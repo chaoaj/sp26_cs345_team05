@@ -40,5 +40,5 @@ function gameover() {
 
 function draw() {
   background(220);
-  homePage(true);
+  screen(page);
 }
