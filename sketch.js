@@ -1,24 +1,42 @@
+var page = 0;
+
 function setup() {
   createCanvas(400, 400);
 }
 
-function homePage(isTrue) {
-  // what is on the home page change isTrue to false when you leave the home page
-
+//page variable tells you what page you are on
+// 0 = home page
+// 1 = skin screen
+// 2 = story slides
+// 3 = gameover screen
+function screen() {
+  if (page == 0) {
+    homePage();
+  } else if (page == 1) {
+    skinScreen();
+  } else if (page == 2) {
+    storySlides();
+  } else if (page == 3) {
+    gameover();
+  }
+}
+function homePage() {
+  
 
 }
 
-function skinScreen(isTrue) {
-  // isTrue is true when you are on the skin screen, change to false when you leave the skin screen
+function skinScreen() {
+  
 }
 
-function storySlides(isTrue) {
-  // isTrue is true when you are on the story slides, change to false when you leave the story slides
+function storySlides() {
+  
 }
 
-function gameover(isTrue) {
-  // isTrue is true when you are on the gameover screen, change to false when you leave the gameover screen
+function gameover() {
+
 }
+  
 
 function draw() {
   background(220);
