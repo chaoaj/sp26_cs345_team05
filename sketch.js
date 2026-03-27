@@ -9,7 +9,8 @@ function preload(){
   skins = loadImage("assets/skins.png");
   start_game = loadImage("assets/start_game.png");
   title = loadImage("assets/title.png");
-
+  victory = loadImage("assets/victory.png");
+  restart = loadImage("assets/restart.png");
 }
 function button(image, x, y, w, h) {
   image(image, x, y, w, h);
@@ -18,6 +19,8 @@ function button(image, x, y, w, h) {
       page = 2;
     } else if (image == skins) {
       page = 1;
+    } else if (image == restart) {
+      page = 0;
     }
   }
 }
@@ -58,7 +61,7 @@ function gameover() {
 
 }
 
-function victory() {
+function victoryPage() {
   
 }
   
