@@ -41,7 +41,7 @@ function screen() {
   } else if (page == 3) {
     gameover();
   } else if (page == 4) {
-    victory();
+    victoryPage();
   }
 }
 function homePage() {
