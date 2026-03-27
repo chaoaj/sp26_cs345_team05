@@ -1,3 +1,7 @@
+<<<<<<< Updated upstream
 //test1
 
 // test2 meow
+=======
+//test
+>>>>>>> Stashed changes
