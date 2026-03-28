@@ -3,6 +3,9 @@ var page = 0;
 let pageWidth = 600;
 let pageHeight = 400;
 
+let homepageX = 0;
+let homepageY = 0;
+
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
   cat = loadImage("assets/cat_homepage.png");
@@ -53,33 +56,50 @@ function screen() {
 }
 
 function homePage() {
+  backgroundMoveSpeed = 4;
+  catScale = 1/2;
+
+  if (mouseX > pageWidth/2 && homepageX < 0) {
+    homepageX += backgroundMoveSpeed;
+  } else  if (mouseX < pageWidth/2 && mouseX != 0 && homepageX > -pageWidth / 50) {
+    homepageX -= backgroundMoveSpeed;
+  }
+
+  if (mouseY > pageHeight/2 && homepageY < 0) {
+    homepageY += backgroundMoveSpeed;
+  } else  if (mouseY < pageHeight/2 && mouseY != 0 && homepageY > -pageHeight / 50) {
+    homepageY -= backgroundMoveSpeed;
+  }
+
   image(
     homepage_background, 
-    0, 0, 
-    pageWidth, pageHeight
+    homepageX, homepageY, 
+    pageWidth + pageWidth / 50, pageHeight + pageHeight / 50
   );
 
-  if (Math.floor(random(0, 7)) == 0) {
+  if (Math.floor(random(0, 6)) == 0) {
     image(
       title1, 
       50, -10, 
       1429/3, 500/3
-    );
+    );    
   } else {
     image(
       title2, 
       50, -10, 
       1429/3, 500/3
     );
+    
+    catScale -= 0.004;
   }
+
+  // print(Math.floor(random([-1, 1])));
 
   image(
     cat, 
     0, 90, 
-    513/2, 632/2
+    cat.width * catScale, cat.height * catScale    
   );
-
-  // print(rand);
 
   // button(start_game, 200, 150, 861/2, 248/2);
 }
