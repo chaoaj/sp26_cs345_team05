@@ -59,23 +59,27 @@ function homePage() {
     pageWidth, pageHeight
   );
 
-  image(
-    title1, 
-    50, -10, 
-    1429/3, 500/3
-  );
-
-  image(
-    title2, 
-    50, -10, 
-    1429/3, 500/3
-  );
+  if (Math.floor(random(0, 7)) == 0) {
+    image(
+      title1, 
+      50, -10, 
+      1429/3, 500/3
+    );
+  } else {
+    image(
+      title2, 
+      50, -10, 
+      1429/3, 500/3
+    );
+  }
 
   image(
     cat, 
     0, 90, 
     513/2, 632/2
   );
+
+  // print(rand);
 
   // button(start_game, 200, 150, 861/2, 248/2);
 }
