@@ -6,7 +6,8 @@ let pageHeight = 400;
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
   cat = loadImage("assets/cat_homepage.png");
-  title = loadImage("assets/title.png");
+  title1 = loadImage("assets/title1.png");
+  title2 = loadImage("assets/title2.png");
 
   game_over = loadImage("assets/game_over.png");
   skins = loadImage("assets/skins.png");
@@ -59,11 +60,24 @@ function homePage() {
   );
 
   image(
+    title1, 
+    50, -10, 
+    1429/3, 500/3
+  );
+
+  image(
+    title2, 
+    50, -10, 
+    1429/3, 500/3
+  );
+
+  image(
     cat, 
     0, 90, 
     513/2, 632/2
   );
-  button(start_game, 200, 150, 200, 100);
+
+  // button(start_game, 200, 150, 861/2, 248/2);
 }
 
 function skinScreen() {
