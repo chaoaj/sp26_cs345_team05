@@ -3,17 +3,19 @@ var page = 0;
 let pageWidth = 600;
 let pageHeight = 400;
 
-function setup() {
-  createCanvas(pageWidth, pageHeight);
-}
-function preload(){
-  // homepage_background = loadImage("assets/restart.png");
+function preload() {
+  homepage_background = loadImage("assets/homepage_background.png");
+  cat = loadImage("assets/cat.png");
 
   // game_over = loadImage("assets/game_over.png");
   // skins = loadImage("assets/skins.png");
   // start_game = loadImage("assets/start_game.png");
 
   // title = loadImage("assets/title.png");
+}
+
+function setup() {
+  createCanvas(pageWidth, pageHeight);
 }
 
 function button(image, x, y, w, h) {
@@ -50,7 +52,21 @@ function screen() {
 }
 
 function homePage() {
-  
+  image(
+    homepage_background, 
+    0, 0, 
+    pageWidth, pageHeight, 
+    0, 0, 
+    949, 633
+  );
+
+  image(
+    cat, 
+    0, 90, 
+    513/2, 632/2, 
+    0, 0, 
+    513, 632
+  );
 
 }
 
