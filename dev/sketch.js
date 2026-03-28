@@ -1,4 +1,5 @@
 var page = 0;
+var scale = 1;
 
 let pageWidth = 600;
 let pageHeight = 400;
@@ -12,9 +13,12 @@ function preload() {
   title1 = loadImage("assets/title1.png");
   title2 = loadImage("assets/title2.png");
 
+  start_game1 = loadImage("assets/start_game1.png");
+  start_game2 = loadImage("assets/start_game2.png");
+
   game_over = loadImage("assets/game_over.png");
   skins = loadImage("assets/skins.png");
-  start_game = loadImage("assets/start_game.png");
+  
 
 }
 
@@ -24,8 +28,13 @@ function setup() {
 
 function button(image1, x, y, w, h) {
   image(image1, x, y, w, h);
-  if (mouseClicked() && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
-    if (image1 == start_game) {
+  if (mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
+    if (image1 == start_game2) {
+      image(start_game1, 275, 150, start_game1.width/7 * scale, start_game1.height/6 * scale);
+    }
+  }
+  if (mouseIsPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
+    if (image1 == start_game2) {
       page = 2;
     } else if (image1 == skins) {
       page = 1;
@@ -56,8 +65,8 @@ function screen() {
 }
 
 function homePage() {
-  backgroundMoveSpeed = 4;
-  catScale = 1/2;
+  scale = 1;
+  backgroundMoveSpeed = 0.5;
 
   if (mouseX > pageWidth/2 && homepageX < 0) {
     homepageX += backgroundMoveSpeed;
@@ -90,18 +99,18 @@ function homePage() {
       1429/3, 500/3
     );
     
-    catScale -= 0.004;
+    scale -= 0.005;
   }
 
-  // print(Math.floor(random([-1, 1])));
-
+  // CAT
   image(
     cat, 
     0, 90, 
-    cat.width * catScale, cat.height * catScale    
+    cat.width * scale/2, cat.height * scale/2   
   );
 
-  // button(start_game, 200, 150, 861/2, 248/2);
+
+  button(start_game2, 275, 150, start_game1.width/7 * scale, start_game1.height/6 * scale);
 }
 
 function skinScreen() {
