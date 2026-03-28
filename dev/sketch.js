@@ -6,10 +6,10 @@ let pageHeight = 400;
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
   cat = loadImage("assets/cat.png");
-
+  
   // game_over = loadImage("assets/game_over.png");
   // skins = loadImage("assets/skins.png");
-  // start_game = loadImage("assets/start_game.png");
+  start_game = loadImage("assets/start_game.png");
 
   // title = loadImage("assets/title.png");
 }
@@ -18,14 +18,14 @@ function setup() {
   createCanvas(pageWidth, pageHeight);
 }
 
-function button(image, x, y, w, h) {
-  image(image, x, y, w, h);
+function button(image1, x, y, w, h) {
+  image(image1, x, y, w, h);
   if (mouseClicked() && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
-    if (image == start_game) {
+    if (image1 == start_game) {
       page = 2;
-    } else if (image == skins) {
+    } else if (image1 == skins) {
       page = 1;
-    } else if (image == restart) {
+    } else if (image1 == restart) {
       page = 0;
     }
   }
@@ -67,7 +67,7 @@ function homePage() {
     0, 0, 
     513, 632
   );
-
+  button(start_game, 200, 150, 200, 100);
 }
 
 function skinScreen() {
