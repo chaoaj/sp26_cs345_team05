@@ -12,6 +12,7 @@ function preload(){
   victory = loadImage("assets/victory.png");
   restart = loadImage("assets/restart.png");
 }
+
 function button(image, x, y, w, h) {
   image(image, x, y, w, h);
   if (mouseClicked() && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
@@ -44,6 +45,7 @@ function screen() {
     victoryPage();
   }
 }
+
 function homePage() {
   
 
