@@ -25,11 +25,13 @@ function preload() {
   game_over = loadImage("assets/game_over.png");
   restart = loadImage("assets/restart.png");
 
-
+  // homepage_sound = loadSound("assets/restart.mp3");
 }
 
 function setup() {
   createCanvas(pageWidth, pageHeight);
+
+  // homepage_sound.play();
 }
 
 function button(image1, x, y, w, h) {
@@ -101,7 +103,7 @@ function homePage() {
   );
 
   // randomized if statement for flicker effect
-  if (Math.floor(random(0, 6)) == 0) {
+  if (Math.floor(random(0, 15)) == 0) {
     image(
       title1, 
       50, -10, 
