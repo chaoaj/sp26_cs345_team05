@@ -62,7 +62,7 @@
 ]; */
 
 
-var page = 3;
+var page = 4;
 var scale = 1;
 
 let pageWidth = 600;
@@ -75,7 +75,7 @@ let currentSlide = 0;
 let slideAlpha = 0;          // 0–255 fade value
 let fadeState = "in";        // "in" | "hold" | "out"
 let fadeTimer = 0;
- 
+
 const FADE_SPEED   = 4;      // alpha change per frame
 const HOLD_FRAMES  = 60;    // frames to hold each slide (3s at 60fps)
 let backstoryActive = false;
@@ -102,6 +102,10 @@ function preload() {
 
   game_over1 = loadImage("assets/game_over1.png");
   game_over2 = loadImage("assets/game_over2.png");
+
+  victory1 = loadImage("assets/victory1.png");
+  victory2 = loadImage("assets/victory2.png");
+
   // restart = loadImage("assets/restart.png");
 
   // homepage_sound = loadSound("assets/homepage_sound.mp3");
@@ -126,8 +130,8 @@ function button(image1, x, y, w, h) {
       image(return1, 20, 20, return1.width/7 * scale, return1.height/6 * scale);
       } 
 
-      // return button from game over screen
-      if (page == 3) {
+      // return button from game over / victory screen
+      if (page == 3 || page == 4) {
         image(return1, 205, 260, return1.width/4 * scale, return1.height/4 * scale);
       }
     }
@@ -379,7 +383,35 @@ function gameover() {
 }
 
 function victoryPage() {
+  scale = 1;
+
+  image(
+    homepage_background,
+    0, 0,
+    pageWidth, pageHeight
+  );
   
+    // randomized if statement for flicker effect
+  if (Math.floor(random(0, 15)) == 0) {
+    image(
+      victory1,
+      90, 40,
+      victory1.width/4, victory1.height/4
+    );
+    
+  } else {
+    image(
+      victory2,
+      90, 40,
+      victory2.width/4, victory2.height/4
+    );
+    
+    scale -= 0.005;
+  }
+  
+
+  // return button
+  button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
 }
 
 function draw() {
