@@ -1,4 +1,4 @@
-var page = 1;
+var page = 0;
 var scale = 1;
 
 let pageWidth = 600;
@@ -25,7 +25,7 @@ function preload() {
   game_over = loadImage("assets/game_over.png");
   restart = loadImage("assets/restart.png");
 
-  // homepage_sound = loadSound("assets/restart.mp3");
+  // homepage_sound = loadSound("assets/homepage_sound.mp3");
 }
 
 function setup() {
@@ -182,7 +182,19 @@ function storySlides() {
 }
 
 function gameover() {
+  image(
+    homepage_background,
+    0, 0,
+    pageWidth, pageHeight
+  );
 
+  image(
+    game_over,
+    70, 40,
+    game_over.width/2, game_over.height/2
+  );
+
+  button(restart, 200, 280, restart.width/3, restart.height/3);
 }
 
 function victoryPage() {
