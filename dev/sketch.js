@@ -324,7 +324,6 @@ function drawSkipButton() {
     onBackstoryComplete();
   }
 
-  pop();
 }
 
 function onBackstoryComplete() {
