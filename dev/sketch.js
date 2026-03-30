@@ -62,7 +62,7 @@
 ]; */
 
 
-var page = 0;
+var page = 3;
 var scale = 1;
 
 let pageWidth = 600;
@@ -106,6 +106,9 @@ function preload() {
   victory1 = loadImage("assets/victory1.png");
   victory2 = loadImage("assets/victory2.png");
 
+  skip1 = loadImage("assets/skip1.png");
+  skip2 = loadImage("assets/skip2.png");
+
   // restart = loadImage("assets/restart.png");
 
   // homepage_sound = loadSound("assets/homepage_sound.mp3");
@@ -134,6 +137,8 @@ function button(image1, x, y, w, h) {
       if (page == 3 || page == 4) {
         image(return1, 205, 260, return1.width/4 * scale, return1.height/4 * scale);
       }
+    } else if (image1 == skip2) {
+      image(skip1, 440, 330, skip1.width/9 * scale, skip1.height/9 * scale);
     }
   }
   if (mouseIsPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
@@ -143,8 +148,8 @@ function button(image1, x, y, w, h) {
       page = 1;
     } else if (image1 == return2) {
       page = 0;
-    } else if (image1 == restart) {
-      page = 0;
+    } else if (image1 == skip2) {
+      page = 5;
     }
 
     print(page);
@@ -157,6 +162,9 @@ function button(image1, x, y, w, h) {
 // 2 = story slides
 // 3 = game over screen
 // 4 = victory screen
+
+// 5 = game screen level 1
+
 function screen() {
   if (page == 0) {
     homePage();
@@ -303,7 +311,8 @@ function storySlides() {
     }
   }
 
-  drawSkipButton();
+  // skip button
+  button(skip2, 440, 330, skip2.width/9 * scale, skip2.height/9 * scale);
 
   // temporary "show controls area"
   push();
@@ -325,28 +334,8 @@ function startBackstory() {
 }
 
 function drawSkipButton() {
-  push();
-  const bx = width - 90, by = height - 40;
-  const bw = 80, bh = 28;
- 
-  fill(60, 60, 100, 200);
-  stroke(150, 150, 220);
-  strokeWeight(1);
-  rectMode(CENTER);
-  rect(bx, by, bw, bh, 8);
- 
-  fill(200, 200, 255);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  textSize(14);
-  textStyle(NORMAL);
-  text("SKIP ▶▶", bx, by);
-  pop();
 
-  if (mouseIsPressed && mouseX > bx - bw/2 && mouseX < bx + bw/2 && 
-    mouseY > by - bh/2 && mouseY < by + bh/2) {
     onBackstoryComplete();
-  }
 
 }
 
@@ -356,6 +345,9 @@ function onBackstoryComplete() {
 }
 
 function gameStart() {
+  textAlign(CENTER);
+  textSize(50);
+  text('meow', 275, 367.5);
 
 }
 
