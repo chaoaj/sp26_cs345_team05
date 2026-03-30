@@ -304,6 +304,16 @@ function storySlides() {
   }
 
   drawSkipButton();
+
+  // temporary "show controls area"
+  push();
+  fill(255);
+  rect(150, 350, 250, 30);
+  fill(0);
+  textSize(13);
+  textAlign(CENTER);
+  text('temporary "show controls area"', 275, 367.5);
+  pop();
 }
 
 function startBackstory() {
