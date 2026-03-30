@@ -62,7 +62,7 @@
 ]; */
 
 
-var page = 0;
+var page = 3;
 var scale = 1;
 
 let pageWidth = 600;
@@ -100,8 +100,9 @@ function preload() {
   return1 = loadImage("assets/return1.png");
   return2 = loadImage("assets/return2.png");
 
-  game_over = loadImage("assets/game_over.png");
-  restart = loadImage("assets/restart.png");
+  game_over1 = loadImage("assets/game_over1.png");
+  game_over2 = loadImage("assets/game_over2.png");
+  // restart = loadImage("assets/restart.png");
 
   // homepage_sound = loadSound("assets/homepage_sound.mp3");
 }
@@ -120,7 +121,15 @@ function button(image1, x, y, w, h) {
     } else if (image1 == skins2) {
       image(skins1, 410, 250, skins1.width/7 * scale, skins1.height/6 * scale);
     } else if (image1 == return2) {
+      // return button from skins screen
+      if (page == 1) {
       image(return1, 20, 20, return1.width/7 * scale, return1.height/6 * scale);
+      } 
+
+      // return button from game over screen
+      if (page == 3) {
+        image(return1, 205, 260, return1.width/4 * scale, return1.height/4 * scale);
+      }
     }
   }
   if (mouseIsPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
@@ -189,6 +198,7 @@ function homePage() {
       50, -10, 
       1429/3, 500/3
     );    
+
   } else {
     image(
       title2, 
@@ -337,19 +347,35 @@ function gameStart() {
 
 
 function gameover() {
+  scale = 1;
+
   image(
     homepage_background,
     0, 0,
     pageWidth, pageHeight
   );
+  
+    // randomized if statement for flicker effect
+  if (Math.floor(random(0, 15)) == 0) {
+    image(
+      game_over1,
+      70, 40,
+      game_over1.width/4, game_over1.height/4
+    );
+    
+  } else {
+    image(
+      game_over2,
+      70, 40,
+      game_over2.width/4, game_over2.height/4
+    );
+    
+    scale -= 0.005;
+  }
+  
 
-  image(
-    game_over,
-    70, 40,
-    game_over.width/2, game_over.height/2
-  );
-
-  button(restart, 200, 280, restart.width/3, restart.height/3);
+  // return button
+  button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
 }
 
 function victoryPage() {
