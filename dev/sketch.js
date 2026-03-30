@@ -1,3 +1,67 @@
+/*const backstorySlides = [
+  {
+    title: "A Long Time Ago…",
+    text: [
+      "In a galaxy not that far away,",
+      "on the cheese-rich planet of Parmesean,",
+      "lived a very normal cat family.",
+      "(Well, as normal as space cats go.)"
+    ],
+    emoji: "🐱🧀🚀"
+  },
+  {
+    title: "Mom & Dad",
+    text: [
+      "Mama Whiskers made the best asteroid stew.",
+      "Papa Paws could fix any broken rocket",
+      "with nothing but duct tape and confidence.",
+      "Life was purrfect."
+    ],
+    emoji: "👩‍🚀👨‍🚀🍲"
+  },
+  {
+    title: "The Incident",
+    text: [
+      "Then one Tuesday — always a Tuesday —",
+      "the Rat King showed up uninvited.",
+      "He kidnapped Mom and Dad,",
+      "and didn't even leave a note. Rude."
+    ],
+    emoji: "🐀👑😤"
+  },
+  {
+    title: "Enter: YOU",
+    text: [
+      "You are their kid.",
+      "You eat danger for breakfast.",
+      "(And also tuna.)",
+      "It's time to suiting up and blast off."
+    ],
+    emoji: "😼⚔️🌌"
+  },
+  {
+    title: "The Mission",
+    text: [
+      "Navigate 4 treacherous planets.",
+      "Defeat the rat hordes standing in your way.",
+      "Find the Rat King.",
+      "Bring Mom and Dad home for dinner."
+    ],
+    emoji: "🗺️💥🐀"
+  },
+  {
+    title: "Good Luck, Space Cat.",
+    text: [
+      "The universe is counting on you.",
+      "Or at least your parents are.",
+      "No pressure.",
+      "…Okay, a little pressure."
+    ],
+    emoji: "🌠🐾✨"
+  }
+]; */
+
+
 var page = 1;
 var scale = 1;
 
@@ -6,6 +70,15 @@ let pageHeight = 400;
 
 let homepageX = 0;
 let homepageY = 0;
+
+let currentSlide = 0;
+let slideAlpha = 0;          // 0–255 fade value
+let fadeState = "in";        // "in" | "hold" | "out"
+let fadeTimer = 0;
+ 
+const FADE_SPEED   = 4;      // alpha change per frame
+const HOLD_FRAMES  = 60;    // frames to hold each slide (3s at 60fps)
+let backstoryActive = false;
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
@@ -18,6 +91,11 @@ function preload() {
 
   skins1 = loadImage("assets/skins1.png");
   skins2 = loadImage("assets/skins2.png");
+
+  story1 = loadImage("assets/story1.gif");
+  story2 = loadImage("assets/story2.gif");
+  story3 = loadImage("assets/story3.gif");
+  story4 = loadImage("assets/story4.gif");
 
   return1 = loadImage("assets/return1.png");
   return2 = loadImage("assets/return2.png");
@@ -75,6 +153,8 @@ function screen() {
     gameover();
   } else if (page == 4) {
     victoryPage();
+  } else if (page == 5) {
+    gameStart();
   }
 }
 
@@ -176,8 +256,84 @@ function skinScreen() {
 }
 
 function storySlides() {
-  
+  if (!backstoryActive) {
+    startBackstory();
+  }
+
+  // Draw current gif fullscreen
+  const storyGifs = [story1, story2, story3, story4];
+  if (currentSlide < storyGifs.length) {
+    image(storyGifs[currentSlide], 0, 0, pageWidth, pageHeight);
+  }
+
+  // Black overlay for fade transition
+  fill(0, 0, 0, 255 - slideAlpha);
+  noStroke();
+  rect(0, 0, pageWidth, pageHeight);
+
+  // Reuse same fade + timer logic
+  if (fadeState === "in") {
+    slideAlpha = min(slideAlpha + FADE_SPEED, 255);
+    if (slideAlpha >= 255) { fadeState = "hold"; fadeTimer = 0; }
+  } else if (fadeState === "hold") {
+    fadeTimer++;
+    if (fadeTimer >= HOLD_FRAMES) { fadeState = "out"; }
+  } else if (fadeState === "out") {
+    slideAlpha = max(slideAlpha - FADE_SPEED, 0);
+    if (slideAlpha <= 0) {
+      currentSlide++;
+      if (currentSlide >= storyGifs.length) { onBackstoryComplete(); return; }
+      fadeState = "in";
+    }
+  }
+
+  drawSkipButton();
 }
+
+function startBackstory() {
+  currentSlide  = 0;
+  slideAlpha    = 0;
+  fadeState     = "in";
+  fadeTimer     = 0;
+  backstoryActive = true;
+}
+
+function drawSkipButton() {
+  push();
+  const bx = width - 90, by = height - 40;
+  const bw = 80, bh = 28;
+ 
+  fill(60, 60, 100, 200);
+  stroke(150, 150, 220);
+  strokeWeight(1);
+  rectMode(CENTER);
+  rect(bx, by, bw, bh, 8);
+ 
+  fill(200, 200, 255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(14);
+  textStyle(NORMAL);
+  text("SKIP ▶▶", bx, by);
+  pop();
+
+  if (mouseIsPressed && mouseX > bx - bw/2 && mouseX < bx + bw/2 && 
+    mouseY > by - bh/2 && mouseY < by + bh/2) {
+    onBackstoryComplete();
+  }
+
+  pop();
+}
+
+function onBackstoryComplete() {
+  backstoryActive = false;
+  page = 5; // Move to game screen (or next appropriate page)
+}
+
+function gameStart() {
+
+}
+
 
 function gameover() {
 
