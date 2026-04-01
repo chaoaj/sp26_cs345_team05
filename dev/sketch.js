@@ -109,9 +109,12 @@ function preload() {
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
   inventory1 = loadImage("assets/inventory.png");
+  level_nacho = loadImage("assets/level_nacho.png");
+  level_cheeseCake = loadImage("assets/level_cheeseCake.png");
+  level_blueCheese = loadImage("assets/level_blueCheese.png");
+  level_parmesan = loadImage("assets/level_parmesan.png");
 
   // restart = loadImage("assets/restart.png");
-
   // homepage_sound = loadSound("assets/homepage_sound.mp3");
 }
 
@@ -361,7 +364,7 @@ function onBackstoryComplete() {
 }
 
 function gameStart() {
-  ICU(3, 100, []);
+  IU(3, 100, [], 4);
 }
 
 
@@ -429,13 +432,16 @@ function victoryPage() {
   button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
 }
 
-function ICU(life, health, inventoryItems) {
+function IU(life, health, inventoryItems, planet) {
+  var level = [level_nacho, level_cheeseCake, level_blueCheese, level_parmesan];
   image(
     icu,
     0, 0,
     pageWidth, pageHeight
   );
   image(inventory1, 20, 330, inventory1.width/3, inventory1.height/3);
+  image(level[planet - 1], 480, 30, level[planet - 1].width/5, level[planet - 1].height/5);
+
 
   lives();
   healthBar();
