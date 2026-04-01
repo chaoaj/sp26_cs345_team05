@@ -62,7 +62,7 @@
 ]; */
 
 
-var page = 3;
+var page = 5;
 var scale = 1;
 
 let pageWidth = 600;
@@ -106,8 +106,9 @@ function preload() {
   victory1 = loadImage("assets/victory1.png");
   victory2 = loadImage("assets/victory2.png");
 
-  skip1 = loadImage("assets/skip1.png");
-  skip2 = loadImage("assets/skip2.png");
+  icu = loadImage("assets/interface.png");
+  heart = loadImage("assets/heart.png");
+  inventory1 = loadImage("assets/inventory.png");
 
   // restart = loadImage("assets/restart.png");
 
@@ -137,8 +138,6 @@ function button(image1, x, y, w, h) {
       if (page == 3 || page == 4) {
         image(return1, 205, 260, return1.width/4 * scale, return1.height/4 * scale);
       }
-    } else if (image1 == skip2) {
-      image(skip1, 440, 330, skip1.width/9 * scale, skip1.height/9 * scale);
     }
   }
   if (mouseIsPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
@@ -148,8 +147,6 @@ function button(image1, x, y, w, h) {
       page = 1;
     } else if (image1 == return2) {
       page = 0;
-    } else if (image1 == skip2) {
-      page = 5;
     }
 
     print(page);
@@ -165,6 +162,7 @@ function button(image1, x, y, w, h) {
 
 // 5 = game screen level 1
 
+// 5 = game screen
 function screen() {
   if (page == 0) {
     homePage();
@@ -311,8 +309,7 @@ function storySlides() {
     }
   }
 
-  // skip button
-  button(skip2, 440, 330, skip2.width/9 * scale, skip2.height/9 * scale);
+  drawSkipButton();
 
   // temporary "show controls area"
   push();
@@ -334,8 +331,28 @@ function startBackstory() {
 }
 
 function drawSkipButton() {
+  push();
+  const bx = width - 90, by = height - 40;
+  const bw = 80, bh = 28;
+ 
+  fill(60, 60, 100, 200);
+  stroke(150, 150, 220);
+  strokeWeight(1);
+  rectMode(CENTER);
+  rect(bx, by, bw, bh, 8);
+ 
+  fill(200, 200, 255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(14);
+  textStyle(NORMAL);
+  text("SKIP ▶▶", bx, by);
+  pop();
 
+  if (mouseIsPressed && mouseX > bx - bw/2 && mouseX < bx + bw/2 && 
+    mouseY > by - bh/2 && mouseY < by + bh/2) {
     onBackstoryComplete();
+  }
 
 }
 
@@ -345,10 +362,7 @@ function onBackstoryComplete() {
 }
 
 function gameStart() {
-  textAlign(CENTER);
-  textSize(50);
-  text('meow', 275, 367.5);
-
+  ICU(3, 100, []);
 }
 
 
@@ -414,6 +428,39 @@ function victoryPage() {
 
   // return button
   button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
+}
+
+function ICU(life, health, inventoryItems) {
+  image(
+    icu,
+    0, 0,
+    pageWidth, pageHeight
+  );
+  image(inventory1, 20, 330, inventory1.width/3, inventory1.height/3);
+
+  lives();
+  healthBar();
+  inventory();
+  
+  function lives() {
+    for (let i = 0; i < life; i++) {
+      image(heart, 30 + i * 50, 290, heart.width/8, heart.height/8);
+    }
+  }
+  function inventory() {
+    
+
+  }
+  function healthBar(maxHealth = 100) {
+    fill(39, 28, 158);
+    rect(30, 5, maxHealth * 2 +10, 20);
+    fill(255, 0, 0);
+    rect(35, 8, health * 2, 15);
+    fill(183, 178, 237);
+    square(3, 3, 25);
+    fill(0);
+    text(health, 5, 20);
+  }
 }
 
 function draw() {
