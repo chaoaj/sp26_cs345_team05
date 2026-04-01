@@ -147,6 +147,8 @@ function button(image1, x, y, w, h) {
       page = 1;
     } else if (image1 == return2) {
       page = 0;
+    } else if (image1 == restart) {
+      page = 0;
     }
 
     print(page);
@@ -159,9 +161,6 @@ function button(image1, x, y, w, h) {
 // 2 = story slides
 // 3 = game over screen
 // 4 = victory screen
-
-// 5 = game screen level 1
-
 // 5 = game screen
 function screen() {
   if (page == 0) {
