@@ -65,6 +65,7 @@
 var page = 5;
 var scale = 1;
 
+
 let pageWidth = 600;
 let pageHeight = 400;
 
@@ -79,6 +80,10 @@ let fadeTimer = 0;
 const FADE_SPEED   = 4;      // alpha change per frame
 const HOLD_FRAMES  = 60;    // frames to hold each slide (3s at 60fps)
 let backstoryActive = false;
+
+let size = 0;
+var inventory2 = [];
+
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
@@ -120,9 +125,11 @@ function preload() {
 
 function setup() {
   createCanvas(pageWidth, pageHeight);
-
+  
+  
   // homepage_sound.play();
 }
+
 
 function button(image1, x, y, w, h) {
   image(image1, x, y, w, h);
@@ -364,7 +371,8 @@ function onBackstoryComplete() {
 }
 
 function gameStart() {
-  IU(3, 100, [], 4);
+  var iu = IU(3, 100, 2, inventory1, inventory2);
+  //addItem(heart);
 }
 
 
@@ -432,7 +440,27 @@ function victoryPage() {
   button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
 }
 
-function IU(life, health, inventoryItems, planet) {
+//adds image item to inventory
+function addItem(item) {
+      if (size < 3) {
+        inventory2[size] = item;
+        size++;
+    }
+  }
+//removes image item from inventory
+function removeItem(item) {
+    for (let i = 0; i < size; i++) {
+      if (inventory2[i] === item) {
+        for (let j = i; j < size - 1; j++) {
+          inventory2[j] = inventory2[j + 1];
+        }
+        size--;
+        break;
+      }
+    }
+  }
+//displays health, lives, inventory, and current planet level
+function IU(life, health, planet, inventory1, inventory2) {
   var level = [level_nacho, level_cheeseCake, level_blueCheese, level_parmesan];
   image(
     icu,
@@ -446,16 +474,18 @@ function IU(life, health, inventoryItems, planet) {
   lives();
   healthBar();
   inventory();
-  
+
+  function inventory() {
+    for (let i = 0; i < size; i++) {
+      image(inventory2[i], 30 + i * 50, 340, inventory2[i].width/8, inventory2[i].height/8);
+    }
+  }
   function lives() {
     for (let i = 0; i < life; i++) {
       image(heart, 30 + i * 50, 290, heart.width/8, heart.height/8);
     }
   }
-  function inventory() {
-    
-
-  }
+  
   function healthBar(maxHealth = 100) {
     fill(39, 28, 158);
     rect(30, 5, maxHealth * 2 +10, 20);
@@ -467,6 +497,8 @@ function IU(life, health, inventoryItems, planet) {
     text(health, 5, 20);
   }
 }
+
+
 
 function draw() {
   background(220);
