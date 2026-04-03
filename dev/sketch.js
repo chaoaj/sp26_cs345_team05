@@ -371,7 +371,7 @@ function onBackstoryComplete() {
 }
 
 function gameStart() {
-  var iu = IU(3, 100, 2, inventory1, inventory2);
+  var iu = IU(3, 100, 1, inventory1, inventory2);
   //addItem(heart);
 }
 
@@ -459,6 +459,25 @@ function removeItem(item) {
       }
     }
   }
+
+class Item {
+  // image: array of image not selected and image selected
+  // selected: whether the item is currently selected in the inventory
+  // data: any additional data about the item (e.g. health boost, damage, etc.)
+  constructor(image, selected, data) {
+    this.image = image;
+    this.selected = selected;
+    this.data = data;
+  }
+
+  image_display() {
+    if (this.selected) {
+      return image[1];
+    } else {
+      return image[0];
+    }
+  }
+}
 //displays health, lives, inventory, and current planet level
 function IU(life, health, planet, inventory1, inventory2) {
   var level = [level_nacho, level_cheeseCake, level_blueCheese, level_parmesan];
@@ -468,7 +487,7 @@ function IU(life, health, planet, inventory1, inventory2) {
     pageWidth, pageHeight
   );
   image(inventory1, 20, 330, inventory1.width/3, inventory1.height/3);
-  image(level[planet - 1], 480, 30, level[planet - 1].width/5, level[planet - 1].height/5);
+  image(level[planet - 1], 480, 10, level[planet - 1].width/5, level[planet - 1].height/5);
 
 
   lives();
