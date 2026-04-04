@@ -124,7 +124,8 @@ function preload() {
   sword_nacho = loadImage("assets/sword_nacho.png");
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
   sword_parmesan = loadImage("assets/sword_parmesan.png");
-  potion = loadImage("assets/Potion.png");
+  sword_cheeseCake = loadImage("assets/sword_cheeseCake.png");
+  potion = loadImage("assets/potion.png");
 }
 
 function setup() {
