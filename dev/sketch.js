@@ -62,9 +62,8 @@
 ]; */
 
 
-var page = 2;
+var page = 5;
 var scale = 1;
-
 
 let pageWidth = 600;
 let pageHeight = 400;
@@ -72,6 +71,21 @@ let pageHeight = 400;
 let homepageX = 0;
 let homepageY = 0;
 
+// sprite sheet settings
+let currentFrame = 0;
+let framePerRow = 3;
+let frameCurrRow = 0;
+let frameWidth = 687;
+let frameHeight = 717;
+
+let playerX;
+let playerY;
+
+let playerSpeed = 15;
+
+let frontR = true;
+
+// slideshow settings
 let currentSlide = 0;
 let slideAlpha = 0;          // 0–255 fade value
 let fadeState = "in";        // "in" | "hold" | "out"
@@ -114,6 +128,10 @@ function preload() {
   skip1 = loadImage("assets/skip1.png");
   skip2 = loadImage("assets/skip2.png");
 
+  cat1 = loadImage("assets/sprite_sheet1.png");
+  playerX = pageWidth / 2;
+  playerY = pageHeight / 5;
+
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
   inventory1 = loadImage("assets/inventory.png");
@@ -122,7 +140,6 @@ function preload() {
   level_blueCheese = loadImage("assets/level_blueCheese.png");
   level_parmesan = loadImage("assets/level_parmesan.png");
 
-  // restart = loadImage("assets/restart.png");
   // homepage_sound = loadSound("assets/homepage_sound.mp3");
   sword_nacho = loadImage("assets/sword_nacho.png");
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
@@ -357,9 +374,108 @@ function onBackstoryComplete() {
   page = 5; // Move to game screen (or next appropriate page)
 }
 
+function drawCat(player) {
+  let sx, sy;
+  
+  sx = currentFrame * frameWidth;
+  sy = frameHeight * frameCurrRow;
+
+  image(
+  player, 
+  playerX, playerY, 
+  frameWidth / 7, frameHeight / 7,
+  sx, sy, 
+  frameWidth, frameHeight
+  );
+  
+  
+  if (frameCount % 4 === 0) {
+
+    if (keyIsDown(DOWN_ARROW)) {
+      frameCurrRow = 0;
+      playerY += playerSpeed;
+    
+      if (currentFrame === 0) {
+        if (frontR === true) {
+          currentFrame = 1;
+          frontR = false;
+        } else {
+          currentFrame = 2;
+          frontR = true;
+        }
+      } else if (currentFrame === 1 || currentFrame === 2) {
+        currentFrame = 0;
+      }
+    } else if (frameCurrRow == 0) {
+      currentFrame = 0;
+    }
+
+    if (keyIsDown(UP_ARROW)) {
+      frameCurrRow = 1;
+      playerY -= playerSpeed;
+    
+      if (currentFrame === 0) {
+        if (frontR === true) {
+          currentFrame = 1;
+          frontR = false;
+        } else {
+          currentFrame = 2;
+          frontR = true;
+        }
+      } else if (currentFrame === 1 || currentFrame === 2) {
+        currentFrame = 0;
+      } 
+    } else if (frameCurrRow == 1) {
+      currentFrame = 0;
+    }
+
+    if (keyIsDown(LEFT_ARROW)) {
+      frameCurrRow = 2;
+      playerX -= playerSpeed;
+    
+      if (currentFrame === 0) {
+        if (frontR === true) {
+          currentFrame = 1;
+          frontR = false;
+        } else {
+          currentFrame = 2;
+          frontR = true;
+        }
+      } else if (currentFrame === 1 || currentFrame === 2) {
+        currentFrame = 0;
+      } 
+    } else if (frameCurrRow == 2) {
+      currentFrame = 0;
+    }
+
+    if (keyIsDown(RIGHT_ARROW)) {
+      frameCurrRow = 3;
+      playerX += playerSpeed;
+    
+      if (currentFrame === 0) {
+        if (frontR === true) {
+          currentFrame = 1;
+          frontR = false;
+        } else {
+          currentFrame = 2;
+          frontR = true;
+        }
+      } else if (currentFrame === 1 || currentFrame === 2) {
+        currentFrame = 0;
+      } 
+    } else if (frameCurrRow == 3) {
+      currentFrame = 0;
+    }
+    
+  }
+  // print(currentFrame);
+}
+
 function gameStart() {
   var iu = IU(3, 100, 1, inventory1, inventory2);
   //addItem(heart);
+
+  drawCat(cat1);
 }
 
 
