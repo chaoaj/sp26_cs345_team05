@@ -104,6 +104,14 @@ let backstoryActive = false;
 let size = 0;
 var inventory2 = [];
 
+let mapData, floorTileset, wallTileset;
+let cam = { x: 0, y: 0 };
+let currentMap;
+let currentMapFloor;
+let currentMapWall;
+let currentPlanet = 1;
+let completedPlanets = [];
+
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
@@ -151,9 +159,20 @@ function preload() {
   sword_parmesan = loadImage("assets/sword_parmesan.png");
   sword_cheeseCake = loadImage("assets/sword_cheeseCake.png");
   potion = loadImage("assets/potion.png");
+
+  // map data
+  mapData_nacho = loadJSON("assets/map1.json");
+  //mapData_parmesan  = loadJSON("assets/map2.json");  // add when ready
+  //mapData_blueCheese = loadJSON("assets/map3.json"); // add when ready
+  //mapData_cheeseCake = loadJSON("assets/map4.json"); // add when ready
+  floorTileset = loadImage("assets/atlas_floor-16x16.png");
+  wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
 }
 
 function setup() {
+  currentMap = mapData_nacho;
+  currentMapFloor = floorTileset;
+  currentMapWall = wallTileset;
   createCanvas(pageWidth, pageHeight);
   playerX = pageWidth / 2;
   playerY = pageHeight / 5;
@@ -376,7 +395,8 @@ function startBackstory() {
 
 function onBackstoryComplete() {
   backstoryActive = false;
-  page = 5; // Move to game screen (or next appropriate page)
+  spawnPlayer(currentMap);
+  page = 5; 
 }
 
 function drawCat(player) {
@@ -408,8 +428,9 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
     else if (left) frameCurrRow = 2;
 
     // boundary
-    playerX = constrain(playerX, 0, pageWidth - frameWidth / 8);
-    playerY = constrain(playerY, 0, pageHeight - frameHeight / 8);
+    playerX = constrain(playerX, 0, currentMap.width * 16 - frameWidth / 8);
+    playerY = constrain(playerY, 0, currentMap.height * 16 - frameHeight / 8);
+
 
     if (moving) {
       if (currentFrame === 0) {
@@ -427,11 +448,100 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
 }
 
 function gameStart() {
+  console.log("currentMap:", currentMap);
+  console.log("currentMapFloor:", currentMapFloor);
+  console.log("currentMapWall:", currentMapWall);
+  console.log("playerX:", playerX, "playerY:", playerY);
+  console.log("cam:", cam);
+  
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 - pageHeight);
+  
+  push();
+  translate(-cam.x, -cam.y);
+  drawMap(currentMap, currentMapFloor, currentMapWall);
   drawCat(cat_white);
+  pop();
 
-  var iu = IU(3, 100, 1, inventory1, inventory2);
+  IU(3, 100, currentPlanet, inventory1, inventory2);
   //addItem(heart);
+}
 
+function drawMap(map, floorTS, wallTS) {
+  const tileW = 16;
+  const mapCols = map.width;
+  
+  for (let layer of map.layers) {
+    if (layer.type !== "tilelayer") continue;
+
+    for (let i = 0; i < layer.data.length; i++) {
+      const tileId = layer.data[i];
+      if (tileId === 0) continue; // empty tile
+
+      const col = i % mapCols;
+      const row = Math.floor(i / mapCols);
+      const x = col * tileW;
+      const y = row * tileW;
+
+      if (tileId >= 77) {
+        const localID = tileId - 77;
+        const srcX = (localID % 24) * tileW;
+        const srcY = floor(localID / 24) * 32;
+        image(wallTS, x, y - 16, tileW, 32, srcX, srcY, tileW, 32);
+      } else {
+        const localID = tileId - 1;
+        const srcX = (localID % 7) * tileW;
+        const srcY = floor(localID / 7) * tileW;
+        image(floorTS, x, y, tileW, tileW, srcX, srcY, tileW, tileW);
+      }
+    }
+  }
+}
+
+function loadRandomPlanet() {
+  // logic to determine next planet
+  const bossPlanet = 4;
+  const normalPlanets = [1, 2, 3];
+  const remaining = normalPlanets.filter(p => !completedPlanets.includes(p) && p !== currentPlanet);
+
+  completedPlanets.push(currentPlanet);
+
+  let next;
+
+  if (remaining.length === 0) {
+    next = bossPlanet;
+  } else {
+    next = remaining[floor(random(remaining.length))];
+  }
+
+  currentPlanet = next;
+
+  if (next === 1) {
+    currentMap = mapData_nacho;
+  } else if (next === 2) {
+    currentMap = mapData_parmesan;
+  } else if (next === 3) {
+    currentMap = mapData_blueCheese;
+  } else if (next === 4) {
+    currentMap = mapData_cheeseCake;
+  } else if (next === 4 && completedPlanets.includes(4)) {
+    page = 4;
+  }
+
+  currentMapFloor = floorTileset;
+  currentMapWall = wallTileset;
+
+  spawnPlayer(currentMap);
+}
+
+function spawnPlayer(map) {
+  const objects = map.layers.find(l => l.type === "objectgroup").objects;
+  const spawn = objects.find(o => o.name === "spawn");
+  if (spawn) {
+    playerX = spawn.x;
+    playerY = spawn.y;
+    console.log("Spawned at:", playerX, playerY);
+  }
 }
 
 
