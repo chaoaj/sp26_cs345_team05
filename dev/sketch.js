@@ -73,7 +73,6 @@ let homepageY = 0;
 
 // sprite sheet settings
 let currentFrame = 0;
-let framePerRow = 3;
 let frameCurrRow = 0;
 let frameWidth = 687;
 let frameHeight = 717;
@@ -86,10 +85,9 @@ let playerSpeed = 12;
 let frontR = true;
 
 // frame change millisecond logic
-let isIdle = true;
 let lastSwitch = 0;
 let idleInterval = 400; // milliseconds
-let walkInterval = 150;
+let walkInterval = 120;
 
 // slideshow settings
 let currentSlide = 0;
@@ -135,8 +133,6 @@ function preload() {
   skip2 = loadImage("assets/skip2.png");
 
   cat1 = loadImage("assets/sprite_sheet3.png");
-  playerX = pageWidth / 2;
-  playerY = pageHeight / 5;
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -156,7 +152,8 @@ function preload() {
 
 function setup() {
   createCanvas(pageWidth, pageHeight);
-  
+  playerX = pageWidth / 2;
+  playerY = pageHeight / 5;
   
   // homepage_sound.play();
 }
@@ -537,7 +534,7 @@ function IU(life, health, planet, inventory1, inventory2) {
     0, 0,
     pageWidth, pageHeight
   );
-  image(inventory1, 20, 330, inventory1.width/3, inventory1.height/3);
+  image(inventory1, 20, 330, inventory1.width/8.5, inventory1.height/8.5);
   image(level[planet - 1], 480, 10, level[planet - 1].width/5, level[planet - 1].height/5);
 
 
@@ -552,7 +549,7 @@ function IU(life, health, planet, inventory1, inventory2) {
   }
   function lives() {
     for (let i = 0; i < life; i++) {
-      image(heart, 30 + i * 50, 290, heart.width/8, heart.height/8);
+      image(heart, 30 + i * 50, 295, heart.width/14, heart.height/16);
     }
   }
   
@@ -567,7 +564,6 @@ function IU(life, health, planet, inventory1, inventory2) {
     text(health, 5, 20);
   }
 }
-
 
 
 function draw() {
