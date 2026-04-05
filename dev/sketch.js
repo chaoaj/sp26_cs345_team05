@@ -62,7 +62,7 @@
 ]; */
 
 
-var page = 5;
+var page = 0;
 var scale = 1;
 
 let pageWidth = 600;
