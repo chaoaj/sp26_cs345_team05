@@ -80,14 +80,16 @@ let frameHeight = 717;
 let playerX;
 let playerY;
 
-let playerSpeed = 12;
+let playerSpeed = 10;
 
 let frontR = true;
+let walkToggle = false;
 
 // frame change millisecond logic
 let lastSwitch = 0;
-let idleInterval = 400; // milliseconds
+let idleInterval = 500; // milliseconds
 let walkInterval = 120;
+
 
 // slideshow settings
 let currentSlide = 0;
@@ -132,7 +134,8 @@ function preload() {
   skip1 = loadImage("assets/skip1.png");
   skip2 = loadImage("assets/skip2.png");
 
-  cat1 = loadImage("assets/sprite_sheet3.png");
+  cat_orange = loadImage("assets/sprite_sheet_orange.png");
+  cat_white = loadImage("assets/sprite_sheet_white.png");
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -162,18 +165,18 @@ function setup() {
 function button(image1, x, y, w, h) {
   image(image1, x, y, w, h);
   if (mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
-    if (image1 == start_game2) {
+    if (image1 === start_game2) {
       image(start_game1, 275, 150, start_game1.width/7 * scale, start_game1.height/6 * scale);
-    } else if (image1 == skins2) {
+    } else if (image1 === skins2) {
       image(skins1, 410, 250, skins1.width/7 * scale, skins1.height/6 * scale);
-    } else if (image1 == return2) {
+    } else if (image1 === return2) {
       // return button from skins screen
-      if (page == 1) {
+      if (page === 1) {
       image(return1, 20, 20, return1.width/7 * scale, return1.height/6 * scale);
       } 
 
       // return button from game over / victory screen
-      if (page == 3 || page == 4) {
+      if (page === 3 || page === 4) {
         image(return1, 205, 260, return1.width/4 * scale, return1.height/4 * scale);
       }
     } else if (image1 === skip2) {
@@ -181,13 +184,13 @@ function button(image1, x, y, w, h) {
     }
   }
   if (mouseIsPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
-    if (image1 == start_game2) {
+    if (image1 === start_game2) {
       page = 2;
-    } else if (image1 == skins2) {
+    } else if (image1 === skins2) {
       page = 1;
-    } else if (image1 == return2) {
+    } else if (image1 === return2) {
       page = 0;
-    } else if (image1 == skip2) {
+    } else if (image1 === skip2) {
       onBackstoryComplete();
     }
 
@@ -204,17 +207,17 @@ function button(image1, x, y, w, h) {
 // 4 = victory screen
 // 5 = game screen
 function screen() {
-  if (page == 0) {
+  if (page === 0) {
     homePage();
-  } else if (page == 1) {
+  } else if (page === 1) {
     skinScreen();
-  } else if (page == 2) {
+  } else if (page === 2) {
     storySlides();
-  } else if (page == 3) {
+  } else if (page === 3) {
     gameover();
-  } else if (page == 4) {
+  } else if (page === 4) {
     victoryPage();
-  } else if (page == 5) {
+  } else if (page === 5) {
     gameStart();
   }
 }
@@ -242,7 +245,7 @@ function homePage() {
   );
 
   // randomized if statement for flicker effect
-  if (Math.floor(random(0, 15)) == 0) {
+  if (Math.floor(random(0, 15)) === 0) {
     image(
       title1, 
       50, -10, 
@@ -296,7 +299,7 @@ function skinScreen() {
   );
 
   // randomized if statement for flicker effect
-  if (Math.floor(random(0, 6)) == 0) {
+  if (Math.floor(random(0, 6)) === 0) {
     image(
       title1, 
       200, 0, 
@@ -380,32 +383,38 @@ function drawCat(player) {
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
-  image(player, playerX, playerY, frameWidth / 8, frameHeight / 8, sx, sy, frameWidth, frameHeight);
+  image(player, playerX, playerY, frameWidth / 10, frameHeight / 10, sx, sy, frameWidth, frameHeight);
 
-  let moving = keyIsDown(DOWN_ARROW) || keyIsDown(UP_ARROW) || 
-               keyIsDown(LEFT_ARROW) || keyIsDown(RIGHT_ARROW);
+let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
+let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
+let left  = keyIsDown(LEFT_ARROW)  || keyIsDown(65);
+let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
+  let moving = up || down || left || right;
 
   if (millis() - lastSwitch > (moving ? walkInterval : idleInterval)) {
     lastSwitch = millis();
 
-    if (keyIsDown(DOWN_ARROW)) {
-      frameCurrRow = 0;
-      playerY += playerSpeed;
-    } else if (keyIsDown(UP_ARROW)) {
-      frameCurrRow = 1;
-      playerY -= playerSpeed;
-    } else if (keyIsDown(LEFT_ARROW)) {
-      frameCurrRow = 2;
-      playerX -= playerSpeed;
-    } else if (keyIsDown(RIGHT_ARROW)) {
-      frameCurrRow = 3;
-      playerX += playerSpeed;
-    }
+    let speed = (moving && (up || down) && (left || right)) ? playerSpeed * 0.707 : playerSpeed;
+
+    if (up)    playerY -= speed;
+    if (down)  playerY += speed;
+    if (left)  playerX -= speed;
+    if (right) playerX += speed;
+
+    // diagonal will prioritize horizontal over vertical
+    if (up)     frameCurrRow = 1;
+    else if (down) frameCurrRow = 0;
+    else if (right)   frameCurrRow = 3;
+    else if (left) frameCurrRow = 2;
+
+    // boundary
+    playerX = constrain(playerX, 0, pageWidth - frameWidth / 8);
+    playerY = constrain(playerY, 0, pageHeight - frameHeight / 8);
 
     if (moving) {
       if (currentFrame === 0) {
-        currentFrame = frontR ? 1 : 2;
-        frontR = !frontR;
+        currentFrame = walkToggle ? 1 : 2;
+        walkToggle = !walkToggle;
       } else {
         currentFrame = 0;
       }
@@ -414,13 +423,15 @@ function drawCat(player) {
       frontR = !frontR;
     }
   }
+  // print(frameCurrRow);
 }
 
 function gameStart() {
+  drawCat(cat_white);
+
   var iu = IU(3, 100, 1, inventory1, inventory2);
   //addItem(heart);
 
-  drawCat(cat1);
 }
 
 
@@ -434,7 +445,7 @@ function gameover() {
   );
   
     // randomized if statement for flicker effect
-  if (Math.floor(random(0, 15)) == 0) {
+  if (Math.floor(random(0, 15)) === 0) {
     image(
       game_over1,
       70, 40,
@@ -466,7 +477,7 @@ function victoryPage() {
   );
   
     // randomized if statement for flicker effect
-  if (Math.floor(random(0, 15)) == 0) {
+  if (Math.floor(random(0, 15)) === 0) {
     image(
       victory1,
       90, 40,
