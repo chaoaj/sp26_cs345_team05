@@ -159,7 +159,6 @@ function preload() {
   potion = loadImage("assets/potion.png");
 
   // map data
-  mapData_nacho = loadJSON("assets/map1.json");
   //mapData_parmesan  = loadJSON("assets/map2.json");  // add when ready
   //mapData_blueCheese = loadJSON("assets/map3.json"); // add when ready
   //mapData_cheeseCake = loadJSON("assets/map4.json"); // add when ready
