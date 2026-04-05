@@ -85,6 +85,12 @@ let playerSpeed = 12;
 
 let frontR = true;
 
+// frame change millisecond logic
+let isIdle = true;
+let lastSwitch = 0;
+let idleInterval = 400; // milliseconds
+let walkInterval = 150;
+
 // slideshow settings
 let currentSlide = 0;
 let slideAlpha = 0;          // 0–255 fade value
@@ -128,7 +134,7 @@ function preload() {
   skip1 = loadImage("assets/skip1.png");
   skip2 = loadImage("assets/skip2.png");
 
-  cat1 = loadImage("assets/sprite_sheet2.png");
+  cat1 = loadImage("assets/sprite_sheet3.png");
   playerX = pageWidth / 2;
   playerY = pageHeight / 5;
 
@@ -279,8 +285,7 @@ function skinScreen() {
     homepageX += backgroundMoveSpeed;
   } else  if (mouseX < pageWidth/2 && mouseX != 0 && homepageX > -pageWidth / 50) {
     homepageX -= backgroundMoveSpeed;
-  }
-
+  } 
   if (mouseY > pageHeight/2 && homepageY < 0) {
     homepageY += backgroundMoveSpeed;
   } else  if (mouseY < pageHeight/2 && mouseY != 0 && homepageY > -pageHeight / 50) {
@@ -375,100 +380,43 @@ function onBackstoryComplete() {
 }
 
 function drawCat(player) {
-  let sx, sy;
-  
-  sx = currentFrame * frameWidth;
-  sy = frameHeight * frameCurrRow;
+  let sx = currentFrame * frameWidth;
+  let sy = frameHeight * frameCurrRow;
 
-  image(
-  player, 
-  playerX, playerY, 
-  frameWidth / 8, frameHeight / 8,
-  sx, sy, 
-  frameWidth, frameHeight
-  );
-  
-  
-  if (frameCount % 4 === 0) {
+  image(player, playerX, playerY, frameWidth / 8, frameHeight / 8, sx, sy, frameWidth, frameHeight);
+
+  let moving = keyIsDown(DOWN_ARROW) || keyIsDown(UP_ARROW) || 
+               keyIsDown(LEFT_ARROW) || keyIsDown(RIGHT_ARROW);
+
+  if (millis() - lastSwitch > (moving ? walkInterval : idleInterval)) {
+    lastSwitch = millis();
 
     if (keyIsDown(DOWN_ARROW)) {
       frameCurrRow = 0;
       playerY += playerSpeed;
-    
-      if (currentFrame === 0) {
-        if (frontR === true) {
-          currentFrame = 1;
-          frontR = false;
-        } else {
-          currentFrame = 2;
-          frontR = true;
-        }
-      } else if (currentFrame === 1 || currentFrame === 2) {
-        currentFrame = 0;
-      }
-    } else if (frameCurrRow == 0) {
-      currentFrame = 0;
-    }
-
-    if (keyIsDown(UP_ARROW)) {
+    } else if (keyIsDown(UP_ARROW)) {
       frameCurrRow = 1;
       playerY -= playerSpeed;
-    
-      if (currentFrame === 0) {
-        if (frontR === true) {
-          currentFrame = 1;
-          frontR = false;
-        } else {
-          currentFrame = 2;
-          frontR = true;
-        }
-      } else if (currentFrame === 1 || currentFrame === 2) {
-        currentFrame = 0;
-      } 
-    } else if (frameCurrRow == 1) {
-      currentFrame = 0;
-    }
-
-    if (keyIsDown(LEFT_ARROW)) {
+    } else if (keyIsDown(LEFT_ARROW)) {
       frameCurrRow = 2;
       playerX -= playerSpeed;
-    
-      if (currentFrame === 0) {
-        if (frontR === true) {
-          currentFrame = 1;
-          frontR = false;
-        } else {
-          currentFrame = 2;
-          frontR = true;
-        }
-      } else if (currentFrame === 1 || currentFrame === 2) {
-        currentFrame = 0;
-      } 
-    } else if (frameCurrRow == 2) {
-      currentFrame = 0;
-    }
-
-    if (keyIsDown(RIGHT_ARROW)) {
+    } else if (keyIsDown(RIGHT_ARROW)) {
       frameCurrRow = 3;
       playerX += playerSpeed;
-    
-      if (currentFrame === 0) {
-        if (frontR === true) {
-          currentFrame = 1;
-          frontR = false;
-        } else {
-          currentFrame = 2;
-          frontR = true;
-        }
-      } else if (currentFrame === 1 || currentFrame === 2) {
-        currentFrame = 0;
-      } 
-    } else if (frameCurrRow == 3) {
-      currentFrame = 0;
     }
-    
+
+    if (moving) {
+      if (currentFrame === 0) {
+        currentFrame = frontR ? 1 : 2;
+        frontR = !frontR;
+      } else {
+        currentFrame = 0;
+      }
+    } else {
+      currentFrame = frontR ? 3 : 0;
+      frontR = !frontR;
+    }
   }
-  // print(currentFrame);
 }
 
 function gameStart() {
