@@ -139,8 +139,14 @@ function preload() {
 
   victory1 = loadImage("assets/victory1.png");
   victory2 = loadImage("assets/victory2.png");
+
   skip1 = loadImage("assets/skip1.png");
   skip2 = loadImage("assets/skip2.png");
+
+  cat_orange = loadImage("assets/sprite_sheet_orange.png");
+  cat_white = loadImage("assets/sprite_sheet_white.png");
+
+
   restart = loadImage("assets/restart.png");
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
