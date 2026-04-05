@@ -81,7 +81,7 @@ let frameHeight = 717;
 let playerX;
 let playerY;
 
-let playerSpeed = 15;
+let playerSpeed = 12;
 
 let frontR = true;
 
@@ -128,7 +128,7 @@ function preload() {
   skip1 = loadImage("assets/skip1.png");
   skip2 = loadImage("assets/skip2.png");
 
-  cat1 = loadImage("assets/sprite_sheet1.png");
+  cat1 = loadImage("assets/sprite_sheet2.png");
   playerX = pageWidth / 2;
   playerY = pageHeight / 5;
 
@@ -383,7 +383,7 @@ function drawCat(player) {
   image(
   player, 
   playerX, playerY, 
-  frameWidth / 7, frameHeight / 7,
+  frameWidth / 8, frameHeight / 8,
   sx, sy, 
   frameWidth, frameHeight
   );
