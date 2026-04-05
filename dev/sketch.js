@@ -62,7 +62,7 @@
 ]; */
 
 
-var page = 5;
+var page = 2;
 var scale = 1;
 
 
@@ -111,6 +111,9 @@ function preload() {
   victory1 = loadImage("assets/victory1.png");
   victory2 = loadImage("assets/victory2.png");
 
+  skip1 = loadImage("assets/skip1.png");
+  skip2 = loadImage("assets/skip2.png");
+
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
   inventory1 = loadImage("assets/inventory.png");
@@ -153,6 +156,8 @@ function button(image1, x, y, w, h) {
       if (page == 3 || page == 4) {
         image(return1, 205, 260, return1.width/4 * scale, return1.height/4 * scale);
       }
+    } else if (image1 === skip2) {
+      image(skip1, 475, 345, skip1.width/14, skip1.height/12);
     }
   }
   if (mouseIsPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
@@ -162,11 +167,12 @@ function button(image1, x, y, w, h) {
       page = 1;
     } else if (image1 == return2) {
       page = 0;
-    } else if (image1 == restart) {
-      page = 0;
+    } else if (image1 == skip2) {
+      onBackstoryComplete();
     }
 
     print(page);
+    
   }
 }
 
@@ -323,7 +329,9 @@ function storySlides() {
     }
   }
 
-  drawSkipButton();
+  // skip button
+  button(skip2, 475, 345, skip2.width/14, skip2.height/12);
+
 
   // temporary "show controls area"
   push();
@@ -342,32 +350,6 @@ function startBackstory() {
   fadeState     = "in";
   fadeTimer     = 0;
   backstoryActive = true;
-}
-
-function drawSkipButton() {
-  push();
-  const bx = width - 90, by = height - 40;
-  const bw = 80, bh = 28;
- 
-  fill(60, 60, 100, 200);
-  stroke(150, 150, 220);
-  strokeWeight(1);
-  rectMode(CENTER);
-  rect(bx, by, bw, bh, 8);
- 
-  fill(200, 200, 255);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  textSize(14);
-  textStyle(NORMAL);
-  text("SKIP ▶▶", bx, by);
-  pop();
-
-  if (mouseIsPressed && mouseX > bx - bw/2 && mouseX < bx + bw/2 && 
-    mouseY > by - bh/2 && mouseY < by + bh/2) {
-    onBackstoryComplete();
-  }
-
 }
 
 function onBackstoryComplete() {
