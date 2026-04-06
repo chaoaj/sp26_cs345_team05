@@ -62,7 +62,7 @@
 ]; */
 
 
-var page = 5;
+var page = 0;
 var scale = 1;
 
 let pageWidth = 600;
@@ -154,7 +154,7 @@ function preload() {
   potion = loadImage("assets/potion.png");
 
   // temp map
-  map = loadImage("assets/map.png");
+  map1 = loadImage("assets/map.png");
 }
 
 function setup() {
@@ -432,7 +432,7 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
 
 function gameStart() {
   image(
-    map, 
+    map1, 
     30, 20, 
     map.width/1.2, map.height/1.2
   );
