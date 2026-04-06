@@ -165,15 +165,31 @@ function preload() {
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
 }
 
+function getSpawnPoint(map) {
+  for (let layer of map.layers) {
+    if (layer.type !== "objectgroup") continue;
+    for (let obj of layer.objects) {
+      if (obj.name === "playerSpawn") {
+        return { x: obj.x, y: obj.y };
+      }
+    }
+  }
+  // fallback if no spawn point found
+  return { x: pageWidth / 2, y: pageHeight / 2 };
+}
+
+
 function setup() {
   console.log("mapData_nacho:", mapData_nacho);
   createCanvas(pageWidth, pageHeight);
-  playerX = 71 * 16 + 200;
-  playerY = 6 * 16 + 200;
 
   currentMap = mapData_nacho;
   currentMapFloor = floorTileset;
   currentMapWall = wallTileset;
+
+  const spawn = getSpawnPoint(currentMap);
+  playerX = spawn.x;
+  playerY = spawn.y;
   
   // homepage_sound.play();
 }
@@ -396,9 +412,12 @@ function onBackstoryComplete() {
   currentMap = mapData_nacho;
   currentMapFloor = floorTileset;
   currentMapWall = wallTileset;
-  playerX = pageWidth / 2;
-  playerY = pageHeight / 2;
-  page = 5; // Move to game screen (or next appropriate page)
+
+  const spawn = getSpawnPoint(currentMap);
+  playerX = spawn.x;
+  playerY = spawn.y;
+
+  page = 5;
 
 }
 
