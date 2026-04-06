@@ -431,7 +431,7 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
 }
 
 function gameStart() {
-  image(
+  image( 
     map1, 
     30, 20, 
     map.width/1.2, map.height/1.2
