@@ -62,7 +62,7 @@
 ]; */
 
 
-var page = 0;
+var page = 5;
 var scale = 1;
 
 let pageWidth = 600;
@@ -71,6 +71,27 @@ let pageHeight = 400;
 let homepageX = 0;
 let homepageY = 0;
 
+// sprite sheet settings
+let currentFrame = 0;
+let frameCurrRow = 0;
+let frameWidth = 687;
+let frameHeight = 717;
+
+let playerX;
+let playerY;
+
+let playerSpeed = 10;
+
+let frontR = true;
+let walkToggle = false;
+
+// frame change millisecond logic
+let lastSwitch = 0;
+let idleInterval = 300; // milliseconds
+let walkInterval = 120;
+
+
+// slideshow settings
 let currentSlide = 0;
 let slideAlpha = 0;          // 0–255 fade value
 let fadeState = "in";        // "in" | "hold" | "out"
@@ -79,6 +100,10 @@ let fadeTimer = 0;
 const FADE_SPEED   = 4;      // alpha change per frame
 const HOLD_FRAMES  = 60;    // frames to hold each slide (3s at 60fps)
 let backstoryActive = false;
+
+let size = 0;
+var inventory2 = [];
+
 
 function preload() {
   homepage_background = loadImage("dev/assets/homepage_background.png");
@@ -106,48 +131,75 @@ function preload() {
   victory1 = loadImage("dev/assets/victory1.png");
   victory2 = loadImage("dev/assets/victory2.png");
 
-  // restart = loadImage("assets/restart.png");
+  skip1 = loadImage("dev/assets/skip1.png");
+  skip2 = loadImage("dev/assets/skip2.png");
 
-  // homepage_sound = loadSound("assets/homepage_sound.mp3");
+  cat_orange = loadImage("dev/assets/sprite_sheet_orange.png");
+  cat_white = loadImage("dev/assets/sprite_sheet_white.png");
+  cat_tan = loadImage("dev/assets/sprite_sheet_tan.png");
+
+  icu = loadImage("dev/assets/interface.png");
+  heart = loadImage("dev/assets/heart.png");
+  inventory1 = loadImage("dev/assets/inventory.png");
+  level_nacho = loadImage("dev/assets/level_nacho.png");
+  level_cheeseCake = loadImage("dev/assets/level_cheeseCake.png");
+  level_blueCheese = loadImage("dev/assets/level_blueCheese.png");
+  level_parmesan = loadImage("dev/assets/level_parmesan.png");
+
+  // homepage_sound = loadSound("dev/assets/homepage_sound.mp3");
+  sword_nacho = loadImage("dev/assets/sword_nacho.png");
+  sword_blueCheese = loadImage("dev/assets/sword_blueCheese.png");
+  sword_parmesan = loadImage("dev/assets/sword_parmesan.png");
+  sword_cheeseCake = loadImage("dev/assets/sword_cheeseCake.png");
+  potion = loadImage("dev/assets/potion.png");
+
+  // temp map
+  map1 = loadImage("dev/assets/map.png");
 }
 
 function setup() {
   createCanvas(pageWidth, pageHeight);
-
+  playerX = 280;
+  playerY = 150;
+  
   // homepage_sound.play();
 }
+
 
 function button(image1, x, y, w, h) {
   image(image1, x, y, w, h);
   if (mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
-    if (image1 == start_game2) {
+    if (image1 === start_game2) {
       image(start_game1, 275, 150, start_game1.width/7 * scale, start_game1.height/6 * scale);
-    } else if (image1 == skins2) {
+    } else if (image1 === skins2) {
       image(skins1, 410, 250, skins1.width/7 * scale, skins1.height/6 * scale);
-    } else if (image1 == return2) {
+    } else if (image1 === return2) {
       // return button from skins screen
-      if (page == 1) {
+      if (page === 1) {
       image(return1, 20, 20, return1.width/7 * scale, return1.height/6 * scale);
       } 
 
       // return button from game over / victory screen
-      if (page == 3 || page == 4) {
+      if (page === 3 || page === 4) {
         image(return1, 205, 260, return1.width/4 * scale, return1.height/4 * scale);
       }
+    } else if (image1 === skip2) {
+      image(skip1, 475, 345, skip1.width/14, skip1.height/12);
     }
   }
   if (mouseIsPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
-    if (image1 == start_game2) {
+    if (image1 === start_game2) {
       page = 2;
-    } else if (image1 == skins2) {
+    } else if (image1 === skins2) {
       page = 1;
-    } else if (image1 == return2) {
+    } else if (image1 === return2) {
       page = 0;
-    } else if (image1 == restart) {
-      page = 0;
+    } else if (image1 === skip2) {
+      onBackstoryComplete();
     }
 
     print(page);
+    
   }
 }
 
@@ -157,18 +209,19 @@ function button(image1, x, y, w, h) {
 // 2 = story slides
 // 3 = game over screen
 // 4 = victory screen
+// 5 = game screen
 function screen() {
-  if (page == 0) {
+  if (page === 0) {
     homePage();
-  } else if (page == 1) {
+  } else if (page === 1) {
     skinScreen();
-  } else if (page == 2) {
+  } else if (page === 2) {
     storySlides();
-  } else if (page == 3) {
+  } else if (page === 3) {
     gameover();
-  } else if (page == 4) {
+  } else if (page === 4) {
     victoryPage();
-  } else if (page == 5) {
+  } else if (page === 5) {
     gameStart();
   }
 }
@@ -196,7 +249,7 @@ function homePage() {
   );
 
   // randomized if statement for flicker effect
-  if (Math.floor(random(0, 15)) == 0) {
+  if (Math.floor(random(0, 15)) === 0) {
     image(
       title1, 
       50, -10, 
@@ -236,8 +289,7 @@ function skinScreen() {
     homepageX += backgroundMoveSpeed;
   } else  if (mouseX < pageWidth/2 && mouseX != 0 && homepageX > -pageWidth / 50) {
     homepageX -= backgroundMoveSpeed;
-  }
-
+  } 
   if (mouseY > pageHeight/2 && homepageY < 0) {
     homepageY += backgroundMoveSpeed;
   } else  if (mouseY < pageHeight/2 && mouseY != 0 && homepageY > -pageHeight / 50) {
@@ -251,7 +303,7 @@ function skinScreen() {
   );
 
   // randomized if statement for flicker effect
-  if (Math.floor(random(0, 6)) == 0) {
+  if (Math.floor(random(0, 6)) === 0) {
     image(
       title1, 
       200, 0, 
@@ -303,7 +355,9 @@ function storySlides() {
     }
   }
 
-  drawSkipButton();
+  // skip button
+  button(skip2, 475, 345, skip2.width/14, skip2.height/12);
+
 
   // temporary "show controls area"
   push();
@@ -324,38 +378,70 @@ function startBackstory() {
   backstoryActive = true;
 }
 
-function drawSkipButton() {
-  push();
-  const bx = width - 90, by = height - 40;
-  const bw = 80, bh = 28;
- 
-  fill(60, 60, 100, 200);
-  stroke(150, 150, 220);
-  strokeWeight(1);
-  rectMode(CENTER);
-  rect(bx, by, bw, bh, 8);
- 
-  fill(200, 200, 255);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  textSize(14);
-  textStyle(NORMAL);
-  text("SKIP ▶▶", bx, by);
-  pop();
-
-  if (mouseIsPressed && mouseX > bx - bw/2 && mouseX < bx + bw/2 && 
-    mouseY > by - bh/2 && mouseY < by + bh/2) {
-    onBackstoryComplete();
-  }
-
-}
-
 function onBackstoryComplete() {
   backstoryActive = false;
   page = 5; // Move to game screen (or next appropriate page)
 }
 
+function drawCat(player) {
+  let sx = currentFrame * frameWidth;
+  let sy = frameHeight * frameCurrRow;
+
+  image(player, playerX, playerY, frameWidth / 10, frameHeight / 10, sx, sy, frameWidth, frameHeight);
+
+let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
+let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
+let left  = keyIsDown(LEFT_ARROW)  || keyIsDown(65);
+let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
+  let moving = up || down || left || right;
+
+  if (millis() - lastSwitch > (moving ? walkInterval : idleInterval)) {
+    lastSwitch = millis();
+
+    let speed = (moving && (up || down) && (left || right)) ? playerSpeed * 0.707 : playerSpeed;
+
+    if (up)    playerY -= speed;
+    if (down)  playerY += speed;
+    if (left)  playerX -= speed;
+    if (right) playerX += speed;
+
+    // diagonal will prioritize vertical movement
+    if (up)     frameCurrRow = 1;
+    else if (down) frameCurrRow = 0;
+    else if (right)   frameCurrRow = 3;
+    else if (left) frameCurrRow = 2;
+
+    // boundary
+    playerX = constrain(playerX, 0, pageWidth - frameWidth / 8);
+    playerY = constrain(playerY, 0, pageHeight - frameHeight / 8);
+
+    if (moving) {
+      if (currentFrame === 0) {
+        currentFrame = walkToggle ? 1 : 2;
+        walkToggle = !walkToggle;
+      } else {
+        currentFrame = 0;
+      }
+    } else {
+      currentFrame = frontR ? 3 : 0;
+      frontR = !frontR;
+    }
+  }
+  // print(frameCurrRow);
+}
+
 function gameStart() {
+  image(
+    map1, 
+    30, 20, 
+    map.width/1.2, map.height/1.2
+  );
+
+  drawCat(cat_tan);
+  
+
+  var iu = IU(3, 100, 1, inventory1, inventory2);
+  addItem(heart);
 
 }
 
@@ -370,7 +456,7 @@ function gameover() {
   );
   
     // randomized if statement for flicker effect
-  if (Math.floor(random(0, 15)) == 0) {
+  if (Math.floor(random(0, 15)) === 0) {
     image(
       game_over1,
       70, 40,
@@ -402,7 +488,7 @@ function victoryPage() {
   );
   
     // randomized if statement for flicker effect
-  if (Math.floor(random(0, 15)) == 0) {
+  if (Math.floor(random(0, 15)) === 0) {
     image(
       victory1,
       90, 40,
@@ -423,6 +509,84 @@ function victoryPage() {
   // return button
   button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
 }
+
+//adds image item to inventory
+function addItem(item) {
+      if (size < 3) {
+        inventory2[size] = item;
+        size++;
+    }
+  }
+//removes image item from inventory
+function removeItem(item) {
+    for (let i = 0; i < size; i++) {
+      if (inventory2[i] === item) {
+        for (let j = i; j < size - 1; j++) {
+          inventory2[j] = inventory2[j + 1];
+        }
+        size--;
+        break;
+      }
+    }
+  }
+
+class Item {
+  // image: array of image not selected and image selected
+  // selected: whether the item is currently selected in the inventory
+  // data: any additional data about the item (e.g. health boost, damage, etc.)
+  constructor(image, selected, data) {
+    this.image = image;
+    this.selected = selected;
+    this.data = data;
+  }
+
+  image_display() {
+    if (this.selected) {
+      return image[1];
+    } else {
+      return image[0];
+    }
+  }
+}
+//displays health, lives, inventory, and current planet level
+function IU(life, health, planet, inventory1, inventory2) {
+  var level = [level_nacho, level_cheeseCake, level_blueCheese, level_parmesan];
+  image(
+    icu,
+    0, 0,
+    pageWidth, pageHeight
+  );
+  image(inventory1, 15, 350, inventory1.width/14, inventory1.height/14);
+  image(level[planet - 1], 480, 10, level[planet - 1].width/5, level[planet - 1].height/5);
+
+
+  lives();
+  healthBar();
+  inventory();
+
+  function inventory() {
+    for (let i = 0; i < size; i++) {
+      image(inventory2[i], 25 + i * 32, 360, inventory2[i].width/25, inventory2[i].height/25);
+    }
+  }
+  function lives() {
+    for (let i = 0; i < life; i++) {
+      image(heart, 25 + i * 30, 325, heart.width/24, heart.height/24);
+    }
+  }
+  
+  function healthBar(maxHealth = 100) {
+    fill(39, 28, 158);
+    rect(30, 5, maxHealth * 2 +10, 20);
+    fill(255, 0, 0);
+    rect(35, 8, health * 2, 15);
+    fill(183, 178, 237);
+    square(3, 3, 25);
+    fill(0);
+    text(health, 5, 20);
+  }
+}
+
 
 function draw() {
   background(220);

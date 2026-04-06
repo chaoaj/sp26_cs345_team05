@@ -152,6 +152,9 @@ function preload() {
   sword_parmesan = loadImage("assets/sword_parmesan.png");
   sword_cheeseCake = loadImage("assets/sword_cheeseCake.png");
   potion = loadImage("assets/potion.png");
+
+  // temp map
+  map = loadImage("assets/map.png");
 }
 
 function setup() {
@@ -428,7 +431,14 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
 }
 
 function gameStart() {
+  image(
+    map, 
+    30, 20, 
+    map.width/1.2, map.height/1.2
+  );
+
   drawCat(cat_tan);
+  
 
   var iu = IU(3, 100, 1, inventory1, inventory2);
   addItem(heart);
