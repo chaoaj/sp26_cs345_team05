@@ -431,7 +431,6 @@ function gameStart() {
   drawCat(cat_tan);
 
   var iu = IU(3, 100, 1, inventory1, inventory2);
-  //addItem(heart);
 
 }
 
@@ -556,7 +555,7 @@ function IU(life, health, planet, inventory1, inventory2) {
 
   function inventory() {
     for (let i = 0; i < size; i++) {
-      image(inventory2[i], 30 + i * 50, 340, inventory2[i].width/8, inventory2[i].height/8);
+      image(inventory2[i], 25 + i * 32, 360, inventory2[i].width/25, inventory2[i].height/25);
     }
   }
   function lives() {
