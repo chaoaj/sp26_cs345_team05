@@ -87,7 +87,7 @@ let walkToggle = false;
 
 // frame change millisecond logic
 let lastSwitch = 0;
-let idleInterval = 500; // milliseconds
+let idleInterval = 300; // milliseconds
 let walkInterval = 120;
 
 
@@ -144,6 +144,7 @@ function preload() {
 
   cat_orange = loadImage("assets/sprite_sheet_orange.png");
   cat_white = loadImage("assets/sprite_sheet_white.png");
+  cat_tan = loadImage("assets/sprite_sheet_tan.png");
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -423,7 +424,7 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
     if (left)  playerX -= speed;
     if (right) playerX += speed;
 
-    // diagonal will prioritize horizontal over vertical
+    // diagonal will prioritize vertical movement
     if (up)     frameCurrRow = 1;
     else if (down) frameCurrRow = 0;
     else if (right)   frameCurrRow = 3;
@@ -604,7 +605,7 @@ function IU(life, health, planet, inventory1, inventory2) {
     0, 0,
     pageWidth, pageHeight
   );
-  image(inventory1, 20, 330, inventory1.width/8.5, inventory1.height/8.5);
+  image(inventory1, 15, 350, inventory1.width/14, inventory1.height/14);
   image(level[planet - 1], 480, 10, level[planet - 1].width/5, level[planet - 1].height/5);
 
 
@@ -614,12 +615,12 @@ function IU(life, health, planet, inventory1, inventory2) {
 
   function inventory() {
     for (let i = 0; i < size; i++) {
-      image(inventory2[i], 30 + i * 50, 340, inventory2[i].width/8, inventory2[i].height/8);
+      image(inventory2[i], 25 + i * 32, 360, inventory2[i].width/25, inventory2[i].height/25);
     }
   }
   function lives() {
     for (let i = 0; i < life; i++) {
-      image(heart, 30 + i * 50, 295, heart.width/14, heart.height/16);
+      image(heart, 25 + i * 30, 325, heart.width/24, heart.height/24);
     }
   }
   
