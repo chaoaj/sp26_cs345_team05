@@ -87,7 +87,7 @@ let walkToggle = false;
 
 // frame change millisecond logic
 let lastSwitch = 0;
-let idleInterval = 500; // milliseconds
+let idleInterval = 300; // milliseconds
 let walkInterval = 120;
 
 
@@ -136,6 +136,7 @@ function preload() {
 
   cat_orange = loadImage("assets/sprite_sheet_orange.png");
   cat_white = loadImage("assets/sprite_sheet_white.png");
+  cat_tan = loadImage("assets/sprite_sheet_tan.png");
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -155,8 +156,8 @@ function preload() {
 
 function setup() {
   createCanvas(pageWidth, pageHeight);
-  playerX = pageWidth / 2;
-  playerY = pageHeight / 5;
+  playerX = 280;
+  playerY = 150;
   
   // homepage_sound.play();
 }
@@ -401,7 +402,7 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
     if (left)  playerX -= speed;
     if (right) playerX += speed;
 
-    // diagonal will prioritize horizontal over vertical
+    // diagonal will prioritize vertical movement
     if (up)     frameCurrRow = 1;
     else if (down) frameCurrRow = 0;
     else if (right)   frameCurrRow = 3;
@@ -427,7 +428,7 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
 }
 
 function gameStart() {
-  drawCat(cat_white);
+  drawCat(cat_tan);
 
   var iu = IU(3, 100, 1, inventory1, inventory2);
   //addItem(heart);
