@@ -546,7 +546,7 @@ function IU(life, health, planet, inventory1, inventory2) {
     0, 0,
     pageWidth, pageHeight
   );
-  image(inventory1, 20, 330, inventory1.width/8.5, inventory1.height/8.5);
+  image(inventory1, 15, 350, inventory1.width/14, inventory1.height/14);
   image(level[planet - 1], 480, 10, level[planet - 1].width/5, level[planet - 1].height/5);
 
 
@@ -561,7 +561,7 @@ function IU(life, health, planet, inventory1, inventory2) {
   }
   function lives() {
     for (let i = 0; i < life; i++) {
-      image(heart, 30 + i * 50, 295, heart.width/14, heart.height/16);
+      image(heart, 25 + i * 30, 325, heart.width/24, heart.height/24);
     }
   }
   
