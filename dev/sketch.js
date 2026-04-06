@@ -431,6 +431,7 @@ function gameStart() {
   drawCat(cat_tan);
 
   var iu = IU(3, 100, 1, inventory1, inventory2);
+  addItem(heart);
 
 }
 
