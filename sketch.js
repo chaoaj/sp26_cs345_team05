@@ -104,6 +104,14 @@ let backstoryActive = false;
 let size = 0;
 var inventory2 = [];
 
+let floorTileset, wallTileset;
+let cam = { x: 0, y: 0 };
+let currentMap;
+let currentMapFloor;
+let currentMapWall;
+let currentPlanet = 1;
+let completedPlanets = [];
+
 
 function preload() {
   homepage_background = loadImage("dev/assets/homepage_background.png");
@@ -147,6 +155,7 @@ function preload() {
   level_parmesan = loadImage("dev/assets/level_parmesan.png");
 
   // homepage_sound = loadSound("dev/assets/homepage_sound.mp3");
+
   sword_nacho = loadImage("dev/assets/sword_nacho.png");
   sword_blueCheese = loadImage("dev/assets/sword_blueCheese.png");
   sword_parmesan = loadImage("dev/assets/sword_parmesan.png");
@@ -155,12 +164,36 @@ function preload() {
 
   // temp map
   map1 = loadImage("dev/assets/map.png");
+
+  floorTileset = loadImage("dev/assets/atlas_floor-16x16.png");
+  wallTileset = loadImage("dev/assets/atlas_walls_high-16x32.png");
 }
 
+function getSpawnPoint(map) {
+  for (let layer of map.layers) {
+    if (layer.type !== "objectgroup") continue;
+    for (let obj of layer.objects) {
+      if (obj.name === "playerSpawn") {
+        return { x: obj.x, y: obj.y };
+      }
+    }
+  }
+  // fallback if no spawn point found
+  return { x: pageWidth / 2, y: pageHeight / 2 };
+}
+
+
 function setup() {
+  console.log("mapData_nacho:", mapData_nacho);
   createCanvas(pageWidth, pageHeight);
-  playerX = 280;
-  playerY = 150;
+
+  currentMap = mapData_nacho;
+  currentMapFloor = floorTileset;
+  currentMapWall = wallTileset;
+
+  const spawn = getSpawnPoint(currentMap);
+  playerX = spawn.x;
+  playerY = spawn.y;
   
   // homepage_sound.play();
 }
@@ -380,7 +413,16 @@ function startBackstory() {
 
 function onBackstoryComplete() {
   backstoryActive = false;
-  page = 5; // Move to game screen (or next appropriate page)
+  currentMap = mapData_nacho;
+  currentMapFloor = floorTileset;
+  currentMapWall = wallTileset;
+
+  const spawn = getSpawnPoint(currentMap);
+  playerX = spawn.x;
+  playerY = spawn.y;
+
+  page = 5;
+
 }
 
 function drawCat(player) {
@@ -412,8 +454,8 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
     else if (left) frameCurrRow = 2;
 
     // boundary
-    playerX = constrain(playerX, 0, pageWidth - frameWidth / 8);
-    playerY = constrain(playerY, 0, pageHeight - frameHeight / 8);
+    playerX = constrain(playerX, 0, currentMap.width * 16 - frameWidth / 8);
+    playerY = constrain(playerY, 0, currentMap.height * 16 - frameHeight / 8);
 
     if (moving) {
       if (currentFrame === 0) {
@@ -431,20 +473,50 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
 }
 
 function gameStart() {
-  image( 
-    map1, 
-    30, 20, 
-    map.width/1.2, map.height/1.2
-  );
+  console.log("playerX:", playerX, "playerY:", playerY);
+  console.log("cam.x:", cam.x, "cam.y:", cam.y);
+  console.log("translate:", -cam.x, -cam.y);
 
-  drawCat(cat_tan);
-  
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 - pageHeight);
 
-  var iu = IU(3, 100, 1, inventory1, inventory2);
-  addItem(heart);
+  push();
+  translate(-cam.x, -cam.y);
+  drawMap(currentMap, currentMapFloor, currentMapWall);
+  drawCat(cat_white);
+  pop();
 
+  IU(3, 100, 1, inventory1, inventory2);
+  //addItem(heart);
 }
 
+function drawMap(map, floorTS, wallTS) {
+  const tileW = 16;
+  const mapCols = map.width;
+
+  for (let layer of map.layers) {
+    if (layer.type !== "tilelayer") continue;
+    for (let i = 0; i < layer.data.length; i++) {
+      const tileId = layer.data[i];
+      if (tileId === 0) continue;
+      const col = i % mapCols;
+      const row = Math.floor(i / mapCols);
+      const x = col * tileW;
+      const y = row * tileW;
+      if (tileId >= 77) {
+        const localID = tileId - 77;
+        const srcX = (localID % 24) * tileW;
+        const srcY = floor(localID / 24) * 32;
+        image(wallTS, x, y - 16, tileW, 32, srcX, srcY, tileW, 32);
+      } else {
+        const localID = tileId - 1;
+        const srcX = (localID % 7) * tileW;
+        const srcY = floor(localID / 7) * tileW;
+        image(floorTS, x, y, tileW, tileW, srcX, srcY, tileW, tileW);
+      }
+    }
+  }
+}
 
 function gameover() {
   scale = 1;

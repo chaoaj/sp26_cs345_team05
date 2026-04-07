@@ -155,6 +155,7 @@ function preload() {
   level_parmesan = loadImage("assets/level_parmesan.png");
 
   // homepage_sound = loadSound("assets/homepage_sound.mp3");
+
   sword_nacho = loadImage("assets/sword_nacho.png");
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
   sword_parmesan = loadImage("assets/sword_parmesan.png");
