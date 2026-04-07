@@ -150,7 +150,7 @@ function preload() {
   heart = loadImage("dev/assets/heart.png");
   inventory1 = loadImage("dev/assets/inventory.png");
   level_nacho = loadImage("dev/assets/level_nacho.png");
-  level_cheeseCake = loadImage("dev/assets/level_cheeseCake.png");
+  level_cheeseCake = loadImage("dev/assets/level_cheesecake.png");
   level_blueCheese = loadImage("dev/assets/level_blueCheese.png");
   level_parmesan = loadImage("dev/assets/level_parmesan.png");
 
@@ -160,7 +160,7 @@ function preload() {
   sword_blueCheese = loadImage("dev/assets/sword_blueCheese.png");
   sword_parmesan = loadImage("dev/assets/sword_parmesan.png");
   sword_cheeseCake = loadImage("dev/assets/sword_cheeseCake.png");
-  potion = loadImage("dev/assets/potion.png");
+  // potion = loadImage("dev/assets/potion.png");
 
   // temp map
   map1 = loadImage("dev/assets/map.png");
