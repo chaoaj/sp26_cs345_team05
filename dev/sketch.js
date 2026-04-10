@@ -62,7 +62,7 @@
 ]; */
 
 
-var page = 0;
+var page = 1;
 var scale = 1;
 
 let pageWidth = 600;
@@ -77,6 +77,11 @@ let frameCurrRow = 0;
 let frameWidth = 687;
 let frameHeight = 717;
 
+// skins page stuff:
+let skinChoice;
+let skinAnimTimer = 0;
+let skinFrame = false; // between frame 0 and 3
+
 let playerX;
 let playerY;
 
@@ -89,7 +94,6 @@ let walkToggle = false;
 let lastSwitch = 0;
 let idleInterval = 300; // milliseconds
 let walkInterval = 120;
-
 
 // slideshow settings
 let currentSlide = 0;
@@ -115,7 +119,7 @@ let completedPlanets = [];
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
-  cat = loadImage("assets/cat_homepage.png");
+  homepage_cat = loadImage("assets/cat_homepage.png");
   title1 = loadImage("assets/title1.png");
   title2 = loadImage("assets/title2.png");
 
@@ -145,6 +149,9 @@ function preload() {
   cat_orange = loadImage("assets/sprite_sheet_orange.png");
   cat_white = loadImage("assets/sprite_sheet_white.png");
   cat_tan = loadImage("assets/sprite_sheet_tan.png");
+  cat_charzard = loadImage("assets/sprite_sheet_charzard.png");
+
+  skinChoice = cat_tan;
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -301,9 +308,9 @@ function homePage() {
 
   // CAT
   image(
-    cat, 
+    homepage_cat, 
     0, 90, 
-    cat.width * scale/2, cat.height * scale/2   
+    homepage_cat.width * scale/2, homepage_cat.height * scale/2   
   );
 
   // start game button
@@ -354,6 +361,46 @@ function skinScreen() {
 
   // return button
   button(return2, 20, 20, return2.width/7 * scale, return2.height/6 * scale);
+
+  let change = Math.floor(random(0, 2)) === 0;
+  
+  if (millis() - skinAnimTimer > 400) {
+  skinAnimTimer = millis();
+  skinFrame = !skinFrame;
+}
+
+image(
+  cat_white,
+  20, 180,
+  frameWidth / 5, frameHeight / 5,
+  skinFrame ? 3 * frameWidth : 0, 0,
+  frameWidth, frameHeight
+);
+
+image(
+  cat_tan,
+  20 + frameWidth / 5, 180,
+  frameWidth / 5, frameHeight / 5,
+  skinFrame ? 3 * frameWidth : 0, 0,
+  frameWidth, frameHeight
+);
+
+image(
+  cat_orange,
+  20 + 2 *frameWidth / 5, 180,
+  frameWidth / 5, frameHeight / 5,
+  skinFrame ? 3 * frameWidth : 0, 0,
+  frameWidth, frameHeight
+);
+
+image(
+  cat_charzard,
+  20 + 3 *frameWidth / 5, 180,
+  frameWidth / 5, frameHeight / 5,
+  skinFrame ? 3 * frameWidth : 0, 0,
+  frameWidth, frameHeight
+);
+
 }
 
 function storySlides() {
@@ -431,10 +478,10 @@ function drawCat(player) {
 
   image(player, playerX, playerY, frameWidth / 10, frameHeight / 10, sx, sy, frameWidth, frameHeight);
 
-let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
-let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
-let left  = keyIsDown(LEFT_ARROW)  || keyIsDown(65);
-let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
+  let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
+  let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
+  let left  = keyIsDown(LEFT_ARROW)  || keyIsDown(65);
+  let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
   let moving = up || down || left || right;
 
   if (millis() - lastSwitch > (moving ? walkInterval : idleInterval)) {
@@ -473,9 +520,9 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
 }
 
 function gameStart() {
-  console.log("playerX:", playerX, "playerY:", playerY);
-  console.log("cam.x:", cam.x, "cam.y:", cam.y);
-  console.log("translate:", -cam.x, -cam.y);
+  // console.log("playerX:", playerX, "playerY:", playerY);
+  // console.log("cam.x:", cam.x, "cam.y:", cam.y);
+  // console.log("translate:", -cam.x, -cam.y);
 
   cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 - pageWidth);
   cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 - pageHeight);
@@ -483,7 +530,7 @@ function gameStart() {
   push();
   translate(-cam.x, -cam.y);
   drawMap(currentMap, currentMapFloor, currentMapWall);
-  drawCat(cat_white);
+  drawCat(cat_charzard);
   pop();
 
   IU(3, 100, 1, inventory1, inventory2);
