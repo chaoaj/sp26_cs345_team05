@@ -497,8 +497,10 @@ function gameStart() {
   drawCat(cat_white);
   pop();
 
-  IU(3, 100, 1, inventory1, inventory2);
+  IU(3, 100, 4, inventory1, inventory2);
   addItem(swordNacho);
+  addItem(potionItem);
+  addItem(swordBlueCheese);
 }
 
 function drawMap(map, floorTS, wallTS) {
@@ -636,9 +638,9 @@ class Item {
 
   image_display() {
     if (this.selected) {
-      return image[1];
+      return this.image[1];
     } else {
-      return image[0];
+      return this.image[0];
     }
   }
 }
@@ -660,15 +662,15 @@ function IU(life, health, planet, inventory1, inventory2) {
   inventory();
 
   function selectedItem() {
-    if (keyCode === 1) {
+    if (keyCode === 49) {
       inventory2[0].selected = true;
       inventory2[1].selected = false;
       inventory2[2].selected = false;
-    } else if (keyCode === 2) {
+    } else if (keyCode === 50) {
       inventory2[0].selected = false;
       inventory2[1].selected = true;
       inventory2[2].selected = false;
-    } else if (keyCode === 3) {
+    } else if (keyCode === 51) {
       inventory2[0].selected = false;
       inventory2[1].selected = false;
       inventory2[2].selected = true;
@@ -676,7 +678,8 @@ function IU(life, health, planet, inventory1, inventory2) {
   }
   function inventory() {
     for (let i = 0; i < size; i++) {
-      image(inventory2[i].image_display(), 25 + i * 32, 360, inventory2[i].image_display().width/25, inventory2[i].image_display().height/25);
+      var img = inventory2[i].image_display();
+      image(img, 25 + i * 32, 357, img.width/1.5, img.height/1.5);
     }
   }
   function lives() {
