@@ -167,7 +167,12 @@ function preload() {
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
   sword_parmesan = loadImage("assets/sword_parmesan.png");
   sword_cheeseCake = loadImage("assets/sword_cheeseCake.png");
-  // potion = loadImage("assets/potion.png");
+  potion = loadImage("assets/Potion.png");
+  sword_nacho_selected = loadImage("assets/sword_nacho_selected.png");
+  sword_blueCheese_selected = loadImage("assets/sword_blueCheese_selected.png");
+  sword_parmesan_selected = loadImage("assets/sword_parmesan_selected.png");
+  sword_cheeseCake_selected = loadImage("assets/sword_cheeseCake_selected.png");
+  potion_selected = loadImage("assets/Potion_selected.png");
 
   // temp map
   map1 = loadImage("assets/map.png");
@@ -201,7 +206,13 @@ function setup() {
   const spawn = getSpawnPoint(currentMap);
   playerX = spawn.x;
   playerY = spawn.y;
-  
+
+  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
+  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
+  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 });
+  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
+  potionItem = new Item([potion, potion_selected], false, { health: 50 });
+
   // homepage_sound.play();
 }
 
@@ -534,7 +545,7 @@ function gameStart() {
   pop();
 
   IU(3, 100, 1, inventory1, inventory2);
-  //addItem(heart);
+  addItem(swordNacho);
 }
 
 function drawMap(map, floorTS, wallTS) {
@@ -629,6 +640,17 @@ function victoryPage() {
   button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
 }
 
+function healthBarEnemy(x, y, health, maxHealth) {
+  fill(39, 28, 158);
+  rect(x+20, y, maxHealth * 2 +10, 20);
+  fill(255, 0, 0);
+  rect(x + 22.5, y + 2.5, health * 2, 15);
+  fill(183, 178, 237);
+  square(x, y, 20);
+  fill(0);
+  text(health, x+5, y+5);
+}
+
 //adds image item to inventory
 function addItem(item) {
       if (size < 3) {
@@ -681,11 +703,27 @@ function IU(life, health, planet, inventory1, inventory2) {
 
   lives();
   healthBar();
+  selectedItem();
   inventory();
 
+  function selectedItem() {
+    if (keyCode === 1) {
+      inventory2[0].selected = true;
+      inventory2[1].selected = false;
+      inventory2[2].selected = false;
+    } else if (keyCode === 2) {
+      inventory2[0].selected = false;
+      inventory2[1].selected = true;
+      inventory2[2].selected = false;
+    } else if (keyCode === 3) {
+      inventory2[0].selected = false;
+      inventory2[1].selected = false;
+      inventory2[2].selected = true;
+    }
+  }
   function inventory() {
     for (let i = 0; i < size; i++) {
-      image(inventory2[i], 25 + i * 32, 360, inventory2[i].width/25, inventory2[i].height/25);
+      image(inventory2[i].image_display(), 25 + i * 32, 360, inventory2[i].image_display().width/25, inventory2[i].image_display().height/25);
     }
   }
   function lives() {
