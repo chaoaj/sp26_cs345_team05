@@ -727,7 +727,7 @@ function IU(life, health, planet, inventory1, inventory2) {
   selectedItem();
   dropItem();
   inventory();
-
+  //removes selected item from inventory when backspace is pressed and shifts remaining items over
   function dropItem() {
     if (keyCode === BACKSPACE) {
       
