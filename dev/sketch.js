@@ -61,7 +61,7 @@
   }
 ]; */
 
-
+var g = 0;
 var page = 1;
 var scale = 1;
 
@@ -479,9 +479,7 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  addItem(swordNacho);
-  addItem(potionItem);
-  addItem(swordBlueCheese);
+  
 
   page = 5;
 
@@ -551,7 +549,12 @@ function gameStart() {
   drawMap(currentMap, currentMapFloor, currentMapWall);
   drawCat(cat_charzard);
   pop();
-
+  if (g ==0){
+    addItem(swordNacho);
+    addItem(potionItem);
+    addItem(swordBlueCheese);
+    g++;
+  }
   IU(3, 100, 4, inventory1, inventory2);
 }
 
@@ -686,18 +689,8 @@ function addItem(item) {
         size++;
     }
   }
-//removes image item from inventory
-function removeItem(item) {
-    for (let i = 0; i < size; i++) {
-      if (inventory2[i] === item) {
-        for (let j = i; j < size - 1; j++) {
-          inventory2[j] = inventory2[j + 1];
-        }
-        size--;
-        break;
-      }
-    }
-  }
+
+  
 
 class Item {
   // image: array of image not selected and image selected
@@ -732,21 +725,56 @@ function IU(life, health, planet, inventory1, inventory2) {
   lives();
   healthBar();
   selectedItem();
+  dropItem();
   inventory();
 
+  function dropItem() {
+    if (keyCode === BACKSPACE) {
+      
+      for (let i = 0; i < size; i++) {
+        if (inventory2[i].selected) {
+          //text("drop item", 200, 200);
+          for (let j = i; j < size - 1; j++) {
+            inventory2[j] = inventory2[j + 1];
+          }
+          inventory2[size] = null;
+          size--;
+          break;
+        }
+      }
+    }
+  }
   function selectedItem() {
     if (keyCode === 49) {
-      inventory2[0].selected = true;
-      inventory2[1].selected = false;
-      inventory2[2].selected = false;
+      if (size > 0 && inventory2[0] != null) {
+        inventory2[0].selected = true;
+      }
+      if (size > 1 && inventory2[1] != null) {
+        inventory2[1].selected = false;
+      }
+      if (size > 2 && inventory2[2] != null) {
+        inventory2[2].selected = false;
+      }
     } else if (keyCode === 50) {
-      inventory2[0].selected = false;
-      inventory2[1].selected = true;
-      inventory2[2].selected = false;
+      if (size > 0 && inventory2[0] != null) {
+        inventory2[0].selected = false;
+      }
+      if (size > 1 && inventory2[1] != null) {
+        inventory2[1].selected = true;
+      }
+      if (size > 2 && inventory2[2] != null) {
+        inventory2[2].selected = false;
+      }
     } else if (keyCode === 51) {
-      inventory2[0].selected = false;
-      inventory2[1].selected = false;
-      inventory2[2].selected = true;
+      if (size > 0 && inventory2[0] != null) {
+        inventory2[0].selected = false;
+      }
+      if (size > 1 && inventory2[1] != null) {
+        inventory2[1].selected = false;
+      }
+      if (size > 2 && inventory2[2] != null) {
+        inventory2[2].selected = true;
+      }
     }
   }
   function inventory() {
