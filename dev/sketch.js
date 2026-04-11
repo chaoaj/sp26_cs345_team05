@@ -84,6 +84,8 @@ let skinFrame = false; // between frame 0 and 3
 
 let playerX;
 let playerY;
+const SPRITE_W = 16;
+const SPRITE_H = 16;
 
 let playerSpeed = 10;
 
@@ -372,9 +374,7 @@ function skinScreen() {
 
   // return button
   button(return2, 20, 20, return2.width/7 * scale, return2.height/6 * scale);
-
-  let change = Math.floor(random(0, 2)) === 0;
-  
+    
   if (millis() - skinAnimTimer > 400) {
   skinAnimTimer = millis();
   skinFrame = !skinFrame;
@@ -479,6 +479,10 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
+  addItem(swordNacho);
+  addItem(potionItem);
+  addItem(swordBlueCheese);
+
   page = 5;
 
 }
@@ -487,7 +491,7 @@ function drawCat(player) {
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
-  image(player, playerX, playerY, frameWidth / 10, frameHeight / 10, sx, sy, frameWidth, frameHeight);
+  image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
 
   let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
   let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
@@ -500,20 +504,24 @@ function drawCat(player) {
 
     let speed = (moving && (up || down) && (left || right)) ? playerSpeed * 0.707 : playerSpeed;
 
-    if (up)    playerY -= speed;
-    if (down)  playerY += speed;
+    let prevX = playerX;
+    let prevY = playerY;
+
     if (left)  playerX -= speed;
     if (right) playerX += speed;
+    if (collidesWithWall(playerX, playerY)) playerX = prevX;  
 
-    // diagonal will prioritize vertical movement
-    if (up)     frameCurrRow = 1;
-    else if (down) frameCurrRow = 0;
-    else if (right)   frameCurrRow = 3;
-    else if (left) frameCurrRow = 2;
+    if (up)    playerY -= speed;
+    if (down)  playerY += speed;
+    if (collidesWithWall(playerX, playerY)) playerY = prevY;
 
-    // boundary
-    playerX = constrain(playerX, 0, currentMap.width * 16 - frameWidth / 8);
-    playerY = constrain(playerY, 0, currentMap.height * 16 - frameHeight / 8);
+    if (up)          frameCurrRow = 1;
+    else if (down)   frameCurrRow = 0;
+    else if (right)  frameCurrRow = 3;
+    else if (left)   frameCurrRow = 2;
+
+    playerX = constrain(playerX, 0, currentMap.width * 16 - SPRITE_W);
+    playerY = constrain(playerY, 0, currentMap.height * 16 - SPRITE_H);
 
     if (moving) {
       if (currentFrame === 0) {
@@ -545,9 +553,6 @@ function gameStart() {
   pop();
 
   IU(3, 100, 4, inventory1, inventory2);
-  addItem(swordNacho);
-  addItem(potionItem);
-  addItem(swordBlueCheese);
 }
 
 function drawMap(map, floorTS, wallTS) {
@@ -576,6 +581,27 @@ function drawMap(map, floorTS, wallTS) {
       }
     }
   }
+}
+
+function isWallTile(worldX, worldY) {
+  const tileW = 16;
+  const col = Math.floor(worldX / tileW);
+  const row = Math.floor(worldY / tileW);
+  if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
+  
+  let hasFloor = false;
+  for (let layer of currentMap.layers) {
+    if (layer.type !== "tilelayer") continue;
+    const tileId = layer.data[row * currentMap.width + col];
+    if (tileId >= 77) return true;
+    if(tileId >= 1 && tileId <= 76) hasFloor = true;
+  }
+  return !hasFloor;
+}
+
+function collidesWithWall(X, Y) {
+  return isWallTile(X, Y) || isWallTile(X + SPRITE_W - 1, Y) ||
+         isWallTile(X, Y + SPRITE_H - 1) || isWallTile(X + SPRITE_W - 1, Y + SPRITE_H - 1);
 }
 
 function gameover() {
