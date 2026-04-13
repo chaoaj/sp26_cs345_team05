@@ -112,6 +112,16 @@ let currentMapWall;
 let currentPlanet = 1;
 let completedPlanets = [];
 
+let enemyState = "wander"; // "wander" | "chase" | "attack"
+let enemyX 
+let enemyY;
+let enemySpeed = 0.7;
+let enemyDetectionRange = 150;
+let enemyAttackRange = 30;
+let enemyMoveTimer = 0;
+let enemyDirX = 1;
+let enemyDirY = 0;
+
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
@@ -194,6 +204,9 @@ function setup() {
   const spawn = getSpawnPoint(currentMap);
   playerX = spawn.x;
   playerY = spawn.y;
+
+  enemyX = spawn.x + 100; // spawn enemy a bit away from player
+  enemyY = spawn.y + 100;
   
   // homepage_sound.play();
 }
@@ -421,8 +434,54 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
+  enemyX = spawn.x + 100; // spawn enemy a bit away from player
+  enemyY = spawn.y + 100;
+
   page = 5;
 
+}
+
+function drawEnemy() {
+  let dx = playerX - enemyX;
+  let dy = playerY - enemyY;
+  let d = dist(playerX, playerY, enemyX, enemyY);
+
+  if (d <= enemyAttackRange) {
+    enemyState = "attack";
+  } else if (d <= enemyDetectionRange) {
+    enemyState = "chase";
+  } else {
+    enemyState = "wander";
+  }
+
+  if (enemyState === "chase") {
+    if (d > 0) {
+    enemyX += (dx / d) * enemySpeed;
+    enemyY += (dy / d) * enemySpeed;
+    } 
+  }
+
+  if (enemyState === "wander") {
+    enemyMoveTimer--;
+    if (enemyMoveTimer <= 0) {
+    // pick a random direction and move for a random duration
+      let angle = random(TWO_PI);
+      enemyDirX = cos(angle);
+      enemyDirY = sin(angle);
+      enemyMoveTimer = floor(random(30, 90)); // move for 0.5 to 1.5 seconds
+    }
+    enemyX += enemyDirX * enemySpeed * 0.5; // wander at half speed
+    enemyY += enemyDirY * enemySpeed * 0.5;
+  }
+
+  if (enemyState === "attack") {
+    // logic for attacking the player (e.g. reducing health)
+    // this is a placeholder and can be expanded with actual attack mechanics
+    console.log("Enemy attacks!");
+  }
+
+  fill(255, 0, 0);
+  rect(enemyX, enemyY, frameWidth / 10, frameHeight / 10);
 }
 
 function drawCat(player) {
@@ -484,6 +543,12 @@ function gameStart() {
   translate(-cam.x, -cam.y);
   drawMap(currentMap, currentMapFloor, currentMapWall);
   drawCat(cat_white);
+  pop();
+
+
+  push();
+  translate(-cam.x, -cam.y);
+  drawEnemy();
   pop();
 
   IU(3, 100, 1, inventory1, inventory2);
@@ -663,4 +728,5 @@ function IU(life, health, planet, inventory1, inventory2) {
 function draw() {
   background(220);
   screen(page);
+
 }
