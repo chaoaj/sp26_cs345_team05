@@ -61,8 +61,8 @@
   }
 ]; */
 
-
-var page = 0;
+var g = 0;
+var page = 1;
 var scale = 1;
 
 let pageWidth = 600;
@@ -77,8 +77,15 @@ let frameCurrRow = 0;
 let frameWidth = 687;
 let frameHeight = 717;
 
+// skins page stuff:
+let skinChoice;
+let skinAnimTimer = 0;
+let skinFrame = false; // between frame 0 and 3
+
 let playerX;
 let playerY;
+const SPRITE_W = 16;
+const SPRITE_H = 16;
 
 let playerSpeed = 10;
 
@@ -89,7 +96,6 @@ let walkToggle = false;
 let lastSwitch = 0;
 let idleInterval = 300; // milliseconds
 let walkInterval = 120;
-
 
 // slideshow settings
 let currentSlide = 0;
@@ -125,7 +131,7 @@ let enemyDirY = 0;
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
-  cat = loadImage("assets/cat_homepage.png");
+  homepage_cat = loadImage("assets/cat_homepage.png");
   title1 = loadImage("assets/title1.png");
   title2 = loadImage("assets/title2.png");
 
@@ -155,6 +161,9 @@ function preload() {
   cat_orange = loadImage("assets/sprite_sheet_orange.png");
   cat_white = loadImage("assets/sprite_sheet_white.png");
   cat_tan = loadImage("assets/sprite_sheet_tan.png");
+  cat_charzard = loadImage("assets/sprite_sheet_charzard.png");
+
+  skinChoice = cat_tan;
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -170,7 +179,12 @@ function preload() {
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
   sword_parmesan = loadImage("assets/sword_parmesan.png");
   sword_cheeseCake = loadImage("assets/sword_cheeseCake.png");
-  // potion = loadImage("assets/potion.png");
+  potion = loadImage("assets/Potion.png");
+  sword_nacho_selected = loadImage("assets/sword_nacho_selected.png");
+  sword_blueCheese_selected = loadImage("assets/sword_blueCheese_selected.png");
+  sword_parmesan_selected = loadImage("assets/sword_parmesan_selected.png");
+  sword_cheeseCake_selected = loadImage("assets/sword_cheeseCake_selected.png");
+  potion_selected = loadImage("assets/Potion_selected.png");
 
   // temp map
   map1 = loadImage("assets/map.png");
@@ -314,9 +328,9 @@ function homePage() {
 
   // CAT
   image(
-    cat, 
+    homepage_cat, 
     0, 90, 
-    cat.width * scale/2, cat.height * scale/2   
+    homepage_cat.width * scale/2, homepage_cat.height * scale/2   
   );
 
   // start game button
@@ -367,6 +381,44 @@ function skinScreen() {
 
   // return button
   button(return2, 20, 20, return2.width/7 * scale, return2.height/6 * scale);
+    
+  if (millis() - skinAnimTimer > 400) {
+  skinAnimTimer = millis();
+  skinFrame = !skinFrame;
+}
+
+image(
+  cat_white,
+  20, 180,
+  frameWidth / 5, frameHeight / 5,
+  skinFrame ? 3 * frameWidth : 0, 0,
+  frameWidth, frameHeight
+);
+
+image(
+  cat_tan,
+  20 + frameWidth / 5, 180,
+  frameWidth / 5, frameHeight / 5,
+  skinFrame ? 3 * frameWidth : 0, 0,
+  frameWidth, frameHeight
+);
+
+image(
+  cat_orange,
+  20 + 2 *frameWidth / 5, 180,
+  frameWidth / 5, frameHeight / 5,
+  skinFrame ? 3 * frameWidth : 0, 0,
+  frameWidth, frameHeight
+);
+
+image(
+  cat_charzard,
+  20 + 3 *frameWidth / 5, 180,
+  frameWidth / 5, frameHeight / 5,
+  skinFrame ? 3 * frameWidth : 0, 0,
+  frameWidth, frameHeight
+);
+
 }
 
 function storySlides() {
@@ -488,12 +540,12 @@ function drawCat(player) {
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
-  image(player, playerX, playerY, frameWidth / 10, frameHeight / 10, sx, sy, frameWidth, frameHeight);
+  image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
 
-let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
-let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
-let left  = keyIsDown(LEFT_ARROW)  || keyIsDown(65);
-let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
+  let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
+  let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
+  let left  = keyIsDown(LEFT_ARROW)  || keyIsDown(65);
+  let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
   let moving = up || down || left || right;
 
   if (millis() - lastSwitch > (moving ? walkInterval : idleInterval)) {
@@ -501,20 +553,24 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
 
     let speed = (moving && (up || down) && (left || right)) ? playerSpeed * 0.707 : playerSpeed;
 
-    if (up)    playerY -= speed;
-    if (down)  playerY += speed;
+    let prevX = playerX;
+    let prevY = playerY;
+
     if (left)  playerX -= speed;
     if (right) playerX += speed;
+    if (collidesWithWall(playerX, playerY)) playerX = prevX;  
 
-    // diagonal will prioritize vertical movement
-    if (up)     frameCurrRow = 1;
-    else if (down) frameCurrRow = 0;
-    else if (right)   frameCurrRow = 3;
-    else if (left) frameCurrRow = 2;
+    if (up)    playerY -= speed;
+    if (down)  playerY += speed;
+    if (collidesWithWall(playerX, playerY)) playerY = prevY;
 
-    // boundary
-    playerX = constrain(playerX, 0, currentMap.width * 16 - frameWidth / 8);
-    playerY = constrain(playerY, 0, currentMap.height * 16 - frameHeight / 8);
+    if (up)          frameCurrRow = 1;
+    else if (down)   frameCurrRow = 0;
+    else if (right)  frameCurrRow = 3;
+    else if (left)   frameCurrRow = 2;
+
+    playerX = constrain(playerX, 0, currentMap.width * 16 - SPRITE_W);
+    playerY = constrain(playerY, 0, currentMap.height * 16 - SPRITE_H);
 
     if (moving) {
       if (currentFrame === 0) {
@@ -532,9 +588,9 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
 }
 
 function gameStart() {
-  console.log("playerX:", playerX, "playerY:", playerY);
-  console.log("cam.x:", cam.x, "cam.y:", cam.y);
-  console.log("translate:", -cam.x, -cam.y);
+  // console.log("playerX:", playerX, "playerY:", playerY);
+  // console.log("cam.x:", cam.x, "cam.y:", cam.y);
+  // console.log("translate:", -cam.x, -cam.y);
 
   cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 - pageWidth);
   cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 - pageHeight);
@@ -542,7 +598,7 @@ function gameStart() {
   push();
   translate(-cam.x, -cam.y);
   drawMap(currentMap, currentMapFloor, currentMapWall);
-  drawCat(cat_white);
+  drawCat(cat_charzard);
   pop();
 
 
@@ -553,6 +609,13 @@ function gameStart() {
 
   IU(3, 100, 1, inventory1, inventory2);
   //addItem(heart);
+  if (g ==0){
+    addItem(swordNacho);
+    addItem(potionItem);
+    addItem(swordBlueCheese);
+    g++;
+  }
+  IU(3, 100, 4, inventory1, inventory2);
 }
 
 function drawMap(map, floorTS, wallTS) {
@@ -581,6 +644,27 @@ function drawMap(map, floorTS, wallTS) {
       }
     }
   }
+}
+
+function isWallTile(worldX, worldY) {
+  const tileW = 16;
+  const col = Math.floor(worldX / tileW);
+  const row = Math.floor(worldY / tileW);
+  if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
+  
+  let hasFloor = false;
+  for (let layer of currentMap.layers) {
+    if (layer.type !== "tilelayer") continue;
+    const tileId = layer.data[row * currentMap.width + col];
+    if (tileId >= 77) return true;
+    if(tileId >= 1 && tileId <= 76) hasFloor = true;
+  }
+  return !hasFloor;
+}
+
+function collidesWithWall(X, Y) {
+  return isWallTile(X, Y) || isWallTile(X + SPRITE_W - 1, Y) ||
+         isWallTile(X, Y + SPRITE_H - 1) || isWallTile(X + SPRITE_W - 1, Y + SPRITE_H - 1);
 }
 
 function gameover() {
@@ -647,6 +731,17 @@ function victoryPage() {
   button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
 }
 
+function healthBarEnemy(x, y, health, maxHealth) {
+  fill(39, 28, 158);
+  rect(x+20, y, maxHealth * 2 +10, 20);
+  fill(255, 0, 0);
+  rect(x + 22.5, y + 2.5, health * 2, 15);
+  fill(183, 178, 237);
+  square(x, y, 20);
+  fill(0);
+  text(health, x+5, y+5);
+}
+
 //adds image item to inventory
 function addItem(item) {
       if (size < 3) {
@@ -654,18 +749,8 @@ function addItem(item) {
         size++;
     }
   }
-//removes image item from inventory
-function removeItem(item) {
-    for (let i = 0; i < size; i++) {
-      if (inventory2[i] === item) {
-        for (let j = i; j < size - 1; j++) {
-          inventory2[j] = inventory2[j + 1];
-        }
-        size--;
-        break;
-      }
-    }
-  }
+
+  
 
 class Item {
   // image: array of image not selected and image selected
@@ -679,9 +764,9 @@ class Item {
 
   image_display() {
     if (this.selected) {
-      return image[1];
+      return this.image[1];
     } else {
-      return image[0];
+      return this.image[0];
     }
   }
 }
@@ -699,11 +784,63 @@ function IU(life, health, planet, inventory1, inventory2) {
 
   lives();
   healthBar();
+  selectedItem();
+  dropItem();
   inventory();
-
+  //removes selected item from inventory when backspace is pressed and shifts remaining items over
+  function dropItem() {
+    if (keyCode === BACKSPACE) {
+      
+      for (let i = 0; i < size; i++) {
+        if (inventory2[i].selected) {
+          //text("drop item", 200, 200);
+          for (let j = i; j < size - 1; j++) {
+            inventory2[j] = inventory2[j + 1];
+          }
+          inventory2[size] = null;
+          size--;
+          break;
+        }
+      }
+    }
+  }
+  function selectedItem() {
+    if (keyCode === 49) {
+      if (size > 0 && inventory2[0] != null) {
+        inventory2[0].selected = true;
+      }
+      if (size > 1 && inventory2[1] != null) {
+        inventory2[1].selected = false;
+      }
+      if (size > 2 && inventory2[2] != null) {
+        inventory2[2].selected = false;
+      }
+    } else if (keyCode === 50) {
+      if (size > 0 && inventory2[0] != null) {
+        inventory2[0].selected = false;
+      }
+      if (size > 1 && inventory2[1] != null) {
+        inventory2[1].selected = true;
+      }
+      if (size > 2 && inventory2[2] != null) {
+        inventory2[2].selected = false;
+      }
+    } else if (keyCode === 51) {
+      if (size > 0 && inventory2[0] != null) {
+        inventory2[0].selected = false;
+      }
+      if (size > 1 && inventory2[1] != null) {
+        inventory2[1].selected = false;
+      }
+      if (size > 2 && inventory2[2] != null) {
+        inventory2[2].selected = true;
+      }
+    }
+  }
   function inventory() {
     for (let i = 0; i < size; i++) {
-      image(inventory2[i], 25 + i * 32, 360, inventory2[i].width/25, inventory2[i].height/25);
+      var img = inventory2[i].image_display();
+      image(img, 25 + i * 32, 357, img.width/1.5, img.height/1.5);
     }
   }
   function lives() {
