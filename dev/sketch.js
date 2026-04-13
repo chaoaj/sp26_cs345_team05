@@ -154,6 +154,7 @@ function preload() {
   cat_charzard = loadImage("assets/sprite_sheet_charzard.png");
 
   skinChoice = cat_tan;
+  skin_selection = loadImage("assets/skin_select_button.png");
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -380,37 +381,44 @@ function skinScreen() {
   skinFrame = !skinFrame;
 }
 
-image(
-  cat_white,
-  20, 180,
-  frameWidth / 5, frameHeight / 5,
-  skinFrame ? 3 * frameWidth : 0, 0,
-  frameWidth, frameHeight
-);
+// draws cats
+let cats = [cat_white, cat_tan, cat_orange, cat_charzard];
 
-image(
-  cat_tan,
-  20 + frameWidth / 5, 180,
-  frameWidth / 5, frameHeight / 5,
-  skinFrame ? 3 * frameWidth : 0, 0,
-  frameWidth, frameHeight
-);
+for (let i = 0; i < 4; i++) {
+  let x = 20 + i * (frameWidth / 5 + 10);
 
-image(
-  cat_orange,
-  20 + 2 *frameWidth / 5, 180,
-  frameWidth / 5, frameHeight / 5,
-  skinFrame ? 3 * frameWidth : 0, 0,
-  frameWidth, frameHeight
-);
+  // draw cat
+  image(
+    cats[i],
+    x, 180,
+    frameWidth / 5, frameHeight / 5,
+    skinFrame ? 3 * frameWidth : 0, 0,
+    frameWidth, frameHeight
+  );
 
-image(
-  cat_charzard,
-  20 + 3 *frameWidth / 5, 180,
-  frameWidth / 5, frameHeight / 5,
-  skinFrame ? 3 * frameWidth : 0, 0,
-  frameWidth, frameHeight
-);
+  // draw selection button
+  button(skin_selection, x, 170, skin_selection.width/5 * scale, skin_selection.height/5 * scale);
+
+  // highlights skin
+  if (skinChoice === cats[i]) {
+    noFill();
+    stroke(191, 141, 247);
+    strokeWeight(5);
+    rect(x, 170, skin_selection.width/5, skin_selection.height/5);
+    noStroke();
+    }
+  }
+
+  if (mouseIsPressed) {
+    for (let i = 0; i < 4; i++) {
+      let x = 20 + i * (frameWidth / 5 + 10);
+      let w = skin_selection.width / 5;
+      let h = skin_selection.height / 5;
+      if (mouseX > x && mouseX < x + w && mouseY > 170 && mouseY < 170 + h) {
+        skinChoice = cats[i];
+      }
+    }
+  }
 
 }
 
@@ -547,7 +555,7 @@ function gameStart() {
   push();
   translate(-cam.x, -cam.y);
   drawMap(currentMap, currentMapFloor, currentMapWall);
-  drawCat(cat_charzard);
+  drawCat(skinChoice);
   pop();
   if (g ==0){
     addItem(swordNacho);
