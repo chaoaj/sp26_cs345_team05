@@ -76,6 +76,7 @@ let currentFrame = 0;
 let frameCurrRow = 0;
 let frameWidth = 687;
 let frameHeight = 717;
+const mapScale = 2;
 
 // skins page stuff:
 let skinChoice;
@@ -84,8 +85,8 @@ let skinFrame = false; // between frame 0 and 3
 
 let playerX;
 let playerY;
-const SPRITE_W = 16;
-const SPRITE_H = 16;
+const SPRITE_W = 16 * mapScale;
+const SPRITE_H = 16 * mapScale;
 
 let playerSpeed = 10;
 
@@ -188,7 +189,7 @@ function getSpawnPoint(map) {
     if (layer.type !== "objectgroup") continue;
     for (let obj of layer.objects) {
       if (obj.name === "playerSpawn") {
-        return { x: obj.x, y: obj.y };
+        return { x: obj.x * mapScale, y: obj.y * mapScale};
       }
     }
   }
@@ -518,8 +519,8 @@ function drawCat(player) {
     else if (right)  frameCurrRow = 3;
     else if (left)   frameCurrRow = 2;
 
-    playerX = constrain(playerX, 0, currentMap.width * 16 - SPRITE_W);
-    playerY = constrain(playerY, 0, currentMap.height * 16 - SPRITE_H);
+    playerX = constrain(playerX, 0, currentMap.width * 16 * mapScale - SPRITE_W);
+    playerY = constrain(playerY, 0, currentMap.height * 16 * mapScale - SPRITE_H);
 
     if (moving) {
       if (currentFrame === 0) {
@@ -537,12 +538,18 @@ function drawCat(player) {
 }
 
 function gameStart() {
-  // console.log("playerX:", playerX, "playerY:", playerY);
-  // console.log("cam.x:", cam.x, "cam.y:", cam.y);
-  // console.log("translate:", -cam.x, -cam.y);
 
-  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 - pageWidth);
-  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 - pageHeight);
+  if (!currentMap) {
+    currentMap = mapData_nacho;
+    currentMapFloor = floorTileset;
+    currentMapWall = wallTileset;
+    const spawn = getSpawnPoint(currentMap);
+    playerX = spawn.x;
+    playerY = spawn.y;
+  }
+  
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
   push();
   translate(-cam.x, -cam.y);
@@ -569,25 +576,25 @@ function drawMap(map, floorTS, wallTS) {
       if (tileId === 0) continue;
       const col = i % mapCols;
       const row = Math.floor(i / mapCols);
-      const x = col * tileW;
-      const y = row * tileW;
+      const x = col * tileW * mapScale;
+      const y = row * tileW * mapScale;
       if (tileId >= 77) {
         const localID = tileId - 77;
         const srcX = (localID % 24) * tileW;
         const srcY = floor(localID / 24) * 32;
-        image(wallTS, x, y - 16, tileW, 32, srcX, srcY, tileW, 32);
+        image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
       } else {
         const localID = tileId - 1;
         const srcX = (localID % 7) * tileW;
         const srcY = floor(localID / 7) * tileW;
-        image(floorTS, x, y, tileW, tileW, srcX, srcY, tileW, tileW);
+        image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
       }
     }
   }
 }
 
 function isWallTile(worldX, worldY) {
-  const tileW = 16;
+  const tileW = 16 * mapScale;
   const col = Math.floor(worldX / tileW);
   const row = Math.floor(worldY / tileW);
   if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
