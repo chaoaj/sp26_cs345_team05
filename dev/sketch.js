@@ -120,7 +120,7 @@ let currentPlanet = 1;
 let completedPlanets = [];
 
 let enemyState = "wander"; // "wander" | "chase" | "attack"
-let enemyX 
+let enemyX;
 let enemyY;
 let enemySpeed = 0.7;
 let enemyDetectionRange = 150;
@@ -221,9 +221,9 @@ function setup() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  enemyX = spawn.x + 100; // spawn enemy a bit away from player
-  enemyY = spawn.y + 100;
-  
+  enemyX = spawn.x + random(-100, 100); // spawn enemy a bit away from player
+  enemyY = spawn.y + random(-100, 100);
+
   swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
   swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
   swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 });
@@ -500,8 +500,8 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  enemyX = spawn.x + 100; // spawn enemy a bit away from player
-  enemyY = spawn.y + 100;
+  enemyX = spawn.x + random(-100, 100); // spawn enemy a bit away from player
+  enemyY = spawn.y + random(-100, 100);
 
   page = 5;
 
@@ -511,6 +511,13 @@ function drawEnemy() {
   let dx = playerX - enemyX;
   let dy = playerY - enemyY;
   let d = dist(playerX, playerY, enemyX, enemyY);
+  let wallCollision = collidesWithWall(enemyX, enemyY);
+
+  if (wallCollision) {
+    enemySpeed = -enemySpeed; // simple response: reverse direction on collision
+  } else {
+    enemyState = "wander"; // ensure speed is positive when not colliding
+  }
 
   if (d <= enemyAttackRange) {
     enemyState = "attack";
@@ -547,7 +554,7 @@ function drawEnemy() {
   }
 
   fill(255, 0, 0);
-  rect(enemyX, enemyY, frameWidth / 10, frameHeight / 10);
+  rect(enemyX, enemyY, 30, 30);
 }
 
 function drawCat(player) {
