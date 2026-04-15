@@ -76,6 +76,7 @@ let currentFrame = 0;
 let frameCurrRow = 0;
 let frameWidth = 687;
 let frameHeight = 717;
+const mapScale = 2;
 
 // skins page stuff:
 let skinChoice;
@@ -84,8 +85,8 @@ let skinFrame = false; // between frame 0 and 3
 
 let playerX;
 let playerY;
-const SPRITE_W = 16;
-const SPRITE_H = 16;
+const SPRITE_W = 16 * mapScale;
+const SPRITE_H = 16 * mapScale;
 
 let playerSpeed = 10;
 
@@ -120,6 +121,16 @@ let currentMapFloor;
 let currentMapWall;
 let currentPlanet = 1;
 let completedPlanets = [];
+
+let enemyState = "wander"; // "wander" | "chase" | "attack"
+let enemyX 
+let enemyY;
+let enemySpeed = 0.7;
+let enemyDetectionRange = 150;
+let enemyAttackRange = 30;
+let enemyMoveTimer = 0;
+let enemyDirX = 1;
+let enemyDirY = 0;
 
 
 function preload() {
@@ -157,6 +168,7 @@ function preload() {
   cat_charzard = loadImage("assets/sprite_sheet_charzard.png");
 
   skinChoice = cat_tan;
+  skin_selection = loadImage("assets/skin_select_button.png");
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -191,7 +203,7 @@ function getSpawnPoint(map) {
     if (layer.type !== "objectgroup") continue;
     for (let obj of layer.objects) {
       if (obj.name === "playerSpawn") {
-        return { x: obj.x, y: obj.y };
+        return { x: obj.x * mapScale, y: obj.y * mapScale};
       }
     }
   }
@@ -212,12 +224,14 @@ function setup() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 }, 0, 0);
-  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 }, 0, 0);
-  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 }, 0, 0);
-  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 }, 0, 0);
-  potionItem = new Item([potion, potion_selected], false, { health: 50 }, 0, 0);
-
+  enemyX = spawn.x + 100; // spawn enemy a bit away from player
+  enemyY = spawn.y + 100;
+  
+  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
+  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
+  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 });
+  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
+  potionItem = new Item([potion, potion_selected], false, { health: 50 });
   // homepage_sound.play();
 }
 
@@ -383,37 +397,44 @@ function skinScreen() {
   skinFrame = !skinFrame;
 }
 
-image(
-  cat_white,
-  20, 180,
-  frameWidth / 5, frameHeight / 5,
-  skinFrame ? 3 * frameWidth : 0, 0,
-  frameWidth, frameHeight
-);
+// draws cats
+let cats = [cat_white, cat_tan, cat_orange, cat_charzard];
 
-image(
-  cat_tan,
-  20 + frameWidth / 5, 180,
-  frameWidth / 5, frameHeight / 5,
-  skinFrame ? 3 * frameWidth : 0, 0,
-  frameWidth, frameHeight
-);
+for (let i = 0; i < 4; i++) {
+  let x = 20 + i * (frameWidth / 5 + 10);
 
-image(
-  cat_orange,
-  20 + 2 *frameWidth / 5, 180,
-  frameWidth / 5, frameHeight / 5,
-  skinFrame ? 3 * frameWidth : 0, 0,
-  frameWidth, frameHeight
-);
+  // draw cat
+  image(
+    cats[i],
+    x, 180,
+    frameWidth / 5, frameHeight / 5,
+    skinFrame ? 3 * frameWidth : 0, 0,
+    frameWidth, frameHeight
+  );
 
-image(
-  cat_charzard,
-  20 + 3 *frameWidth / 5, 180,
-  frameWidth / 5, frameHeight / 5,
-  skinFrame ? 3 * frameWidth : 0, 0,
-  frameWidth, frameHeight
-);
+  // draw selection button
+  button(skin_selection, x, 170, skin_selection.width/5 * scale, skin_selection.height/5 * scale);
+
+  // highlights skin
+  if (skinChoice === cats[i]) {
+    noFill();
+    stroke(191, 141, 247);
+    strokeWeight(5);
+    rect(x, 170, skin_selection.width/5, skin_selection.height/5);
+    noStroke();
+    }
+  }
+
+  if (mouseIsPressed) {
+    for (let i = 0; i < 4; i++) {
+      let x = 20 + i * (frameWidth / 5 + 10);
+      let w = skin_selection.width / 5;
+      let h = skin_selection.height / 5;
+      if (mouseX > x && mouseX < x + w && mouseY > 170 && mouseY < 170 + h) {
+        skinChoice = cats[i];
+      }
+    }
+  }
 
 }
 
@@ -482,10 +503,54 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  
+  enemyX = spawn.x + 100; // spawn enemy a bit away from player
+  enemyY = spawn.y + 100;
 
   page = 5;
 
+}
+
+function drawEnemy() {
+  let dx = playerX - enemyX;
+  let dy = playerY - enemyY;
+  let d = dist(playerX, playerY, enemyX, enemyY);
+
+  if (d <= enemyAttackRange) {
+    enemyState = "attack";
+  } else if (d <= enemyDetectionRange) {
+    enemyState = "chase";
+  } else {
+    enemyState = "wander";
+  }
+
+  if (enemyState === "chase") {
+    if (d > 0) {
+    enemyX += (dx / d) * enemySpeed;
+    enemyY += (dy / d) * enemySpeed;
+    } 
+  }
+
+  if (enemyState === "wander") {
+    enemyMoveTimer--;
+    if (enemyMoveTimer <= 0) {
+    // pick a random direction and move for a random duration
+      let angle = random(TWO_PI);
+      enemyDirX = cos(angle);
+      enemyDirY = sin(angle);
+      enemyMoveTimer = floor(random(30, 90)); // move for 0.5 to 1.5 seconds
+    }
+    enemyX += enemyDirX * enemySpeed * 0.5; // wander at half speed
+    enemyY += enemyDirY * enemySpeed * 0.5;
+  }
+
+  if (enemyState === "attack") {
+    // logic for attacking the player (e.g. reducing health)
+    // this is a placeholder and can be expanded with actual attack mechanics
+    console.log("Enemy attacks!");
+  }
+
+  fill(255, 0, 0);
+  rect(enemyX, enemyY, frameWidth / 10, frameHeight / 10);
 }
 
 function drawCat(player) {
@@ -521,8 +586,8 @@ function drawCat(player) {
     else if (right)  frameCurrRow = 3;
     else if (left)   frameCurrRow = 2;
 
-    playerX = constrain(playerX, 0, currentMap.width * 16 - SPRITE_W);
-    playerY = constrain(playerY, 0, currentMap.height * 16 - SPRITE_H);
+    playerX = constrain(playerX, 0, currentMap.width * 16 * mapScale - SPRITE_W);
+    playerY = constrain(playerY, 0, currentMap.height * 16 * mapScale - SPRITE_H);
 
     if (moving) {
       if (currentFrame === 0) {
@@ -556,19 +621,34 @@ function drawSwap() {
   }
 
 function gameStart() {
-  // console.log("playerX:", playerX, "playerY:", playerY);
-  // console.log("cam.x:", cam.x, "cam.y:", cam.y);
-  // console.log("translate:", -cam.x, -cam.y);
 
-  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 - pageWidth);
-  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 - pageHeight);
+  if (!currentMap) {
+    currentMap = mapData_nacho;
+    currentMapFloor = floorTileset;
+    currentMapWall = wallTileset;
+    const spawn = getSpawnPoint(currentMap);
+    playerX = spawn.x;
+    playerY = spawn.y;
+  }
+  
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
   push();
   translate(-cam.x, -cam.y);
   drawMap(currentMap, currentMapFloor, currentMapWall);
   drawSwap();
-  drawCat(cat_charzard);
+  drawCat(skinChoice);
   pop();
+
+
+  push();
+  translate(-cam.x, -cam.y);
+  drawEnemy();
+  pop();
+
+  IU(3, 100, 1, inventory1, inventory2);
+  //addItem(heart);
   if (g ==0){
     addItem(swordNacho);
     addItem(potionItem);
@@ -589,25 +669,25 @@ function drawMap(map, floorTS, wallTS) {
       if (tileId === 0) continue;
       const col = i % mapCols;
       const row = Math.floor(i / mapCols);
-      const x = col * tileW;
-      const y = row * tileW;
+      const x = col * tileW * mapScale;
+      const y = row * tileW * mapScale;
       if (tileId >= 77) {
         const localID = tileId - 77;
         const srcX = (localID % 24) * tileW;
         const srcY = floor(localID / 24) * 32;
-        image(wallTS, x, y - 16, tileW, 32, srcX, srcY, tileW, 32);
+        image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
       } else {
         const localID = tileId - 1;
         const srcX = (localID % 7) * tileW;
         const srcY = floor(localID / 7) * tileW;
-        image(floorTS, x, y, tileW, tileW, srcX, srcY, tileW, tileW);
+        image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
       }
     }
   }
 }
 
 function isWallTile(worldX, worldY) {
-  const tileW = 16;
+  const tileW = 16 * mapScale;
   const col = Math.floor(worldX / tileW);
   const row = Math.floor(worldY / tileW);
   if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
@@ -879,4 +959,5 @@ function IU(life, health, planet, inventory1, inventory2) {
 function draw() {
   background(220);
   screen(page);
+
 }
