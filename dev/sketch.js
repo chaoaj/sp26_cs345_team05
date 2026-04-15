@@ -608,14 +608,14 @@ function drawSwap() {
 
     for (let i = 0; i < droppedSize; i++) {
       if (droppedInventory[i] != null) {
-        if (dist(playerX, playerY, droppedInventory[i].x, droppedInventory[i].y) <10) {
+        if (dist(playerX, playerY, droppedInventory[i].x, droppedInventory[i].y) <20) {
           droppedInventory[i].selected = true;
         } else {
           droppedInventory[i].selected = false;
         }
         text(droppedInventory[i].x, 200, 220 + i * 20);
         text(droppedInventory[i].y, 250, 220 + i * 20);
-        image(droppedInventory[i].image_display(), droppedInventory[i].x, droppedInventory[i].y, 10, 10);
+        image(droppedInventory[i].image_display(), droppedInventory[i].x, droppedInventory[i].y, 20, 20);
       }
     }
   }
