@@ -119,6 +119,16 @@ let currentMapWall;
 let currentPlanet = 1;
 let completedPlanets = [];
 
+let enemyState = "wander"; // "wander" | "chase" | "attack"
+let enemyX 
+let enemyY;
+let enemySpeed = 0.7;
+let enemyDetectionRange = 150;
+let enemyAttackRange = 30;
+let enemyMoveTimer = 0;
+let enemyDirX = 1;
+let enemyDirY = 0;
+
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
@@ -211,12 +221,9 @@ function setup() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
-  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
-  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 });
-  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
-  potionItem = new Item([potion, potion_selected], false, { health: 50 });
-
+  enemyX = spawn.x + 100; // spawn enemy a bit away from player
+  enemyY = spawn.y + 100;
+  
   // homepage_sound.play();
 }
 
@@ -488,10 +495,54 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  
+  enemyX = spawn.x + 100; // spawn enemy a bit away from player
+  enemyY = spawn.y + 100;
 
   page = 5;
 
+}
+
+function drawEnemy() {
+  let dx = playerX - enemyX;
+  let dy = playerY - enemyY;
+  let d = dist(playerX, playerY, enemyX, enemyY);
+
+  if (d <= enemyAttackRange) {
+    enemyState = "attack";
+  } else if (d <= enemyDetectionRange) {
+    enemyState = "chase";
+  } else {
+    enemyState = "wander";
+  }
+
+  if (enemyState === "chase") {
+    if (d > 0) {
+    enemyX += (dx / d) * enemySpeed;
+    enemyY += (dy / d) * enemySpeed;
+    } 
+  }
+
+  if (enemyState === "wander") {
+    enemyMoveTimer--;
+    if (enemyMoveTimer <= 0) {
+    // pick a random direction and move for a random duration
+      let angle = random(TWO_PI);
+      enemyDirX = cos(angle);
+      enemyDirY = sin(angle);
+      enemyMoveTimer = floor(random(30, 90)); // move for 0.5 to 1.5 seconds
+    }
+    enemyX += enemyDirX * enemySpeed * 0.5; // wander at half speed
+    enemyY += enemyDirY * enemySpeed * 0.5;
+  }
+
+  if (enemyState === "attack") {
+    // logic for attacking the player (e.g. reducing health)
+    // this is a placeholder and can be expanded with actual attack mechanics
+    console.log("Enemy attacks!");
+  }
+
+  fill(255, 0, 0);
+  rect(enemyX, enemyY, frameWidth / 10, frameHeight / 10);
 }
 
 function drawCat(player) {
@@ -564,6 +615,15 @@ function gameStart() {
   drawMap(currentMap, currentMapFloor, currentMapWall);
   drawCat(skinChoice);
   pop();
+
+
+  push();
+  translate(-cam.x, -cam.y);
+  drawEnemy();
+  pop();
+
+  IU(3, 100, 1, inventory1, inventory2);
+  //addItem(heart);
   if (g ==0){
     addItem(swordNacho);
     addItem(potionItem);
@@ -820,4 +880,5 @@ function IU(life, health, planet, inventory1, inventory2) {
 function draw() {
   background(220);
   screen(page);
+
 }
