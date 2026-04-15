@@ -224,6 +224,11 @@ function setup() {
   enemyX = spawn.x + 100; // spawn enemy a bit away from player
   enemyY = spawn.y + 100;
   
+  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
+  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
+  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 });
+  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
+  potionItem = new Item([potion, potion_selected], false, { health: 50 });
   // homepage_sound.play();
 }
 
