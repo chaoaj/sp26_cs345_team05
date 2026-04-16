@@ -88,7 +88,7 @@ let playerY;
 const SPRITE_W = 16 * mapScale;
 const SPRITE_H = 16 * mapScale;
 
-let playerSpeed = 10;
+let playerSpeed = 8;
 
 let frontR = true;
 let walkToggle = false;
@@ -96,7 +96,7 @@ let walkToggle = false;
 // frame change millisecond logic
 let lastSwitch = 0;
 let idleInterval = 300; // milliseconds
-let walkInterval = 120;
+let walkInterval = 100;
 
 // slideshow settings
 let currentSlide = 0;
@@ -123,7 +123,6 @@ let currentPlanet = 1;
 let completedPlanets = [];
 
 let enemyState = "wander"; // "wander" | "chase" | "attack"
-let enemyX;
 let enemyX;
 let enemyY;
 let enemySpeed = 0.7;
@@ -520,14 +519,7 @@ function onBackstoryComplete() {
 function drawEnemy() {
   let dx = playerX - enemyX;
   let dy = playerY - enemyY;
-  let d = dist(playerX, playerY, enemyX, enemyY);
-  let wallCollision = collidesWithWall(enemyX, enemyY);
-
-  if (wallCollision) {
-    enemySpeed = -enemySpeed; // simple response: reverse direction on collision
-  } else {
-    enemyState = "wander"; // ensure speed is positive when not colliding
-  }
+  let d  = dist(playerX, playerY, enemyX, enemyY);
 
   if (d <= enemyAttackRange) {
     enemyState = "attack";
@@ -537,44 +529,35 @@ function drawEnemy() {
     enemyState = "wander";
   }
 
+  // changes direction based on player location
   let dirRow;
   if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 0) dirRow = 1;  
-    else        dirRow = 3;  
+    dirRow = dx > 0 ? 1 : 3;   // right / left
   } else {
-    if (dy > 0) dirRow = 2;  
-    else        dirRow = 0;  
+    dirRow = dy > 0 ? 2 : 0;   // down / up
   }
 
+  let moveX = 0;
+  let moveY = 0;
 
-  if (enemyState === "chase") {
-    if (d > 0) {
-    enemyX += (dx / d) * enemySpeed;
-    enemyY += (dy / d) * enemySpeed;
-    } 
-  }
-
-  if (enemyState === "wander") {
+  if (enemyState === "chase" && d > 0) {
+    moveX = (dx / d) * enemySpeed;
+    moveY = (dy / d) * enemySpeed;
+  } else if (enemyState === "wander") {
     enemyMoveTimer--;
     if (enemyMoveTimer <= 0) {
-    // pick a random direction and move for a random duration
       let angle = random(TWO_PI);
       enemyDirX = cos(angle);
       enemyDirY = sin(angle);
-      enemyMoveTimer = floor(random(30, 90)); // move for 0.5 to 1.5 seconds
+      enemyMoveTimer = floor(random(30, 90));
     }
-    enemyX += enemyDirX * enemySpeed * 0.5; // wander at half speed
-    enemyY += enemyDirY * enemySpeed * 0.5;
-  }
-
-  if (enemyState === "attack") {
-    // logic for attacking the player (e.g. reducing health)
-    // this is a placeholder and can be expanded with actual attack mechanics
+    moveX = enemyDirX * enemySpeed * 0.5;
+    moveY = enemyDirY * enemySpeed * 0.5;
+  } else if (enemyState === "attack") {
     console.log("Enemy attacks!");
   }
 
-  // fill(255, 0, 0);
-  // rect(enemyX, enemyY, frameWidthRat / 10, frameHeightRat / 10);
+  moveEnemy(moveX, moveY, dirRow);
 
   let sx = currentFrameRat * RAT_FRAME_W;
   let sy = RAT_ROW_Y[dirRow];
@@ -585,9 +568,32 @@ function drawEnemy() {
 
   if (frameCount % 5 === 0) {
     currentFrameRat++;
-    if (currentFrameRat >= 3) {
-      currentFrameRat = 0;
-    }
+    if (currentFrameRat >= 3) currentFrameRat = 0;
+  }
+}
+
+// enemy border mechanic
+function moveEnemy(moveX, moveY, dirRow) {
+  if (moveX === 0 && moveY === 0) return;
+
+  let nextX = enemyX + moveX;
+  let nextY = enemyY + moveY;
+
+  let w = RAT_FRAME_W;
+  let h = RAT_FRAME_H[dirRow];
+
+  if (!isWallTile(nextX, enemyY) &&
+      !isWallTile(nextX + w - 1, enemyY) &&
+      !isWallTile(nextX, enemyY + h - 1) &&
+      !isWallTile(nextX + w - 1, enemyY + h - 1)) {
+    enemyX = nextX;
+  }
+
+  if (!isWallTile(enemyX, nextY) &&
+      !isWallTile(enemyX + w - 1, nextY) &&
+      !isWallTile(enemyX, nextY + h - 1) &&
+      !isWallTile(enemyX + w - 1, nextY + h - 1)) {
+    enemyY = nextY;
   }
 }
 
@@ -669,8 +675,12 @@ function gameStart() {
     playerY = spawn.y;
   }
   
-  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
-  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
+  let targetCamX = playerX - pageWidth / 2;
+  let targetCamY = playerY - pageHeight / 2;
+
+  cam.x = lerp(cam.x, constrain(targetCamX, 0, currentMap.width * 16 * mapScale - pageWidth), 0.15);
+  cam.y = lerp(cam.y, constrain(targetCamY, 0, currentMap.height * 16 * mapScale - pageHeight), 0.15);
+
 
   push();
   translate(-cam.x, -cam.y);
