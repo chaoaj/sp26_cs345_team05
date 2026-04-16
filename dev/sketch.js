@@ -110,6 +110,9 @@ let backstoryActive = false;
 
 let size = 0;
 var inventory2 = [];
+var droppedInventory = [];
+var droppedSize = 0;
+var click = true;
 
 let floorTileset, wallTileset;
 let cam = { x: 0, y: 0 };
@@ -120,6 +123,7 @@ let currentPlanet = 1;
 let completedPlanets = [];
 
 let enemyState = "wander"; // "wander" | "chase" | "attack"
+let enemyX;
 let enemyX;
 let enemyY;
 let enemySpeed = 0.7;
@@ -506,8 +510,8 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  enemyX = spawn.x + 100; // spawn enemy a bit away from player
-  enemyY = spawn.y + 100;
+  enemyX = spawn.x + random(-100, 100); // spawn enemy a bit away from player
+  enemyY = spawn.y + random(-100, 100);
 
   page = 5;
 
@@ -517,6 +521,13 @@ function drawEnemy() {
   let dx = playerX - enemyX;
   let dy = playerY - enemyY;
   let d = dist(playerX, playerY, enemyX, enemyY);
+  let wallCollision = collidesWithWall(enemyX, enemyY);
+
+  if (wallCollision) {
+    enemySpeed = -enemySpeed; // simple response: reverse direction on collision
+  } else {
+    enemyState = "wander"; // ensure speed is positive when not colliding
+  }
 
   if (d <= enemyAttackRange) {
     enemyState = "attack";
@@ -631,6 +642,22 @@ function drawCat(player) {
   // print(frameCurrRow);
 }
 
+function drawSwap() {
+
+    for (let i = 0; i < droppedSize; i++) {
+      if (droppedInventory[i] != null) {
+        if (dist(playerX, playerY, droppedInventory[i].x, droppedInventory[i].y) <20) {
+          droppedInventory[i].selected = true;
+        } else {
+          droppedInventory[i].selected = false;
+        }
+        text(droppedInventory[i].x, 200, 220 + i * 20);
+        text(droppedInventory[i].y, 250, 220 + i * 20);
+        image(droppedInventory[i].image_display(), droppedInventory[i].x, droppedInventory[i].y, 20, 20);
+      }
+    }
+  }
+
 function gameStart() {
 
   if (!currentMap) {
@@ -648,6 +675,7 @@ function gameStart() {
   push();
   translate(-cam.x, -cam.y);
   drawMap(currentMap, currentMapFloor, currentMapWall);
+  drawSwap();
   drawCat(skinChoice);
   pop();
 
@@ -806,10 +834,12 @@ class Item {
   // image: array of image not selected and image selected
   // selected: whether the item is currently selected in the inventory
   // data: any additional data about the item (e.g. health boost, damage, etc.)
-  constructor(image, selected, data) {
+  constructor(image, selected, data, x , y ) {
     this.image = image;
     this.selected = selected;
     this.data = data;
+    this.x = x;
+    this.y = y;
   }
 
   image_display() {
@@ -831,12 +861,57 @@ function IU(life, health, planet, inventory1, inventory2) {
   image(inventory1, 15, 350, inventory1.width/14, inventory1.height/14);
   image(level[planet - 1], 480, 10, level[planet - 1].width/5, level[planet - 1].height/5);
 
+  
 
   lives();
   healthBar();
   selectedItem();
   dropItem();
+  swapItem();
+  if (keyCode === ENTER) {
+    click = false;
+  } else {
+    click = true;
+  }
   inventory();
+
+  
+
+  function swapItem() {
+    var swapped = false;
+    
+        for (let i = 0; i < droppedSize; i++) {
+          
+          if (droppedInventory[i] != null && droppedInventory[i].selected && keyCode === ENTER && click) {
+            for (let j = 0; j < size; j++) {
+              if (inventory2[j].selected) {
+                inventory2[j].selected = false;
+                var temp = inventory2[j];
+                inventory2[j] = droppedInventory[i];
+                  droppedInventory[i] = temp;
+                  droppedInventory[i].x = playerX;
+                  droppedInventory[i].y = playerY;
+                swapped = true;
+                click = false;
+                break;
+              }
+              
+            }
+            
+          }
+          
+        }
+        if (!swapped && keyCode === ENTER && click) {
+          for (let i = 0; i < droppedSize; i++) {
+            if (droppedInventory[i] != null && droppedInventory[i].selected) {
+              addItem(droppedInventory[i]);
+              droppedInventory[i].selected = false;
+              droppedInventory[i] = null;
+            }
+          }
+        }
+    }
+  
   //removes selected item from inventory when backspace is pressed and shifts remaining items over
   function dropItem() {
     if (keyCode === BACKSPACE) {
@@ -844,10 +919,16 @@ function IU(life, health, planet, inventory1, inventory2) {
       for (let i = 0; i < size; i++) {
         if (inventory2[i].selected) {
           //text("drop item", 200, 200);
+          inventory2[i].selected = false;
+          droppedInventory[droppedSize] = inventory2[i];
+          droppedInventory[droppedSize].x = playerX;
+          droppedInventory[droppedSize].y = playerY;
+          text(droppedInventory[droppedSize].x, 200, 200);
+          droppedSize++;
           for (let j = i; j < size - 1; j++) {
             inventory2[j] = inventory2[j + 1];
           }
-          inventory2[size] = null;
+          inventory2[size - 1] = null;
           size--;
           break;
         }
@@ -856,33 +937,34 @@ function IU(life, health, planet, inventory1, inventory2) {
   }
   function selectedItem() {
     if (keyCode === 49) {
-      if (size > 0 && inventory2[0] != null) {
-        inventory2[0].selected = true;
-      }
-      if (size > 1 && inventory2[1] != null) {
-        inventory2[1].selected = false;
-      }
-      if (size > 2 && inventory2[2] != null) {
-        inventory2[2].selected = false;
-      }
+        if (inventory2[0] != null && size >= 1) {
+          inventory2[0].selected = true;
+        }
+        if (inventory2[1] != null && size >= 2) {
+          inventory2[1].selected = false;
+        }
+        if (inventory2[2] != null && size >= 3) {
+          inventory2[2].selected = false;
+        }
     } else if (keyCode === 50) {
-      if (size > 0 && inventory2[0] != null) {
+      if (inventory2[0] != null && size >= 1) {
         inventory2[0].selected = false;
       }
-      if (size > 1 && inventory2[1] != null) {
+      if (inventory2[1] != null && size >= 2) { 
         inventory2[1].selected = true;
       }
-      if (size > 2 && inventory2[2] != null) {
+      if (inventory2[2] != null && size >= 3) {
         inventory2[2].selected = false;
       }
+
     } else if (keyCode === 51) {
-      if (size > 0 && inventory2[0] != null) {
+      if (inventory2[0] != null && size >= 1) {
         inventory2[0].selected = false;
       }
-      if (size > 1 && inventory2[1] != null) {
+      if (inventory2[1] != null && size >= 2) {
         inventory2[1].selected = false;
       }
-      if (size > 2 && inventory2[2] != null) {
+      if (inventory2[2] != null && size >= 3) { 
         inventory2[2].selected = true;
       }
     }
