@@ -62,11 +62,11 @@
 ]; */
 
 var g = 0;
-var page = 1;
+var page = 5;
 var scale = 1;
 
-let pageWidth = 600;
-let pageHeight = 400;
+const pageWidth = 600;
+const pageHeight = 400;
 
 let homepageX = 0;
 let homepageY = 0;
@@ -120,7 +120,7 @@ let currentPlanet = 1;
 let completedPlanets = [];
 
 let enemyState = "wander"; // "wander" | "chase" | "attack"
-let enemyX 
+let enemyX;
 let enemyY;
 let enemySpeed = 0.7;
 let enemyDetectionRange = 150;
@@ -128,6 +128,12 @@ let enemyAttackRange = 30;
 let enemyMoveTimer = 0;
 let enemyDirX = 1;
 let enemyDirY = 0;
+
+let currentFrameRat = 0;
+const RAT_FRAME_W = 32;
+const RAT_FRAME_H = [43, 21, 43, 21]; 
+const RAT_ROW_Y = [0, 43, 64, 107];   
+
 
 
 function preload() {
@@ -167,6 +173,8 @@ function preload() {
   skinChoice = cat_tan;
   skin_selection = loadImage("assets/skin_select_button.png");
 
+  rat1 = loadImage("assets/rat.png");
+
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
   inventory1 = loadImage("assets/inventory.png");
@@ -187,9 +195,6 @@ function preload() {
   sword_parmesan_selected = loadImage("assets/sword_parmesan_selected.png");
   sword_cheeseCake_selected = loadImage("assets/sword_cheeseCake_selected.png");
   potion_selected = loadImage("assets/Potion_selected.png");
-
-  // temp map
-  map1 = loadImage("assets/map.png");
 
   floorTileset = loadImage("assets/atlas_floor-16x16.png");
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
@@ -221,8 +226,14 @@ function setup() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  enemyX = spawn.x + 100; // spawn enemy a bit away from player
-  enemyY = spawn.y + 100;
+  enemyX = spawn.x + 100; 
+  enemyY = spawn.y + 50;
+
+  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
+  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
+  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 });
+  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
+  potionItem = new Item([potion, potion_selected], false, { health: 50 });
   
   // homepage_sound.play();
 }
@@ -515,6 +526,16 @@ function drawEnemy() {
     enemyState = "wander";
   }
 
+  let dirRow;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 0) dirRow = 1;  
+    else        dirRow = 3;  
+  } else {
+    if (dy > 0) dirRow = 2;  
+    else        dirRow = 0;  
+  }
+
+
   if (enemyState === "chase") {
     if (d > 0) {
     enemyX += (dx / d) * enemySpeed;
@@ -541,8 +562,22 @@ function drawEnemy() {
     console.log("Enemy attacks!");
   }
 
-  fill(255, 0, 0);
-  rect(enemyX, enemyY, frameWidth / 10, frameHeight / 10);
+  // fill(255, 0, 0);
+  // rect(enemyX, enemyY, frameWidthRat / 10, frameHeightRat / 10);
+
+  let sx = currentFrameRat * RAT_FRAME_W;
+  let sy = RAT_ROW_Y[dirRow];
+  let sw = RAT_FRAME_W;
+  let sh = RAT_FRAME_H[dirRow];
+
+  image(rat1, enemyX, enemyY, sw, sh, sx, sy, sw, sh);
+
+  if (frameCount % 5 === 0) {
+    currentFrameRat++;
+    if (currentFrameRat >= 3) {
+      currentFrameRat = 0;
+    }
+  }
 }
 
 function drawCat(player) {
@@ -630,7 +665,7 @@ function gameStart() {
     addItem(swordBlueCheese);
     g++;
   }
-  IU(3, 100, 4, inventory1, inventory2);
+  // IU(3, 100, 4, inventory1, inventory2);
 }
 
 function drawMap(map, floorTS, wallTS) {
