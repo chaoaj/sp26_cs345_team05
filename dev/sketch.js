@@ -197,8 +197,9 @@ function preload() {
   slides_track = loadSound("assets/slides1.0.mp3");
   sword_sound = loadSound("assets/sword_effect.mp3");
   victory_music = loadSound("assets/Victory.mp3");
-  
 
+  button_beep = loadSound("assets/button_beep.mp3");
+  
   sword_nacho = loadImage("assets/sword_nacho.png");
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
   sword_parmesan = loadImage("assets/sword_parmesan.png");
@@ -241,8 +242,8 @@ function setup() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  enemyX = spawn.x + 100; 
-  enemyY = spawn.y + 50;
+  enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
+  enemyY = spawn.y + random(-100, 100);
 
   swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
   swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
@@ -250,7 +251,6 @@ function setup() {
   swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
   potionItem = new Item([potion, potion_selected], false, { health: 50 });
   
-  homepage_sound.play();
 }
 
 
@@ -276,6 +276,8 @@ function button(image1, x, y, w, h) {
     }
   }
   if (mouseIsPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
+    button_beep.play();
+    
     if (image1 === start_game2) {
       page = 2;
     } else if (image1 === skins2) {
@@ -317,6 +319,10 @@ function screen() {
 function homePage() {
   scale = 1;
   backgroundMoveSpeed = 0.5;
+
+  if (!homepage_sound.isPlaying()) {
+    homepage_sound.loop();
+  }
 
   if (mouseX > pageWidth/2 && homepageX < 0) {
     homepageX += backgroundMoveSpeed;
@@ -415,7 +421,7 @@ function skinScreen() {
   skinFrame = !skinFrame;
 }
 
-// draws cats
+// list of cat skins
 let cats = [cat_white, cat_tan, cat_orange, cat_charzard];
 
 for (let i = 0; i < 4; i++) {
@@ -528,9 +534,6 @@ function onBackstoryComplete() {
   const spawn = getSpawnPoint(currentMap);
   playerX = spawn.x;
   playerY = spawn.y;
-
-  enemyX = spawn.x + random(-100, 100); // spawn enemy a bit away from player
-  enemyY = spawn.y + random(-100, 100);
 
   page = 5;
 
