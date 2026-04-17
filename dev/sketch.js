@@ -121,6 +121,10 @@ let currentMapFloor;
 let currentMapWall;
 let currentPlanet = 1;
 let completedPlanets = [];
+let fightRooms = [];
+let chests = [];
+let spikeWalls = [];
+let chestTileset;
 
 let enemyState = "wander"; // "wander" | "chase" | "attack"
 let enemyX;
@@ -201,6 +205,7 @@ function preload() {
 
   floorTileset = loadImage("assets/atlas_floor-16x16.png");
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
+  chestTileset = loadImage("assets/Chest.png");
 }
 
 function getSpawnPoint(map) {
@@ -516,6 +521,175 @@ function onBackstoryComplete() {
 
 }
 
+function initMapObjects(map) {
+  fightRooms = [];
+  chests = [];
+  spikeWalls = [];
+
+  for (let layer of map.layers) {
+    if (layer.type !== "objectgroup") continue;
+
+    if (layer.name === "fightRooms") {
+      for (let obj of layer.objects) {
+        if (obj.name === "fightRoom1" || obj.name === "fightRoom") {
+          fightRooms.push({
+            x: obj.x * mapScale,
+            y: obj.y * mapScale,
+            w: obj.width * mapScale,
+            h: obj.height * mapScale,
+            cleared: false,
+            active: false
+          });
+        }
+      }
+    }
+
+    if (layer.name === "Enemy/Boss/Chest") {
+      for (let obj of layer.objects) {
+        if (obj.name === "chestSpawn") {
+          chests.push({
+            x: obj.x * mapScale,
+            y: obj.y * mapScale,
+            opened: false,
+            tileCol: Math.floor(obj.x / 16),
+            tileRow: Math.floor(obj.y / 16)
+          });
+        }
+      }
+    }
+  }
+
+  const chestsLayer = map.layers.find(l => l.name === "chests");
+  if (chestsLayer) {
+    for (let i = 0; i < chestsLayer.data.length; i++) {
+      if (chestsLayer.data[i] === 25) { // static spike tile
+        const col = i % map.width;
+        const row = Math.floor(i / map.width);
+        spikeWalls.push({
+          x: col * 16 * mapScale,
+          y: row * 16 * mapScale,
+          raised: false,
+          roomIndex: -1,
+          animFrame: 0,
+          animTimer: 0
+        });
+      }
+    }
+  }
+
+  // Assign each spike wall to its nearest fight room
+  for (let spike of spikeWalls) {
+    let closest = -1;
+    let closestDist = Infinity;
+    for (let i = 0; i < fightRooms.length; i++) {
+      let r = fightRooms[i];
+      let cx = r.x + r.w / 2;
+      let cy = r.y + r.h / 2;
+      let d = dist(spike.x, spike.y, cx, cy);
+      if (d < closestDist) {
+        closestDist = d;
+        closest = i;
+      }
+    }
+    spike.roomIndex = closest;
+  }
+}
+
+function updateFightRooms() {
+  for (let i = 0; i < fightRooms.length; i++) {
+    let r = fightRooms[i];
+    if (r.cleared) continue;
+    let inRoom = playerX > r.x && playerX < r.x + r.w &&
+                 playerY > r.y && playerY < r.y + r.h;
+    if (inRoom && !r.active) {
+      console.log("entered fight room", i);
+      r.active = true;
+      for (let spike of spikeWalls) {
+        if (spike.roomIndex === i) {
+          spike.raised = true;
+          spike.animFrame = 0;
+          spike.animTimer = millis();
+        }
+      }
+    }
+
+    if (r.active) {
+      let allEnemiesDefeated = false; 
+      if (allEnemiesDefeated) {
+        r.cleared = true;
+        r.active = false;
+        for (let spike of spikeWalls) {
+          if (spike.roomIndex === i) {
+            spike.raised = false;
+            spike.animFrame = 0;
+            spike.animTimer = millis();
+          }
+        }
+      }
+    }
+  }
+}
+
+function drawChests() {
+  const OPEN_TILE = 199;
+
+  for (let chest of chests) {
+    if (chest.opened) continue;
+    let d = dist(playerX, playerY, chest.x, chest.y);
+    if (d < 30 * mapScale) {
+      push();
+      fill(255);
+      noStroke();
+      textSize(8);
+      textAlign(CENTER);
+      text("E to open", chest.x + 8 * mapScale, chest.y - 5);
+      pop();
+
+      if (keyIsDown(69)) {
+        chest.opened = true;
+        const chestLayer = currentMap.layers.find(l => l.name === "chests");
+        if (chestLayer) {
+          const idx = chest.tileRow * currentMap.width + chest.tileCol;
+          chestLayer.data[idx] = OPEN_TILE;
+        }
+      }
+    }
+  }
+}
+
+const SPIKE_FRAMES_RAISE  = [[21, 100], [22, 100], [23, 100], [24, 2000]];
+const SPIKE_FRAMES_RETRACT = [[24, 100], [23, 100], [22, 100], [21, 2000]];
+
+function drawSpikeWalls() {
+  if (!spikeWalls || spikeWalls.length === 0) return;
+
+  const tileW = 16;
+  const now = millis();
+
+  for (let spike of spikeWalls) {
+    let frames = spike.raised ? SPIKE_FRAMES_RAISE : SPIKE_FRAMES_RETRACT;
+
+    if (now - spike.animTimer > frames[spike.animFrame][1]) {
+      spike.animTimer = now;
+      if (spike.animFrame < frames.length - 1) {
+        spike.animFrame++;
+      }
+    }
+
+    let tileId = frames[spike.animFrame][0];
+    const localID = tileId - 1;
+    const srcX = (localID % 7) * tileW;
+    const srcY = Math.floor(localID / 7) * tileW;
+
+    image(
+      floorTileset,
+      spike.x, spike.y,
+      tileW * mapScale, tileW * mapScale,
+      srcX, srcY, tileW, tileW
+    );
+  }
+}
+
 function drawEnemy() {
   healthBarEnemy(enemyX, enemyY - 5, 100, 100); // example health bar above enemy
   let dx = playerX - enemyX;
@@ -666,7 +840,6 @@ function drawSwap() {
   }
 
 function gameStart() {
-
   if (!currentMap) {
     currentMap = mapData_nacho;
     currentMapFloor = floorTileset;
@@ -675,21 +848,22 @@ function gameStart() {
     playerX = spawn.x;
     playerY = spawn.y;
   }
-  
+
   let targetCamX = playerX - pageWidth / 2;
   let targetCamY = playerY - pageHeight / 2;
 
   cam.x = lerp(cam.x, constrain(targetCamX, 0, currentMap.width * 16 * mapScale - pageWidth), 0.15);
   cam.y = lerp(cam.y, constrain(targetCamY, 0, currentMap.height * 16 * mapScale - pageHeight), 0.15);
 
-
   push();
   translate(-cam.x, -cam.y);
   drawMap(currentMap, currentMapFloor, currentMapWall);
+  drawChests();
+  drawSpikeWalls();
+  updateFightRooms();
   drawSwap();
   drawCat(skinChoice);
   pop();
-
 
   push();
   translate(-cam.x, -cam.y);
@@ -697,14 +871,16 @@ function gameStart() {
   pop();
 
   IU(3, 100, 1, inventory1, inventory2);
-  //addItem(heart);
-  if (g ==0){
+
+  if (g == 0) {
+    initMapObjects(currentMap);
+    console.log("spikeWalls:", spikeWalls.length);
+    console.log("fightRooms:", fightRooms.length);
     addItem(swordNacho);
     addItem(potionItem);
     addItem(swordBlueCheese);
     g++;
   }
-  // IU(3, 100, 4, inventory1, inventory2);
 }
 
 function drawMap(map, floorTS, wallTS) {
@@ -716,19 +892,36 @@ function drawMap(map, floorTS, wallTS) {
     for (let i = 0; i < layer.data.length; i++) {
       const tileId = layer.data[i];
       if (tileId === 0) continue;
+      if (layer.name === "chests" && tileId === 25) continue;
       const col = i % mapCols;
       const row = Math.floor(i / mapCols);
       const x = col * tileW * mapScale;
       const y = row * tileW * mapScale;
-      if (tileId >= 77) {
-        const localID = tileId - 77;
+
+      if (tileId >= 194) {
+        const localID = tileId - 194;
+        const srcX = (localID % 3) * tileW;
+        const srcY = Math.floor(localID / 3) * tileW;
+        image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+      } else if (tileId >= 146) {
+        if (tileId === 179) {
+          fill(0); noStroke();
+          rect(x, y, tileW * mapScale, tileW * mapScale);
+        } else {
+          const localID = tileId - 146;
+          const srcX = (localID % 12) * tileW;
+          const srcY = Math.floor(localID / 12) * tileW;
+          image(wallTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        }
+      } else if (tileId >= 50) {
+        const localID = tileId - 50;
         const srcX = (localID % 24) * tileW;
-        const srcY = floor(localID / 24) * 32;
+        const srcY = Math.floor(localID / 24) * 32;
         image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
       } else {
         const localID = tileId - 1;
         const srcX = (localID % 7) * tileW;
-        const srcY = floor(localID / 7) * tileW;
+        const srcY = Math.floor(localID / 7) * tileW;
         image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
       }
     }
@@ -740,13 +933,16 @@ function isWallTile(worldX, worldY) {
   const col = Math.floor(worldX / tileW);
   const row = Math.floor(worldY / tileW);
   if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
-  
+
   let hasFloor = false;
   for (let layer of currentMap.layers) {
     if (layer.type !== "tilelayer") continue;
+    if (layer.name !== "floors" && layer.name !== "walls") continue;
+    
     const tileId = layer.data[row * currentMap.width + col];
-    if (tileId >= 77) return true;
-    if(tileId >= 1 && tileId <= 76) hasFloor = true;
+    if (tileId >= 50 && tileId <= 193) return true; // high walls + low walls
+    if (tileId === 179) return true;                 // void blocks movement
+    if (tileId >= 1 && tileId <= 49) hasFloor = true;
   }
   return !hasFloor;
 }
