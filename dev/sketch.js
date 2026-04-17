@@ -62,7 +62,7 @@
 ]; */
 
 var g = 0;
-var page = 5;
+var page = 0;
 var scale = 1;
 
 const pageWidth = 600;

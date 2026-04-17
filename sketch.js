@@ -61,12 +61,12 @@
   }
 ]; */
 
-
-var page = 0;
+var g = 0;
+var page = 5;
 var scale = 1;
 
-let pageWidth = 600;
-let pageHeight = 400;
+const pageWidth = 600;
+const pageHeight = 400;
 
 let homepageX = 0;
 let homepageY = 0;
@@ -76,11 +76,19 @@ let currentFrame = 0;
 let frameCurrRow = 0;
 let frameWidth = 687;
 let frameHeight = 717;
+const mapScale = 2;
+
+// skins page stuff:
+let skinChoice;
+let skinAnimTimer = 0;
+let skinFrame = false; // between frame 0 and 3
 
 let playerX;
 let playerY;
+const SPRITE_W = 16 * mapScale;
+const SPRITE_H = 16 * mapScale;
 
-let playerSpeed = 10;
+let playerSpeed = 8;
 
 let frontR = true;
 let walkToggle = false;
@@ -88,8 +96,7 @@ let walkToggle = false;
 // frame change millisecond logic
 let lastSwitch = 0;
 let idleInterval = 300; // milliseconds
-let walkInterval = 120;
-
+let walkInterval = 100;
 
 // slideshow settings
 let currentSlide = 0;
@@ -103,6 +110,9 @@ let backstoryActive = false;
 
 let size = 0;
 var inventory2 = [];
+var droppedInventory = [];
+var droppedSize = 0;
+var click = true;
 
 let floorTileset, wallTileset;
 let cam = { x: 0, y: 0 };
@@ -112,10 +122,26 @@ let currentMapWall;
 let currentPlanet = 1;
 let completedPlanets = [];
 
+let enemyState = "wander"; // "wander" | "chase" | "attack"
+let enemyX;
+let enemyY;
+let enemySpeed = 0.7;
+let enemyDetectionRange = 150;
+let enemyAttackRange = 30;
+let enemyMoveTimer = 0;
+let enemyDirX = 1;
+let enemyDirY = 0;
+
+let currentFrameRat = 0;
+const RAT_FRAME_W = 32;
+const RAT_FRAME_H = [43, 21, 43, 21]; 
+const RAT_ROW_Y = [0, 43, 64, 107];   
+
+
 
 function preload() {
   homepage_background = loadImage("dev/assets/homepage_background.png");
-  cat = loadImage("dev/assets/cat_homepage.png");
+  homepage_cat = loadImage("dev/assets/cat_homepage.png");
   title1 = loadImage("dev/assets/title1.png");
   title2 = loadImage("dev/assets/title2.png");
 
@@ -145,6 +171,12 @@ function preload() {
   cat_orange = loadImage("dev/assets/sprite_sheet_orange.png");
   cat_white = loadImage("dev/assets/sprite_sheet_white.png");
   cat_tan = loadImage("dev/assets/sprite_sheet_tan.png");
+  cat_charzard = loadImage("dev/assets/sprite_sheet_charzard.png");
+
+  skinChoice = cat_tan;
+  skin_selection = loadImage("dev/assets/skin_select_button.png");
+
+  rat1 = loadImage("dev/assets/rat.png");
 
   icu = loadImage("dev/assets/interface.png");
   heart = loadImage("dev/assets/heart.png");
@@ -160,10 +192,12 @@ function preload() {
   sword_blueCheese = loadImage("dev/assets/sword_blueCheese.png");
   sword_parmesan = loadImage("dev/assets/sword_parmesan.png");
   sword_cheeseCake = loadImage("dev/assets/sword_cheeseCake.png");
-  // potion = loadImage("dev/assets/potion.png");
-
-  // temp map
-  map1 = loadImage("dev/assets/map.png");
+  potion = loadImage("dev/assets/Potion.png");
+  sword_nacho_selected = loadImage("dev/assets/sword_nacho_selected.png");
+  sword_blueCheese_selected = loadImage("dev/assets/sword_blueCheese_selected.png");
+  sword_parmesan_selected = loadImage("dev/assets/sword_parmesan_selected.png");
+  sword_cheeseCake_selected = loadImage("dev/assets/sword_cheeseCake_selected.png");
+  potion_selected = loadImage("dev/assets/Potion_selected.png");
 
   floorTileset = loadImage("dev/assets/atlas_floor-16x16.png");
   wallTileset = loadImage("dev/assets/atlas_walls_high-16x32.png");
@@ -174,7 +208,7 @@ function getSpawnPoint(map) {
     if (layer.type !== "objectgroup") continue;
     for (let obj of layer.objects) {
       if (obj.name === "playerSpawn") {
-        return { x: obj.x, y: obj.y };
+        return { x: obj.x * mapScale, y: obj.y * mapScale};
       }
     }
   }
@@ -194,6 +228,15 @@ function setup() {
   const spawn = getSpawnPoint(currentMap);
   playerX = spawn.x;
   playerY = spawn.y;
+
+  enemyX = spawn.x + 100; 
+  enemyY = spawn.y + 50;
+
+  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
+  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
+  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 });
+  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
+  potionItem = new Item([potion, potion_selected], false, { health: 50 });
   
   // homepage_sound.play();
 }
@@ -301,9 +344,9 @@ function homePage() {
 
   // CAT
   image(
-    cat, 
+    homepage_cat, 
     0, 90, 
-    cat.width * scale/2, cat.height * scale/2   
+    homepage_cat.width * scale/2, homepage_cat.height * scale/2   
   );
 
   // start game button
@@ -354,6 +397,51 @@ function skinScreen() {
 
   // return button
   button(return2, 20, 20, return2.width/7 * scale, return2.height/6 * scale);
+    
+  if (millis() - skinAnimTimer > 400) {
+  skinAnimTimer = millis();
+  skinFrame = !skinFrame;
+}
+
+// draws cats
+let cats = [cat_white, cat_tan, cat_orange, cat_charzard];
+
+for (let i = 0; i < 4; i++) {
+  let x = 20 + i * (frameWidth / 5 + 10);
+
+  // draw cat
+  image(
+    cats[i],
+    x, 180,
+    frameWidth / 5, frameHeight / 5,
+    skinFrame ? 3 * frameWidth : 0, 0,
+    frameWidth, frameHeight
+  );
+
+  // draw selection button
+  button(skin_selection, x, 170, skin_selection.width/5 * scale, skin_selection.height/5 * scale);
+
+  // highlights skin
+  if (skinChoice === cats[i]) {
+    noFill();
+    stroke(191, 141, 247);
+    strokeWeight(5);
+    rect(x, 170, skin_selection.width/5, skin_selection.height/5);
+    noStroke();
+    }
+  }
+
+  if (mouseIsPressed) {
+    for (let i = 0; i < 4; i++) {
+      let x = 20 + i * (frameWidth / 5 + 10);
+      let w = skin_selection.width / 5;
+      let h = skin_selection.height / 5;
+      if (mouseX > x && mouseX < x + w && mouseY > 170 && mouseY < 170 + h) {
+        skinChoice = cats[i];
+      }
+    }
+  }
+
 }
 
 function storySlides() {
@@ -421,20 +509,104 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
+  enemyX = spawn.x + random(-100, 100); // spawn enemy a bit away from player
+  enemyY = spawn.y + random(-100, 100);
+
   page = 5;
 
+}
+
+function drawEnemy() {
+  let dx = playerX - enemyX;
+  let dy = playerY - enemyY;
+  let d  = dist(playerX, playerY, enemyX, enemyY);
+
+  if (d <= enemyAttackRange) {
+    enemyState = "attack";
+  } else if (d <= enemyDetectionRange) {
+    enemyState = "chase";
+  } else {
+    enemyState = "wander";
+  }
+
+  // changes direction based on player location
+  let dirRow;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    dirRow = dx > 0 ? 1 : 3;   // right / left
+  } else {
+    dirRow = dy > 0 ? 2 : 0;   // down / up
+  }
+
+  let moveX = 0;
+  let moveY = 0;
+
+  if (enemyState === "chase" && d > 0) {
+    moveX = (dx / d) * enemySpeed;
+    moveY = (dy / d) * enemySpeed;
+  } else if (enemyState === "wander") {
+    enemyMoveTimer--;
+    if (enemyMoveTimer <= 0) {
+      let angle = random(TWO_PI);
+      enemyDirX = cos(angle);
+      enemyDirY = sin(angle);
+      enemyMoveTimer = floor(random(30, 90));
+    }
+    moveX = enemyDirX * enemySpeed * 0.5;
+    moveY = enemyDirY * enemySpeed * 0.5;
+  } else if (enemyState === "attack") {
+    console.log("Enemy attacks!");
+  }
+
+  moveEnemy(moveX, moveY, dirRow);
+
+  let sx = currentFrameRat * RAT_FRAME_W;
+  let sy = RAT_ROW_Y[dirRow];
+  let sw = RAT_FRAME_W;
+  let sh = RAT_FRAME_H[dirRow];
+
+  image(rat1, enemyX, enemyY, sw, sh, sx, sy, sw, sh);
+
+  if (frameCount % 5 === 0) {
+    currentFrameRat++;
+    if (currentFrameRat >= 3) currentFrameRat = 0;
+  }
+}
+
+// enemy border mechanic
+function moveEnemy(moveX, moveY, dirRow) {
+  if (moveX === 0 && moveY === 0) return;
+
+  let nextX = enemyX + moveX;
+  let nextY = enemyY + moveY;
+
+  let w = RAT_FRAME_W;
+  let h = RAT_FRAME_H[dirRow];
+
+  if (!isWallTile(nextX, enemyY) &&
+      !isWallTile(nextX + w - 1, enemyY) &&
+      !isWallTile(nextX, enemyY + h - 1) &&
+      !isWallTile(nextX + w - 1, enemyY + h - 1)) {
+    enemyX = nextX;
+  }
+
+  if (!isWallTile(enemyX, nextY) &&
+      !isWallTile(enemyX + w - 1, nextY) &&
+      !isWallTile(enemyX, nextY + h - 1) &&
+      !isWallTile(enemyX + w - 1, nextY + h - 1)) {
+    enemyY = nextY;
+  }
 }
 
 function drawCat(player) {
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
-  image(player, playerX, playerY, frameWidth / 10, frameHeight / 10, sx, sy, frameWidth, frameHeight);
+  image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
 
-let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
-let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
-let left  = keyIsDown(LEFT_ARROW)  || keyIsDown(65);
-let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
+  let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
+  let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
+  let left  = keyIsDown(LEFT_ARROW)  || keyIsDown(65);
+  let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
   let moving = up || down || left || right;
 
   if (millis() - lastSwitch > (moving ? walkInterval : idleInterval)) {
@@ -442,20 +614,24 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
 
     let speed = (moving && (up || down) && (left || right)) ? playerSpeed * 0.707 : playerSpeed;
 
-    if (up)    playerY -= speed;
-    if (down)  playerY += speed;
+    let prevX = playerX;
+    let prevY = playerY;
+
     if (left)  playerX -= speed;
     if (right) playerX += speed;
+    if (collidesWithWall(playerX, playerY)) playerX = prevX;  
 
-    // diagonal will prioritize vertical movement
-    if (up)     frameCurrRow = 1;
-    else if (down) frameCurrRow = 0;
-    else if (right)   frameCurrRow = 3;
-    else if (left) frameCurrRow = 2;
+    if (up)    playerY -= speed;
+    if (down)  playerY += speed;
+    if (collidesWithWall(playerX, playerY)) playerY = prevY;
 
-    // boundary
-    playerX = constrain(playerX, 0, currentMap.width * 16 - frameWidth / 8);
-    playerY = constrain(playerY, 0, currentMap.height * 16 - frameHeight / 8);
+    if (up)          frameCurrRow = 1;
+    else if (down)   frameCurrRow = 0;
+    else if (right)  frameCurrRow = 3;
+    else if (left)   frameCurrRow = 2;
+
+    playerX = constrain(playerX, 0, currentMap.width * 16 * mapScale - SPRITE_W);
+    playerY = constrain(playerY, 0, currentMap.height * 16 * mapScale - SPRITE_H);
 
     if (moving) {
       if (currentFrame === 0) {
@@ -472,22 +648,62 @@ let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
   // print(frameCurrRow);
 }
 
-function gameStart() {
-  console.log("playerX:", playerX, "playerY:", playerY);
-  console.log("cam.x:", cam.x, "cam.y:", cam.y);
-  console.log("translate:", -cam.x, -cam.y);
+function drawSwap() {
 
-  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 - pageWidth);
-  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 - pageHeight);
+    for (let i = 0; i < droppedSize; i++) {
+      if (droppedInventory[i] != null) {
+        if (dist(playerX, playerY, droppedInventory[i].x, droppedInventory[i].y) <20) {
+          droppedInventory[i].selected = true;
+        } else {
+          droppedInventory[i].selected = false;
+        }
+        text(droppedInventory[i].x, 200, 220 + i * 20);
+        text(droppedInventory[i].y, 250, 220 + i * 20);
+        image(droppedInventory[i].image_display(), droppedInventory[i].x, droppedInventory[i].y, 20, 20);
+      }
+    }
+  }
+
+function gameStart() {
+
+  if (!currentMap) {
+    currentMap = mapData_nacho;
+    currentMapFloor = floorTileset;
+    currentMapWall = wallTileset;
+    const spawn = getSpawnPoint(currentMap);
+    playerX = spawn.x;
+    playerY = spawn.y;
+  }
+  
+  let targetCamX = playerX - pageWidth / 2;
+  let targetCamY = playerY - pageHeight / 2;
+
+  cam.x = lerp(cam.x, constrain(targetCamX, 0, currentMap.width * 16 * mapScale - pageWidth), 0.15);
+  cam.y = lerp(cam.y, constrain(targetCamY, 0, currentMap.height * 16 * mapScale - pageHeight), 0.15);
+
 
   push();
   translate(-cam.x, -cam.y);
   drawMap(currentMap, currentMapFloor, currentMapWall);
-  drawCat(cat_white);
+  drawSwap();
+  drawCat(skinChoice);
+  pop();
+
+
+  push();
+  translate(-cam.x, -cam.y);
+  drawEnemy();
   pop();
 
   IU(3, 100, 1, inventory1, inventory2);
   //addItem(heart);
+  if (g ==0){
+    addItem(swordNacho);
+    addItem(potionItem);
+    addItem(swordBlueCheese);
+    g++;
+  }
+  // IU(3, 100, 4, inventory1, inventory2);
 }
 
 function drawMap(map, floorTS, wallTS) {
@@ -501,21 +717,42 @@ function drawMap(map, floorTS, wallTS) {
       if (tileId === 0) continue;
       const col = i % mapCols;
       const row = Math.floor(i / mapCols);
-      const x = col * tileW;
-      const y = row * tileW;
+      const x = col * tileW * mapScale;
+      const y = row * tileW * mapScale;
       if (tileId >= 77) {
         const localID = tileId - 77;
         const srcX = (localID % 24) * tileW;
         const srcY = floor(localID / 24) * 32;
-        image(wallTS, x, y - 16, tileW, 32, srcX, srcY, tileW, 32);
+        image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
       } else {
         const localID = tileId - 1;
         const srcX = (localID % 7) * tileW;
         const srcY = floor(localID / 7) * tileW;
-        image(floorTS, x, y, tileW, tileW, srcX, srcY, tileW, tileW);
+        image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
       }
     }
   }
+}
+
+function isWallTile(worldX, worldY) {
+  const tileW = 16 * mapScale;
+  const col = Math.floor(worldX / tileW);
+  const row = Math.floor(worldY / tileW);
+  if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
+  
+  let hasFloor = false;
+  for (let layer of currentMap.layers) {
+    if (layer.type !== "tilelayer") continue;
+    const tileId = layer.data[row * currentMap.width + col];
+    if (tileId >= 77) return true;
+    if(tileId >= 1 && tileId <= 76) hasFloor = true;
+  }
+  return !hasFloor;
+}
+
+function collidesWithWall(X, Y) {
+  return isWallTile(X, Y) || isWallTile(X + SPRITE_W - 1, Y) ||
+         isWallTile(X, Y + SPRITE_H - 1) || isWallTile(X + SPRITE_W - 1, Y + SPRITE_H - 1);
 }
 
 function gameover() {
@@ -582,6 +819,17 @@ function victoryPage() {
   button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
 }
 
+function healthBarEnemy(x, y, health, maxHealth) {
+  fill(39, 28, 158);
+  rect(x+20, y, maxHealth * 2 +10, 20);
+  fill(255, 0, 0);
+  rect(x + 22.5, y + 2.5, health * 2, 15);
+  fill(183, 178, 237);
+  square(x, y, 20);
+  fill(0);
+  text(health, x+5, y+5);
+}
+
 //adds image item to inventory
 function addItem(item) {
       if (size < 3) {
@@ -589,34 +837,26 @@ function addItem(item) {
         size++;
     }
   }
-//removes image item from inventory
-function removeItem(item) {
-    for (let i = 0; i < size; i++) {
-      if (inventory2[i] === item) {
-        for (let j = i; j < size - 1; j++) {
-          inventory2[j] = inventory2[j + 1];
-        }
-        size--;
-        break;
-      }
-    }
-  }
+
+  
 
 class Item {
   // image: array of image not selected and image selected
   // selected: whether the item is currently selected in the inventory
   // data: any additional data about the item (e.g. health boost, damage, etc.)
-  constructor(image, selected, data) {
+  constructor(image, selected, data, x , y ) {
     this.image = image;
     this.selected = selected;
     this.data = data;
+    this.x = x;
+    this.y = y;
   }
 
   image_display() {
     if (this.selected) {
-      return image[1];
+      return this.image[1];
     } else {
-      return image[0];
+      return this.image[0];
     }
   }
 }
@@ -631,14 +871,118 @@ function IU(life, health, planet, inventory1, inventory2) {
   image(inventory1, 15, 350, inventory1.width/14, inventory1.height/14);
   image(level[planet - 1], 480, 10, level[planet - 1].width/5, level[planet - 1].height/5);
 
+  
 
   lives();
   healthBar();
+  selectedItem();
+  dropItem();
+  swapItem();
+  if (keyCode === ENTER) {
+    click = false;
+  } else {
+    click = true;
+  }
   inventory();
 
+  
+
+  function swapItem() {
+    var swapped = false;
+    
+        for (let i = 0; i < droppedSize; i++) {
+          
+          if (droppedInventory[i] != null && droppedInventory[i].selected && keyCode === ENTER && click) {
+            for (let j = 0; j < size; j++) {
+              if (inventory2[j].selected) {
+                inventory2[j].selected = false;
+                var temp = inventory2[j];
+                inventory2[j] = droppedInventory[i];
+                  droppedInventory[i] = temp;
+                  droppedInventory[i].x = playerX;
+                  droppedInventory[i].y = playerY;
+                swapped = true;
+                click = false;
+                break;
+              }
+              
+            }
+            
+          }
+          
+        }
+        if (!swapped && keyCode === ENTER && click) {
+          for (let i = 0; i < droppedSize; i++) {
+            if (droppedInventory[i] != null && droppedInventory[i].selected) {
+              addItem(droppedInventory[i]);
+              droppedInventory[i].selected = false;
+              droppedInventory[i] = null;
+            }
+          }
+        }
+    }
+  
+  //removes selected item from inventory when backspace is pressed and shifts remaining items over
+  function dropItem() {
+    if (keyCode === BACKSPACE) {
+      
+      for (let i = 0; i < size; i++) {
+        if (inventory2[i].selected) {
+          //text("drop item", 200, 200);
+          inventory2[i].selected = false;
+          droppedInventory[droppedSize] = inventory2[i];
+          droppedInventory[droppedSize].x = playerX;
+          droppedInventory[droppedSize].y = playerY;
+          text(droppedInventory[droppedSize].x, 200, 200);
+          droppedSize++;
+          for (let j = i; j < size - 1; j++) {
+            inventory2[j] = inventory2[j + 1];
+          }
+          inventory2[size - 1] = null;
+          size--;
+          break;
+        }
+      }
+    }
+  }
+  function selectedItem() {
+    if (keyCode === 49) {
+        if (inventory2[0] != null && size >= 1) {
+          inventory2[0].selected = true;
+        }
+        if (inventory2[1] != null && size >= 2) {
+          inventory2[1].selected = false;
+        }
+        if (inventory2[2] != null && size >= 3) {
+          inventory2[2].selected = false;
+        }
+    } else if (keyCode === 50) {
+      if (inventory2[0] != null && size >= 1) {
+        inventory2[0].selected = false;
+      }
+      if (inventory2[1] != null && size >= 2) { 
+        inventory2[1].selected = true;
+      }
+      if (inventory2[2] != null && size >= 3) {
+        inventory2[2].selected = false;
+      }
+
+    } else if (keyCode === 51) {
+      if (inventory2[0] != null && size >= 1) {
+        inventory2[0].selected = false;
+      }
+      if (inventory2[1] != null && size >= 2) {
+        inventory2[1].selected = false;
+      }
+      if (inventory2[2] != null && size >= 3) { 
+        inventory2[2].selected = true;
+      }
+    }
+  }
   function inventory() {
     for (let i = 0; i < size; i++) {
-      image(inventory2[i], 25 + i * 32, 360, inventory2[i].width/25, inventory2[i].height/25);
+      var img = inventory2[i].image_display();
+      image(img, 25 + i * 32, 357, img.width/1.5, img.height/1.5);
     }
   }
   function lives() {
@@ -663,4 +1007,5 @@ function IU(life, health, planet, inventory1, inventory2) {
 function draw() {
   background(220);
   screen(page);
+
 }
