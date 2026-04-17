@@ -462,8 +462,4 @@ const mapData_nacho =
  "type":"map",
  "version":"1.10",
  "width":100
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
