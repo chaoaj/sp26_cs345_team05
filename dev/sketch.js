@@ -277,7 +277,7 @@ function button(image1, x, y, w, h) {
   }
   if (mouseIsPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
     button_beep.play();
-    
+
     if (image1 === start_game2) {
       page = 2;
     } else if (image1 === skins2) {
