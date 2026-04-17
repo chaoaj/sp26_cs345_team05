@@ -186,7 +186,14 @@ function preload() {
   level_blueCheese = loadImage("assets/level_blueCheese.png");
   level_parmesan = loadImage("assets/level_parmesan.png");
 
-  // homepage_sound = loadSound("assets/homepage_sound.mp3");
+  homepage_sound = loadSound("assets/homepage_sound.mp3");
+  level_theme = loadSound("assets/Game_SoundTrack.mp3");
+  potion_sound = loadSound("assets/Potion_sound.mp3");
+  overmusic = loadSound("assets/GameOver.mp3");
+  slides_track = loadSound("assets/slides1.0.mp3");
+  sword_sound = loadSound("assets/sword_effect.mp3");
+  victory_music = loadSound("assets/Victory.mp3");
+  
 
   sword_nacho = loadImage("assets/sword_nacho.png");
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
@@ -238,7 +245,7 @@ function setup() {
   swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
   potionItem = new Item([potion, potion_selected], false, { health: 50 });
   
-  // homepage_sound.play();
+  homepage_sound.play();
 }
 
 
@@ -447,6 +454,13 @@ for (let i = 0; i < 4; i++) {
 function storySlides() {
   if (!backstoryActive) {
     startBackstory();
+  }
+  if (!slides_track.isPlaying()) {
+    slides_track.loop();
+  }
+
+  if (homepage_sound.isPlaying()) {
+    homepage_sound.stop();
   }
 
   // Draw current gif fullscreen
@@ -665,7 +679,16 @@ function drawSwap() {
   }
 
 function gameStart() {
+  if (!level_theme.isPlaying()) {
+    level_theme.loop();
+  }
 
+  if (homepage_sound.isPlaying()) {
+    homepage_sound.stop();
+  }
+  if (slides_track.isPlaying()) {
+    slides_track.stop();
+  }
   if (!currentMap) {
     currentMap = mapData_nacho;
     currentMapFloor = floorTileset;
@@ -757,7 +780,12 @@ function collidesWithWall(X, Y) {
 
 function gameover() {
   scale = 1;
-
+  if (!overmusic.isPlaying()) {
+    overmusic.play();
+  }
+  if (level_theme.isPlaying()) {
+    level_theme.stop();
+  }
   image(
     homepage_background,
     0, 0,
@@ -789,7 +817,13 @@ function gameover() {
 
 function victoryPage() {
   scale = 1;
+  if (!victory_music.isPlaying()) {
+    victory_music.play();
+  }
 
+  if (level_theme.isPlaying()) {
+    level_theme.stop();
+  }
   image(
     homepage_background,
     0, 0,
