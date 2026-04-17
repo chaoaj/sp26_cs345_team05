@@ -62,7 +62,7 @@
 ]; */
 
 var g = 0;
-var page = 5;
+var page = 0;
 var scale = 1;
 
 const pageWidth = 600;
@@ -229,8 +229,8 @@ function setup() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  enemyX = spawn.x + 100; 
-  enemyY = spawn.y + 50;
+  enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
+  enemyY = spawn.y + random(-50, 50);
 
   swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
   swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
@@ -509,9 +509,6 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  enemyX = spawn.x + random(-100, 100); // spawn enemy a bit away from player
-  enemyY = spawn.y + random(-100, 100);
-
   page = 5;
 
 }
@@ -693,6 +690,7 @@ function gameStart() {
   push();
   translate(-cam.x, -cam.y);
   drawEnemy();
+
   pop();
 
   IU(3, 100, 1, inventory1, inventory2);
