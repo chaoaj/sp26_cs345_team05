@@ -517,6 +517,7 @@ function onBackstoryComplete() {
 }
 
 function drawEnemy() {
+  healthBarEnemy(enemyX, enemyY - 5, 100, 100); // example health bar above enemy
   let dx = playerX - enemyX;
   let dy = playerY - enemyY;
   let d  = dist(playerX, playerY, enemyX, enemyY);
@@ -821,13 +822,14 @@ function victoryPage() {
 
 function healthBarEnemy(x, y, health, maxHealth) {
   fill(39, 28, 158);
-  rect(x+20, y, maxHealth * 2 +10, 20);
+  rect(x+10, y, maxHealth * 0.3 +2, 8);
   fill(255, 0, 0);
-  rect(x + 22.5, y + 2.5, health * 2, 15);
+  rect(x + 10.5, y + 1.5, health * 0.3, 5);
   fill(183, 178, 237);
-  square(x, y, 20);
+  square(x, y, 8);
   fill(0);
-  text(health, x+5, y+5);
+  textSize(4);
+  text(health, x+0.5, y+5);
 }
 
 //adds image item to inventory
