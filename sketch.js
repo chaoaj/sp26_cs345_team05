@@ -62,11 +62,11 @@
 ]; */
 
 var g = 0;
-var page = 1;
+var page = 5;
 var scale = 1;
 
-let pageWidth = 600;
-let pageHeight = 400;
+const pageWidth = 600;
+const pageHeight = 400;
 
 let homepageX = 0;
 let homepageY = 0;
@@ -76,7 +76,6 @@ let currentFrame = 0;
 let frameCurrRow = 0;
 let frameWidth = 687;
 let frameHeight = 717;
-<<<<<<< HEAD
 const mapScale = 2;
 
 // skins page stuff:
@@ -88,13 +87,8 @@ let playerX;
 let playerY;
 const SPRITE_W = 16 * mapScale;
 const SPRITE_H = 16 * mapScale;
-=======
 
-let playerX;
-let playerY;
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
-
-let playerSpeed = 10;
+let playerSpeed = 8;
 
 let frontR = true;
 let walkToggle = false;
@@ -102,12 +96,8 @@ let walkToggle = false;
 // frame change millisecond logic
 let lastSwitch = 0;
 let idleInterval = 300; // milliseconds
-let walkInterval = 120;
+let walkInterval = 100;
 
-<<<<<<< HEAD
-=======
-
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
 // slideshow settings
 let currentSlide = 0;
 let slideAlpha = 0;          // 0–255 fade value
@@ -120,12 +110,9 @@ let backstoryActive = false;
 
 let size = 0;
 var inventory2 = [];
-<<<<<<< HEAD
 var droppedInventory = [];
 var droppedSize = 0;
 var click = true;
-=======
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
 
 let floorTileset, wallTileset;
 let cam = { x: 0, y: 0 };
@@ -135,9 +122,8 @@ let currentMapWall;
 let currentPlanet = 1;
 let completedPlanets = [];
 
-<<<<<<< HEAD
 let enemyState = "wander"; // "wander" | "chase" | "attack"
-let enemyX 
+let enemyX;
 let enemyY;
 let enemySpeed = 0.7;
 let enemyDetectionRange = 150;
@@ -146,80 +132,51 @@ let enemyMoveTimer = 0;
 let enemyDirX = 1;
 let enemyDirY = 0;
 
-=======
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
+let currentFrameRat = 0;
+const RAT_FRAME_W = 32;
+const RAT_FRAME_H = [43, 21, 43, 21]; 
+const RAT_ROW_Y = [0, 43, 64, 107];   
+
+
 
 function preload() {
-  homepage_background = loadImage("assets/homepage_background.png");
-  homepage_cat = loadImage("assets/cat_homepage.png");
-  title1 = loadImage("assets/title1.png");
-  title2 = loadImage("assets/title2.png");
+  homepage_background = loadImage("dev/assets/homepage_background.png");
+  homepage_cat = loadImage("dev/assets/cat_homepage.png");
+  title1 = loadImage("dev/assets/title1.png");
+  title2 = loadImage("dev/assets/title2.png");
 
-  start_game1 = loadImage("assets/start_game1.png");
-  start_game2 = loadImage("assets/start_game2.png");
+  start_game1 = loadImage("dev/assets/start_game1.png");
+  start_game2 = loadImage("dev/assets/start_game2.png");
 
-  skins1 = loadImage("assets/skins1.png");
-  skins2 = loadImage("assets/skins2.png");
+  skins1 = loadImage("dev/assets/skins1.png");
+  skins2 = loadImage("dev/assets/skins2.png");
 
-  story1 = loadImage("assets/story1.gif");
-  story2 = loadImage("assets/story2.gif");
-  story3 = loadImage("assets/story3.gif");
-  story4 = loadImage("assets/story4.gif");
+  story1 = loadImage("dev/assets/story1.gif");
+  story2 = loadImage("dev/assets/story2.gif");
+  story3 = loadImage("dev/assets/story3.gif");
+  story4 = loadImage("dev/assets/story4.gif");
 
-  return1 = loadImage("assets/return1.png");
-  return2 = loadImage("assets/return2.png");
+  return1 = loadImage("dev/assets/return1.png");
+  return2 = loadImage("dev/assets/return2.png");
 
-  game_over1 = loadImage("assets/game_over1.png");
-  game_over2 = loadImage("assets/game_over2.png");
+  game_over1 = loadImage("dev/assets/game_over1.png");
+  game_over2 = loadImage("dev/assets/game_over2.png");
 
-  victory1 = loadImage("assets/victory1.png");
-  victory2 = loadImage("assets/victory2.png");
+  victory1 = loadImage("dev/assets/victory1.png");
+  victory2 = loadImage("dev/assets/victory2.png");
 
-<<<<<<< HEAD
-  skip1 = loadImage("assets/skip1.png");
-  skip2 = loadImage("assets/skip2.png");
-
-  cat_orange = loadImage("assets/sprite_sheet_orange.png");
-  cat_white = loadImage("assets/sprite_sheet_white.png");
-  cat_tan = loadImage("assets/sprite_sheet_tan.png");
-  cat_charzard = loadImage("assets/sprite_sheet_charzard.png");
-
-  skinChoice = cat_tan;
-  skin_selection = loadImage("assets/skin_select_button.png");
-
-  icu = loadImage("assets/interface.png");
-  heart = loadImage("assets/heart.png");
-  inventory1 = loadImage("assets/inventory.png");
-  level_nacho = loadImage("assets/level_nacho.png");
-  level_cheeseCake = loadImage("assets/level_cheesecake.png");
-  level_blueCheese = loadImage("assets/level_blueCheese.png");
-  level_parmesan = loadImage("assets/level_parmesan.png");
-
-  // homepage_sound = loadSound("assets/homepage_sound.mp3");
-
-  sword_nacho = loadImage("assets/sword_nacho.png");
-  sword_blueCheese = loadImage("assets/sword_blueCheese.png");
-  sword_parmesan = loadImage("assets/sword_parmesan.png");
-  sword_cheeseCake = loadImage("assets/sword_cheeseCake.png");
-  potion = loadImage("assets/Potion.png");
-  sword_nacho_selected = loadImage("assets/sword_nacho_selected.png");
-  sword_blueCheese_selected = loadImage("assets/sword_blueCheese_selected.png");
-  sword_parmesan_selected = loadImage("assets/sword_parmesan_selected.png");
-  sword_cheeseCake_selected = loadImage("assets/sword_cheeseCake_selected.png");
-  potion_selected = loadImage("assets/Potion_selected.png");
-
-  // temp map
-  map1 = loadImage("assets/map.png");
-
-  floorTileset = loadImage("assets/atlas_floor-16x16.png");
-  wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
-=======
   skip1 = loadImage("dev/assets/skip1.png");
   skip2 = loadImage("dev/assets/skip2.png");
 
   cat_orange = loadImage("dev/assets/sprite_sheet_orange.png");
   cat_white = loadImage("dev/assets/sprite_sheet_white.png");
   cat_tan = loadImage("dev/assets/sprite_sheet_tan.png");
+  cat_charzard = loadImage("dev/assets/sprite_sheet_charzard.png");
+
+  skinChoice = cat_tan;
+  skin_selection = loadImage("dev/assets/skin_select_button.png");
+
+  rat1 = loadImage("dev/assets/rat.png");
 
   icu = loadImage("dev/assets/interface.png");
   heart = loadImage("dev/assets/heart.png");
@@ -235,14 +192,15 @@ function preload() {
   sword_blueCheese = loadImage("dev/assets/sword_blueCheese.png");
   sword_parmesan = loadImage("dev/assets/sword_parmesan.png");
   sword_cheeseCake = loadImage("dev/assets/sword_cheeseCake.png");
-  // potion = loadImage("dev/assets/potion.png");
-
-  // temp map
-  map1 = loadImage("dev/assets/map.png");
+  potion = loadImage("dev/assets/Potion.png");
+  sword_nacho_selected = loadImage("dev/assets/sword_nacho_selected.png");
+  sword_blueCheese_selected = loadImage("dev/assets/sword_blueCheese_selected.png");
+  sword_parmesan_selected = loadImage("dev/assets/sword_parmesan_selected.png");
+  sword_cheeseCake_selected = loadImage("dev/assets/sword_cheeseCake_selected.png");
+  potion_selected = loadImage("dev/assets/Potion_selected.png");
 
   floorTileset = loadImage("dev/assets/atlas_floor-16x16.png");
   wallTileset = loadImage("dev/assets/atlas_walls_high-16x32.png");
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
 }
 
 function getSpawnPoint(map) {
@@ -250,11 +208,7 @@ function getSpawnPoint(map) {
     if (layer.type !== "objectgroup") continue;
     for (let obj of layer.objects) {
       if (obj.name === "playerSpawn") {
-<<<<<<< HEAD
         return { x: obj.x * mapScale, y: obj.y * mapScale};
-=======
-        return { x: obj.x, y: obj.y };
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
       }
     }
   }
@@ -274,19 +228,16 @@ function setup() {
   const spawn = getSpawnPoint(currentMap);
   playerX = spawn.x;
   playerY = spawn.y;
-<<<<<<< HEAD
 
-  enemyX = spawn.x + 100; // spawn enemy a bit away from player
-  enemyY = spawn.y + 100;
-  
+  enemyX = spawn.x + 100; 
+  enemyY = spawn.y + 50;
+
   swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
   swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
   swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 });
   swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
   potionItem = new Item([potion, potion_selected], false, { health: 50 });
-=======
   
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
   // homepage_sound.play();
 }
 
@@ -558,69 +509,17 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-<<<<<<< HEAD
-  enemyX = spawn.x + 100; // spawn enemy a bit away from player
-  enemyY = spawn.y + 100;
+  enemyX = spawn.x + random(-100, 100); // spawn enemy a bit away from player
+  enemyY = spawn.y + random(-100, 100);
 
   page = 5;
 
-=======
-  page = 5;
-
-}
-
-function drawCat(player) {
-  let sx = currentFrame * frameWidth;
-  let sy = frameHeight * frameCurrRow;
-
-  image(player, playerX, playerY, frameWidth / 10, frameHeight / 10, sx, sy, frameWidth, frameHeight);
-
-let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
-let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
-let left  = keyIsDown(LEFT_ARROW)  || keyIsDown(65);
-let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
-  let moving = up || down || left || right;
-
-  if (millis() - lastSwitch > (moving ? walkInterval : idleInterval)) {
-    lastSwitch = millis();
-
-    let speed = (moving && (up || down) && (left || right)) ? playerSpeed * 0.707 : playerSpeed;
-
-    if (up)    playerY -= speed;
-    if (down)  playerY += speed;
-    if (left)  playerX -= speed;
-    if (right) playerX += speed;
-
-    // diagonal will prioritize vertical movement
-    if (up)     frameCurrRow = 1;
-    else if (down) frameCurrRow = 0;
-    else if (right)   frameCurrRow = 3;
-    else if (left) frameCurrRow = 2;
-
-    // boundary
-    playerX = constrain(playerX, 0, currentMap.width * 16 - frameWidth / 8);
-    playerY = constrain(playerY, 0, currentMap.height * 16 - frameHeight / 8);
-
-    if (moving) {
-      if (currentFrame === 0) {
-        currentFrame = walkToggle ? 1 : 2;
-        walkToggle = !walkToggle;
-      } else {
-        currentFrame = 0;
-      }
-    } else {
-      currentFrame = frontR ? 3 : 0;
-      frontR = !frontR;
-    }
-  }
-  // print(frameCurrRow);
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
 }
 
 function drawEnemy() {
   let dx = playerX - enemyX;
   let dy = playerY - enemyY;
-  let d = dist(playerX, playerY, enemyX, enemyY);
+  let d  = dist(playerX, playerY, enemyX, enemyY);
 
   if (d <= enemyAttackRange) {
     enemyState = "attack";
@@ -630,34 +529,72 @@ function drawEnemy() {
     enemyState = "wander";
   }
 
-  if (enemyState === "chase") {
-    if (d > 0) {
-    enemyX += (dx / d) * enemySpeed;
-    enemyY += (dy / d) * enemySpeed;
-    } 
+  // changes direction based on player location
+  let dirRow;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    dirRow = dx > 0 ? 1 : 3;   // right / left
+  } else {
+    dirRow = dy > 0 ? 2 : 0;   // down / up
   }
 
-  if (enemyState === "wander") {
+  let moveX = 0;
+  let moveY = 0;
+
+  if (enemyState === "chase" && d > 0) {
+    moveX = (dx / d) * enemySpeed;
+    moveY = (dy / d) * enemySpeed;
+  } else if (enemyState === "wander") {
     enemyMoveTimer--;
     if (enemyMoveTimer <= 0) {
-    // pick a random direction and move for a random duration
       let angle = random(TWO_PI);
       enemyDirX = cos(angle);
       enemyDirY = sin(angle);
-      enemyMoveTimer = floor(random(30, 90)); // move for 0.5 to 1.5 seconds
+      enemyMoveTimer = floor(random(30, 90));
     }
-    enemyX += enemyDirX * enemySpeed * 0.5; // wander at half speed
-    enemyY += enemyDirY * enemySpeed * 0.5;
-  }
-
-  if (enemyState === "attack") {
-    // logic for attacking the player (e.g. reducing health)
-    // this is a placeholder and can be expanded with actual attack mechanics
+    moveX = enemyDirX * enemySpeed * 0.5;
+    moveY = enemyDirY * enemySpeed * 0.5;
+  } else if (enemyState === "attack") {
     console.log("Enemy attacks!");
   }
 
-  fill(255, 0, 0);
-  rect(enemyX, enemyY, frameWidth / 10, frameHeight / 10);
+  moveEnemy(moveX, moveY, dirRow);
+
+  let sx = currentFrameRat * RAT_FRAME_W;
+  let sy = RAT_ROW_Y[dirRow];
+  let sw = RAT_FRAME_W;
+  let sh = RAT_FRAME_H[dirRow];
+
+  image(rat1, enemyX, enemyY, sw, sh, sx, sy, sw, sh);
+
+  if (frameCount % 5 === 0) {
+    currentFrameRat++;
+    if (currentFrameRat >= 3) currentFrameRat = 0;
+  }
+}
+
+// enemy border mechanic
+function moveEnemy(moveX, moveY, dirRow) {
+  if (moveX === 0 && moveY === 0) return;
+
+  let nextX = enemyX + moveX;
+  let nextY = enemyY + moveY;
+
+  let w = RAT_FRAME_W;
+  let h = RAT_FRAME_H[dirRow];
+
+  if (!isWallTile(nextX, enemyY) &&
+      !isWallTile(nextX + w - 1, enemyY) &&
+      !isWallTile(nextX, enemyY + h - 1) &&
+      !isWallTile(nextX + w - 1, enemyY + h - 1)) {
+    enemyX = nextX;
+  }
+
+  if (!isWallTile(enemyX, nextY) &&
+      !isWallTile(enemyX + w - 1, nextY) &&
+      !isWallTile(enemyX, nextY + h - 1) &&
+      !isWallTile(enemyX + w - 1, nextY + h - 1)) {
+    enemyY = nextY;
+  }
 }
 
 function drawCat(player) {
@@ -728,11 +665,7 @@ function drawSwap() {
   }
 
 function gameStart() {
-  console.log("playerX:", playerX, "playerY:", playerY);
-  console.log("cam.x:", cam.x, "cam.y:", cam.y);
-  console.log("translate:", -cam.x, -cam.y);
 
-<<<<<<< HEAD
   if (!currentMap) {
     currentMap = mapData_nacho;
     currentMapFloor = floorTileset;
@@ -742,17 +675,16 @@ function gameStart() {
     playerY = spawn.y;
   }
   
-  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
-  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
-=======
-  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 - pageWidth);
-  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 - pageHeight);
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
+  let targetCamX = playerX - pageWidth / 2;
+  let targetCamY = playerY - pageHeight / 2;
+
+  cam.x = lerp(cam.x, constrain(targetCamX, 0, currentMap.width * 16 * mapScale - pageWidth), 0.15);
+  cam.y = lerp(cam.y, constrain(targetCamY, 0, currentMap.height * 16 * mapScale - pageHeight), 0.15);
+
 
   push();
   translate(-cam.x, -cam.y);
   drawMap(currentMap, currentMapFloor, currentMapWall);
-<<<<<<< HEAD
   drawSwap();
   drawCat(skinChoice);
   pop();
@@ -761,23 +693,17 @@ function gameStart() {
   push();
   translate(-cam.x, -cam.y);
   drawEnemy();
-=======
-  drawCat(cat_white);
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
   pop();
 
   IU(3, 100, 1, inventory1, inventory2);
   //addItem(heart);
-<<<<<<< HEAD
   if (g ==0){
     addItem(swordNacho);
     addItem(potionItem);
     addItem(swordBlueCheese);
     g++;
   }
-  IU(3, 100, 4, inventory1, inventory2);
-=======
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
+  // IU(3, 100, 4, inventory1, inventory2);
 }
 
 function drawMap(map, floorTS, wallTS) {
@@ -791,36 +717,22 @@ function drawMap(map, floorTS, wallTS) {
       if (tileId === 0) continue;
       const col = i % mapCols;
       const row = Math.floor(i / mapCols);
-<<<<<<< HEAD
       const x = col * tileW * mapScale;
       const y = row * tileW * mapScale;
-=======
-      const x = col * tileW;
-      const y = row * tileW;
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
       if (tileId >= 77) {
         const localID = tileId - 77;
         const srcX = (localID % 24) * tileW;
         const srcY = floor(localID / 24) * 32;
-<<<<<<< HEAD
         image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
-=======
-        image(wallTS, x, y - 16, tileW, 32, srcX, srcY, tileW, 32);
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
       } else {
         const localID = tileId - 1;
         const srcX = (localID % 7) * tileW;
         const srcY = floor(localID / 7) * tileW;
-<<<<<<< HEAD
         image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-=======
-        image(floorTS, x, y, tileW, tileW, srcX, srcY, tileW, tileW);
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
       }
     }
   }
 }
-<<<<<<< HEAD
 
 function isWallTile(worldX, worldY) {
   const tileW = 16 * mapScale;
@@ -842,8 +754,6 @@ function collidesWithWall(X, Y) {
   return isWallTile(X, Y) || isWallTile(X + SPRITE_W - 1, Y) ||
          isWallTile(X, Y + SPRITE_H - 1) || isWallTile(X + SPRITE_W - 1, Y + SPRITE_H - 1);
 }
-=======
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
 
 function gameover() {
   scale = 1;
@@ -909,7 +819,6 @@ function victoryPage() {
   button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
 }
 
-<<<<<<< HEAD
 function healthBarEnemy(x, y, health, maxHealth) {
   fill(39, 28, 158);
   rect(x+20, y, maxHealth * 2 +10, 20);
@@ -921,8 +830,6 @@ function healthBarEnemy(x, y, health, maxHealth) {
   text(health, x+5, y+5);
 }
 
-=======
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
 //adds image item to inventory
 function addItem(item) {
       if (size < 3) {
@@ -930,54 +837,26 @@ function addItem(item) {
         size++;
     }
   }
-<<<<<<< HEAD
 
   
-=======
-//removes image item from inventory
-function removeItem(item) {
-    for (let i = 0; i < size; i++) {
-      if (inventory2[i] === item) {
-        for (let j = i; j < size - 1; j++) {
-          inventory2[j] = inventory2[j + 1];
-        }
-        size--;
-        break;
-      }
-    }
-  }
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
 
 class Item {
   // image: array of image not selected and image selected
   // selected: whether the item is currently selected in the inventory
   // data: any additional data about the item (e.g. health boost, damage, etc.)
-<<<<<<< HEAD
   constructor(image, selected, data, x , y ) {
     this.image = image;
     this.selected = selected;
     this.data = data;
     this.x = x;
     this.y = y;
-=======
-  constructor(image, selected, data) {
-    this.image = image;
-    this.selected = selected;
-    this.data = data;
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
   }
 
   image_display() {
     if (this.selected) {
-<<<<<<< HEAD
       return this.image[1];
     } else {
       return this.image[0];
-=======
-      return image[1];
-    } else {
-      return image[0];
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
     }
   }
 }
@@ -992,7 +871,6 @@ function IU(life, health, planet, inventory1, inventory2) {
   image(inventory1, 15, 350, inventory1.width/14, inventory1.height/14);
   image(level[planet - 1], 480, 10, level[planet - 1].width/5, level[planet - 1].height/5);
 
-<<<<<<< HEAD
   
 
   lives();
@@ -1105,16 +983,6 @@ function IU(life, health, planet, inventory1, inventory2) {
     for (let i = 0; i < size; i++) {
       var img = inventory2[i].image_display();
       image(img, 25 + i * 32, 357, img.width/1.5, img.height/1.5);
-=======
-
-  lives();
-  healthBar();
-  inventory();
-
-  function inventory() {
-    for (let i = 0; i < size; i++) {
-      image(inventory2[i], 25 + i * 32, 360, inventory2[i].width/25, inventory2[i].height/25);
->>>>>>> a4c6eebbea4bb5512621e691169784e2b673adac
     }
   }
   function lives() {
