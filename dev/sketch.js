@@ -461,6 +461,7 @@ function storySlides() {
     startBackstory();
   }
   if (!slides_track.isPlaying()) {
+    slides_track.setVolume(0.4);
     slides_track.loop();
   }
 
@@ -855,6 +856,7 @@ function drawSwap() {
 
 function gameStart() {
   if (!level_theme.isPlaying()) {
+    level_theme.setVolume(0.2);
     level_theme.loop();
   }
 
@@ -979,7 +981,7 @@ function collidesWithWall(X, Y) {
 function gameover() {
   scale = 1;
   if (!overmusic.isPlaying()) {
-    overmusic.play();
+    overmusic.loop();
   }
   if (level_theme.isPlaying()) {
     level_theme.stop();
@@ -1016,7 +1018,7 @@ function gameover() {
 function victoryPage() {
   scale = 1;
   if (!victory_music.isPlaying()) {
-    victory_music.play();
+    victory_music.loop();
   }
 
   if (level_theme.isPlaying()) {
