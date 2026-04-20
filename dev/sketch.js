@@ -132,6 +132,9 @@ let enemyMoveTimer = 0;
 let enemyDirX = 1;
 let enemyDirY = 0;
 
+const ENEMY_ATTACK = 10;
+const PLAYER_ATTACK = 10;
+
 let currentFrameRat = 0;
 const RAT_FRAME_W = 32;
 const RAT_FRAME_H = [43, 21, 43, 21]; 
@@ -232,11 +235,11 @@ function setup() {
   enemyX = spawn.x + 100; 
   enemyY = spawn.y + 50;
 
-  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
-  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
-  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 });
-  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
-  potionItem = new Item([potion, potion_selected], false, { health: 50 });
+  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 , health: 0 });
+  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 , health: 0});
+  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 });
+  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 });
+  potionItem = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   
   // homepage_sound.play();
 }
@@ -820,6 +823,7 @@ function victoryPage() {
   button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
 }
 
+
 function healthBarEnemy(x, y, health, maxHealth) {
   fill(39, 28, 158);
   rect(x+10, y, maxHealth * 0.3 +2, 8);
@@ -830,6 +834,18 @@ function healthBarEnemy(x, y, health, maxHealth) {
   fill(0);
   textSize(4);
   text(health, x+0.5, y+5);
+}
+
+//returns player attack damage based on selected item in inventory, defaults to base attack if no item selected
+function playerAttack() {
+  var attack = 0;
+  for (let i = 0; i < size; i++) {
+    if (inventory2[i] != null && inventory2[i].selected) {
+      attack = inventory2[i].data.damage;
+        
+    }
+  }
+  return PLAYER_ATTACK + attack;
 }
 
 //adds image item to inventory
@@ -880,6 +896,7 @@ function IU(life, health, planet, inventory1, inventory2) {
   selectedItem();
   dropItem();
   swapItem();
+  usePotion();
   if (keyCode === ENTER) {
     click = false;
   } else {
@@ -887,6 +904,19 @@ function IU(life, health, planet, inventory1, inventory2) {
   }
   inventory();
 
+  function usePotion() {
+    for (let i = 0; i < size; i++) {
+      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT) {
+        health = min(health + inventory2[i].data.health, 100);
+        for (let j = i; j < size - 1; j++) {
+          inventory2[j] = inventory2[j + 1];
+        }
+        inventory2[size - 1] = null;
+        size--;
+        break;
+      }
+    }
+  }
   
 
   function swapItem() {
