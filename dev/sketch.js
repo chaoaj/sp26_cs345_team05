@@ -63,7 +63,7 @@
 
 var planet = 1;
 var g = 0;
-var page = 3;
+var page = 0;
 var scale = 1;
 
 const pageWidth = 600;
@@ -210,7 +210,7 @@ function preload() {
   slides_track = loadSound("assets/slides1.0.mp3");
   sword_sound = loadSound("assets/sword_effect.mp3");
   victory_music = loadSound("assets/Victory.mp3");
-  openchest_sound = loadSound("assets/tp_chest_open.mp3");
+  openchestSound = loadSound("assets/tp_chest_open.mp3");
 
   button_beep = loadSound("assets/button_beep.mp3");
   
@@ -348,8 +348,8 @@ function homePage() {
 
   if (!homepage_sound.isPlaying()) {
     homepage_sound.loop();
+    
   }
-
   if (mouseX > pageWidth/2 && homepageX < 0) {
     homepageX += backgroundMoveSpeed;
   } else  if (mouseX < pageWidth/2 && mouseX != 0 && homepageX > -pageWidth / 50) {
@@ -694,6 +694,10 @@ function drawChests() {
 
       if (keyIsDown(69)) {
         chest.opened = true;
+
+        if (openchestSound) {
+          openchestSound.play();
+        }
         const chestLayer = currentMap.layers.find(l => l.name === "chests");
         if (chestLayer) {
           const idx = chest.tileRow * currentMap.width + chest.tileCol;
