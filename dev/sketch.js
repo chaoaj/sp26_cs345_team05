@@ -65,6 +65,7 @@ var planet = 1;
 var g = 0;
 var page = 0;
 var scale = 1;
+var lives = 3;
 
 const pageWidth = 600;
 const pageHeight = 400;
@@ -255,6 +256,9 @@ function setup() {
   const spawn = getSpawnPoint(currentMap);
   playerX = spawn.x;
   playerY = spawn.y;
+
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
   enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
   enemyY = spawn.y + random(-100, 100);
@@ -561,8 +565,11 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  page = 5;
+  // Initialize camera directly at player position — no lerp delay
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
+  page = 5;
 }
 
 function initMapObjects(map) {
@@ -1004,9 +1011,15 @@ function gameStart() {
   drawEnemy();
   pop();
 
-
-  IU(3, playerHealth, 1, inventory1, inventory2);
-
+  
+  IU(lives, playerHealth, inventory1, inventory2);
+  if (playerHealth <= 0 && lives <= 0) {
+    page = 3; // game over
+  } else if (playerHealth <= 0) {
+    lives--;
+    playerHealth = 100;
+    page = 3; // game over
+  }
   if (g == 0) {
     initMapObjects(currentMap);
     console.log("spikeWalls:", spikeWalls.length);
@@ -1285,7 +1298,7 @@ function IU(life, health, inventory1, inventory2) {
         text("shift to use potion", 20, 395);
        }
       if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT) {
-        health = min(health + inventory2[i].data.health, 100);
+        playerHealth = min(playerHealth + inventory2[i].data.health, 100);
         for (let j = i; j < size - 1; j++) {
           inventory2[j] = inventory2[j + 1];
         }
@@ -1446,5 +1459,4 @@ function IU(life, health, inventory1, inventory2) {
 function draw() {
   background(220);
   screen(page);
-
 }
