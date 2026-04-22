@@ -194,12 +194,13 @@ function preload() {
   level_parmesan = loadImage("dev/assets/level_parmesan.png");
 
   homepage_sound = loadSound("dev/assets/homepage_sound.mp3");
-  level_theme = loadSound("dev/assets/Game_Soundtrack.mp3");
+  level_theme = loadSound("dev/assets/Game_SoundtrackUpdated.mp3");
   potion_sound = loadSound("dev/assets/Potion_sound.mp3");
   overmusic = loadSound("dev/assets/GameOver.mp3");
   slides_track = loadSound("dev/assets/Slides1.0.mp3");
   sword_sound = loadSound("dev/assets/sword_effect.mp3");
   victory_music = loadSound("dev/assets/Victory.mp3");
+  openchest_sound = loadSound("dev/assets/tp_chest_open.mp3");
 
   button_beep = loadSound("dev/assets/button_beep.mp3");
   
