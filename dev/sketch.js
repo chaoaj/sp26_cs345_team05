@@ -137,13 +137,14 @@ let enemyX;
 let enemyY;
 let enemySpeed = 0.7;
 let enemyDetectionRange = 150;
-let enemyAttackRange = 30;
+let enemyAttackRange = 25;
 let enemyMoveTimer = 0;
 let enemyDirX = 1;
 let enemyDirY = 0;
 
 let enemyHealth = 100;
 let playerHealth = 100;
+let attackCooldown = 0;
 
 const ENEMY_ATTACK = 10;
 const PLAYER_ATTACK = 10;
@@ -792,11 +793,15 @@ function drawEnemy() {
     if (currentFrameRat >= 3) currentFrameRat = 0;
   }
 
-  if (key == " " && enemyState === "attack") {
-    if (d <= enemyAttackRange) {
-      playerHealth -= ENEMY_ATTACK;
+  if (enemyState === "attack" && attackCooldown <= 0) {
+    if (playerHealth <= 0) {
+      playerHealth = 0;
+    } else {
+      playerHealth -= PLAYER_ATTACK;
+      attackCooldown = 60; // Set cooldown period
     }
   }
+  attackCooldown--; // Decrease cooldown each frame
 }
 
 // enemy border mechanic
@@ -834,7 +839,6 @@ function getEquippedItem() {
 }
 
 function drawCat(player) {
-  healthBarEnemy(playerX, playerY - 5, playerHealth, 100); // example health bar above cat
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
@@ -924,12 +928,16 @@ function drawCat(player) {
       frontR = !frontR;
     }
   }
-  if (enemyState === "attack") {
-    if (playerHealth <= 0) {
-      playerHealth = 0;
-    } else {
-      playerHealth -= PLAYER_ATTACK;
+
+  if (keyCode === 32) { // 32 is the keyCode for the spacebar
+    if (enemyState === "attack" && dist(playerX, playerY, enemyX, enemyY) <= enemyAttackRange && attackCooldown <= 0) {
+      if (enemyHealth <= 0) {
+        enemyHealth = 0;
+      }
+      enemyHealth -= PLAYER_ATTACK;
+      attackCooldown = 30; // Set cooldown period
     }
+    attackCooldown--; // Decrease cooldown each frame
   }
   // print(frameCurrRow);
 }
@@ -992,8 +1000,8 @@ function gameStart() {
   drawEnemy();
   pop();
 
-  //chestItem();
-  IU(3, 100, inventory1, inventory2);
+
+  IU(3, playerHealth, 1, inventory1, inventory2);
 
   if (g == 0) {
     initMapObjects(currentMap);
