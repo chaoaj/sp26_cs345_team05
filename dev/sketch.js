@@ -711,6 +711,7 @@ function drawChests() {
         chest.opened = true;
 
         if (openchestSound) {
+          openchestSound.setVolume(0.3);
           openchestSound.play();
         }
         const chestLayer = currentMap.layers.find(l => l.name === "chests");
@@ -1110,6 +1111,7 @@ function gameover() {
   lives = 3;
   playerHealth = 100;
   if (!overmusic.isPlaying()) {
+    overmusic.setVolume(0.4);
     overmusic.loop();
   }
   if (level_theme.isPlaying()) {
