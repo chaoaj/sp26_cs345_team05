@@ -62,7 +62,7 @@
 ]; */
 
 var g = 0;
-var page = 0;
+var page = 5;
 var scale = 1;
 
 const pageWidth = 600;
@@ -1107,7 +1107,7 @@ function IU(life, health, planet, inventory1, inventory2) {
     pageWidth, pageHeight
   );
   image(inventory1, 15, 350, inventory1.width/14, inventory1.height/14);
-  image(level[planet - 1], 480, 10, level[planet - 1].width/5, level[planet - 1].height/5);
+  image(level[planet - 1], 480, 10, level[planet - 1].width/10, level[planet - 1].height/10);
 
   
 
