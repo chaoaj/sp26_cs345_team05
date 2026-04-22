@@ -256,6 +256,9 @@ function setup() {
   playerX = spawn.x;
   playerY = spawn.y;
 
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
+
   enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
   enemyY = spawn.y + random(-100, 100);
 
@@ -561,8 +564,11 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  page = 5;
+  // Initialize camera directly at player position — no lerp delay
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
+  page = 5;
 }
 
 function initMapObjects(map) {
@@ -1001,7 +1007,7 @@ function gameStart() {
   pop();
 
 
-  IU(3, playerHealth, 1, inventory1, inventory2);
+  IU(3, playerHealth, inventory1, inventory2);
 
   if (g == 0) {
     initMapObjects(currentMap);
@@ -1442,5 +1448,4 @@ function IU(life, health, inventory1, inventory2) {
 function draw() {
   background(220);
   screen(page);
-
 }
