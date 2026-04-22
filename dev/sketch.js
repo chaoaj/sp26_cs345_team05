@@ -1294,7 +1294,7 @@ function IU(life, health, inventory1, inventory2) {
         text("shift to use potion", 20, 395);
        }
       if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT) {
-        health = min(health + inventory2[i].data.health, 100);
+        playerHealth = min(playerHealth + inventory2[i].data.health, 100);
         for (let j = i; j < size - 1; j++) {
           inventory2[j] = inventory2[j + 1];
         }
