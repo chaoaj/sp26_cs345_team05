@@ -61,6 +61,7 @@
   }
 ]; */
 
+var planet = 1;
 var g = 0;
 var page = 0;
 var scale = 1;
@@ -113,6 +114,11 @@ var inventory2 = [];
 var droppedInventory = [];
 var droppedSize = 0;
 var click = true;
+var chestInventory_blueCheese = [];
+var chestInventory_parmesan = [];
+var chestInventory_cheeseCake = [];
+var chestInventory_nacho = [];
+var chestInventory = [chestInventory_nacho, chestInventory_blueCheese, chestInventory_parmesan, chestInventory_cheeseCake];
 
 let floorTileset, wallTileset;
 let cam = { x: 0, y: 0 };
@@ -252,7 +258,19 @@ function setup() {
   swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 , health: 0});
   swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 });
   swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 });
-  potionItem = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_nacho = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_blueCheese = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_parmesan = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_cheeseCake = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  chestInventory_nacho[0] = (swordNacho);
+  chestInventory_nacho[1] = (potionItem_nacho);
+  chestInventory_blueCheese[0] = (swordBlueCheese);
+  chestInventory_blueCheese[1] = (potionItem_blueCheese);
+  chestInventory_parmesan[0] = (swordParmesan);
+  chestInventory_parmesan[1] = (potionItem_parmesan);
+  chestInventory_cheeseCake[0] = (swordCheeseCake);
+  chestInventory_cheeseCake[1] = (potionItem_cheeseCake);
+
   
 }
 
@@ -655,7 +673,10 @@ function drawChests() {
   const OPEN_TILE = 199;
 
   for (let chest of chests) {
-    if (chest.opened) continue;
+    if (chest.opened) {
+      chestItem(chest.x, chest.y);
+      continue;
+    }
     let d = dist(playerX, playerY, chest.x, chest.y);
     if (d < 30 * mapScale) {
       push();
@@ -902,15 +923,13 @@ function gameStart() {
   drawEnemy();
   pop();
 
-  IU(3, 100, 1, inventory1, inventory2);
+  //chestItem();
+  IU(3, 100, inventory1, inventory2);
 
   if (g == 0) {
     initMapObjects(currentMap);
     console.log("spikeWalls:", spikeWalls.length);
     console.log("fightRooms:", fightRooms.length);
-    addItem(swordNacho);
-    addItem(potionItem);
-    addItem(swordBlueCheese);
     g++;
   }
 }
@@ -1114,9 +1133,48 @@ class Item {
     }
   }
 }
+
+function chestItem(x, y) {
+  chestSelect();
+  displayItem();
+
+
+  function displayItem() {
+    for (let i = 0; i < 2; i++) {
+      if (chestInventory[planet-1][i] != null) {
+        image(chestInventory[planet-1][i].image_display(), x - 20+ i * 20, y - 30, 20, 20);
+        textSize(8);
+        fill(255);
+        text("use 9 & 0 to select", x - 30, y - 40);
+        text("Enter to pick up", x -30, y - 30);
+      }
+    }
+    
+    
+}
+
+  function chestSelect() {
+    if (keyCode === 57) {
+      if (chestInventory[planet-1][0] != null) {
+        chestInventory[planet-1][0].selected = true;
+      }
+      if (chestInventory[planet-1][1] != null) {
+        chestInventory[planet-1][1].selected = false;
+      }
+    } else if (keyCode === 48) {
+      if (chestInventory[planet-1][0] != null) {
+        chestInventory[planet-1][0].selected = false;
+      }
+      if (chestInventory[planet-1][1] != null) {
+        chestInventory[planet-1][1].selected = true;
+      }
+    }
+  }
+}
+
 //displays health, lives, inventory, and current planet level
-function IU(life, health, planet, inventory1, inventory2) {
-  var level = [level_nacho, level_cheeseCake, level_blueCheese, level_parmesan];
+function IU(life, health, inventory1, inventory2) {
+  var level = [level_nacho, level_blueCheese, level_parmesan, level_cheeseCake];
   image(
     icu,
     0, 0,
@@ -1142,6 +1200,9 @@ function IU(life, health, planet, inventory1, inventory2) {
 
   function usePotion() {
     for (let i = 0; i < size; i++) {
+      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected) {
+        text("shift to use potion", 20, 395);
+       }
       if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT) {
         health = min(health + inventory2[i].data.health, 100);
         for (let j = i; j < size - 1; j++) {
@@ -1157,6 +1218,35 @@ function IU(life, health, planet, inventory1, inventory2) {
 
   function swapItem() {
     var swapped = false;
+
+    for (let i = 0; i < chestInventory[planet-1].length; i++) {
+      if (chestInventory[planet-1][i] != null && chestInventory[planet-1][i].selected && keyCode === ENTER && click) {
+            for (let j = 0; j < size; j++) {
+              if (inventory2[j].selected) {
+                inventory2[j].selected = false;
+                var temp = inventory2[j];
+                inventory2[j] = chestInventory[planet-1][i];
+                  chestInventory[planet-1][i] = temp;
+                  chestInventory[planet-1][i].x = playerX;
+                  chestInventory[planet-1][i].y = playerY;
+                swapped = true;
+                click = false;
+                break;
+              }
+              
+            }
+            
+          }
+        }
+        if (!swapped && keyCode === ENTER && click) {
+          for (let i = 0; i < chestInventory[planet-1].length; i++) {
+            if (chestInventory[planet-1][i] != null && chestInventory[planet-1][i].selected) {
+              addItem(chestInventory[planet-1][i]);
+              chestInventory[planet-1][i].selected = false;
+              chestInventory[planet-1][i] = null;
+            }
+          }
+        }
     
         for (let i = 0; i < droppedSize; i++) {
           
