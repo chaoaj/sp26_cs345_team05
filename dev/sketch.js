@@ -354,6 +354,7 @@ function homePage() {
     homepage_sound.loop();
     
   }
+  stopAllSounds();
   if (mouseX > pageWidth/2 && homepageX < 0) {
     homepageX += backgroundMoveSpeed;
   } else  if (mouseX < pageWidth/2 && mouseX != 0 && homepageX > -pageWidth / 50) {
@@ -491,6 +492,10 @@ for (let i = 0; i < 4; i++) {
   }
 
 }
+function stopAllSounds() {
+  level_theme.stop();
+  homepage_sound.stop();
+}
 
 function storySlides() {
   if (!backstoryActive) {
@@ -503,6 +508,9 @@ function storySlides() {
 
   if (homepage_sound.isPlaying()) {
     homepage_sound.stop();
+  }
+  if (overmusic.isPlaying()) {
+    overmusic.stop();
   }
 
   // Draw current gif fullscreen
@@ -1018,7 +1026,7 @@ function gameStart() {
   } else if (playerHealth <= 0) {
     lives--;
     playerHealth = 100;
-    
+    page = 3; // game over
   }
   if (g == 0) {
     initMapObjects(currentMap);
