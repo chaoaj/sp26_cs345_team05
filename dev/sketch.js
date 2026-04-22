@@ -209,7 +209,7 @@ function preload() {
   slides_track = loadSound("assets/slides1.0.mp3");
   sword_sound = loadSound("assets/sword_effect.mp3");
   victory_music = loadSound("assets/Victory.mp3");
-  openchest = loadSound("assets/open_chest.mp3");
+  openchest_sound = loadSound("assets/tp_chest_open.mp3");
 
   button_beep = loadSound("assets/button_beep.mp3");
   
