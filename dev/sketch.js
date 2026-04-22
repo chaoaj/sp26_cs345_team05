@@ -63,8 +63,9 @@
 
 var planet = 1;
 var g = 0;
-var page = 5;
+var page = 0;
 var scale = 1;
+var lives = 3;
 
 const pageWidth = 600;
 const pageHeight = 400;
@@ -144,9 +145,12 @@ let enemyDirY = 0;
 
 let enemyHealth = 100;
 let playerHealth = 100;
-let attackCooldown = 0;
+let attackCooldown = 0; // frames until enemy can damage player again
+let lives = 3;
+//let enemies = [];
+let enemyAlive = true;
 
-const ENEMY_ATTACK = 10;
+const ENEMY_ATTACK = 5;
 const PLAYER_ATTACK = 10;
 
 let currentFrameRat = 0;
@@ -216,7 +220,7 @@ function preload() {
   slides_track = loadSound("assets/slides1.0.mp3");
   sword_sound = loadSound("assets/sword_effect.mp3");
   victory_music = loadSound("assets/Victory.mp3");
-  openchest_sound = loadSound("assets/tp_chest_open.mp3");
+  openchestSound = loadSound("assets/tp_chest_open.mp3");
 
   button_beep = loadSound("assets/button_beep.mp3");
   
@@ -360,8 +364,9 @@ function homePage() {
 
   if (!homepage_sound.isPlaying()) {
     homepage_sound.loop();
+    
   }
-
+  stopAllSounds();
   if (mouseX > pageWidth/2 && homepageX < 0) {
     homepageX += backgroundMoveSpeed;
   } else  if (mouseX < pageWidth/2 && mouseX != 0 && homepageX > -pageWidth / 50) {
@@ -499,6 +504,10 @@ for (let i = 0; i < 4; i++) {
   }
 
 }
+function stopAllSounds() {
+  level_theme.stop();
+  homepage_sound.stop();
+}
 
 function storySlides() {
   if (!backstoryActive) {
@@ -511,6 +520,9 @@ function storySlides() {
 
   if (homepage_sound.isPlaying()) {
     homepage_sound.stop();
+  }
+  if (overmusic.isPlaying()) {
+    overmusic.stop();
   }
 
   // Draw current gif fullscreen
@@ -709,6 +721,11 @@ function drawChests() {
 
       if (keyIsDown(69)) {
         chest.opened = true;
+
+        if (openchestSound) {
+          openchestSound.setVolume(0.3);
+          openchestSound.play();
+        }
         const chestLayer = currentMap.layers.find(l => l.name === "chests");
         if (chestLayer) {
           const idx = chest.tileRow * currentMap.width + chest.tileCol;
@@ -752,7 +769,27 @@ function drawSpikeWalls() {
   }
 }
 
+//function createEnemy(x, y, enemyType, damage, health) {
+  //enemies.push({ 
+    //x: x, 
+    //y: y, 
+    //health: health,
+    //state: "wander",
+    //dirX: random([-1, 1]),
+    //dirY: random([-1, 1])
+  //});
+//}
+
 function drawEnemy() {
+  if (!enemyAlive) return;
+  //for (let i = enemies.length - 1; i >= 0; i--) {
+    //let enemy = enemies[i];
+
+    //if (enemy.health <= 0) {
+      //enemies.splice(i, 1);
+      //continue;
+    //}
+  //}
   healthBarEnemy(enemyX, enemyY - 5, enemyHealth, 100); // example health bar above enemy
   let dx = playerX - enemyX;
   let dy = playerY - enemyY;
@@ -816,7 +853,15 @@ function drawEnemy() {
       attackCooldown = 60; // Set cooldown period
     }
   }
-  attackCooldown--; // Decrease cooldown each frame
+
+  if (attackCooldown > 0) {
+    attackCooldown--;
+  }
+
+  if (enemyHealth <= 0) {
+    enemyHealth = 0;
+    enemyAlive = false;
+  }
 }
 
 
@@ -864,6 +909,7 @@ function getEquippedItem() {
 }
 
 function drawCat(player) {
+  let d = dist(playerX, playerY, enemyX, enemyY);
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
@@ -954,15 +1000,37 @@ function drawCat(player) {
     }
   }
 
-  if (keyCode === 32) { // 32 is the keyCode for the spacebar
-    if (enemyState === "attack" && dist(playerX, playerY, enemyX, enemyY) <= enemyAttackRange && attackCooldown <= 0) {
-      if (enemyHealth <= 0) {
+  if (attackCooldown > 0) {
+    attackCooldown--;
+  }
+
+  if (playerHealth <= 0) {
+    playerHealth = 0;
+    lives--;
+    if (lives > 0) {
+      const spawn = getSpawnPoint(currentMap);
+      playerX = spawn.x;
+      playerY = spawn.y;
+      playerHealth = 100;
+    } else {
+      page = 3; // Game over
+    }
+  }
+
+  if (keyIsDown(32)) { // player hits spacebar to attack
+    if (enemyState === "attack" && d <= enemyAttackRange && attackCooldown == 0) {
+      enemyHealth -= PLAYER_ATTACK;
+      attackCooldown = 60; // Set cooldown period
+
+      if (enemyHealth < 0) {
         enemyHealth = 0;
       }
-      enemyHealth -= PLAYER_ATTACK;
-      attackCooldown = 30; // Set cooldown period
     }
-    attackCooldown--; // Decrease cooldown each frame
+  }
+
+  if (enemyHealth <= 0) {
+    enemyHealth = 0;
+    enemyAlive = false;
   }
   // print(frameCurrRow);
 }
@@ -1025,9 +1093,15 @@ function gameStart() {
   drawEnemy();
   pop();
 
-
-  IU(3, playerHealth, inventory1, inventory2);
-
+  
+  IU(lives, playerHealth, inventory1, inventory2);
+  if (playerHealth <= 0 && lives <= 0) {
+    page = 3; // game over
+  } else if (playerHealth <= 0) {
+    lives--;
+    playerHealth = 100;
+    page = 3; // game over
+  }
   if (g == 0) {
     initMapObjects(currentMap);
     console.log("spikeWalls:", spikeWalls.length);
@@ -1119,7 +1193,10 @@ function collidesWithWall(X, Y) {
 
 function gameover() {
   scale = 1;
+  lives = 3;
+  playerHealth = 100;
   if (!overmusic.isPlaying()) {
+    overmusic.setVolume(0.4);
     overmusic.loop();
   }
   if (level_theme.isPlaying()) {
@@ -1318,7 +1395,7 @@ function IU(life, health, inventory1, inventory2) {
         text("shift to use potion", 20, 395);
        }
       if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT) {
-        health = min(health + inventory2[i].data.health, 100);
+        playerHealth = min(playerHealth + inventory2[i].data.health, 100);
         for (let j = i; j < size - 1; j++) {
           inventory2[j] = inventory2[j + 1];
         }
