@@ -823,12 +823,63 @@ function moveEnemy(moveX, moveY, dirRow) {
   }
 }
 
+function getEquippedItem() {
+  for (let i = 0; i < size; i++) {
+    if (inventory2[i] != null && inventory2[i].selected) {
+      return inventory2[i];
+    }
+  }
+  return null;
+}
+
 function drawCat(player) {
   healthBarEnemy(playerX, playerY - 5, playerHealth, 100); // example health bar above cat
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
-  image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+  let equipped = getEquippedItem();
+
+
+  if (equipped != null) {
+    let img = equipped.image_display();
+
+    let centerX = SPRITE_W / 2;
+    let centerY = SPRITE_H / 2;
+
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (frameCurrRow === 3) { // right
+      offsetX = centerX + 4;
+      offsetY = centerY - 4;
+    } else if (frameCurrRow === 2) { // left
+      offsetX = centerX - 12;
+      offsetY = centerY - 4;
+    } else if (frameCurrRow === 0) { // down
+      offsetX = centerX - 4;
+      offsetY = centerY + 2;
+    } else if (frameCurrRow === 1) { // up
+      offsetX = centerX + 2;
+      offsetY = centerY - 12;
+    }
+
+    // 👇 DRAW UNDER if facing up
+    if (frameCurrRow === 1) {
+      image(img, playerX + offsetX, playerY + offsetY, 12, 12);
+    }
+
+    // draw cat
+    image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+
+    // 👇 DRAW OVER for other directions
+    if (frameCurrRow !== 1) {
+      image(img, playerX + offsetX, playerY + offsetY, 12, 12);
+    }
+
+    } else {
+    // no item → just draw cat
+    image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+  }
 
   let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
   let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
@@ -1112,7 +1163,7 @@ function healthBarEnemy(x, y, health, maxHealth) {
 function playerAttack() {
   var attack = 0;
   for (let i = 0; i < size; i++) {
-    if (inventory2[i] != null && inventory2[i].selected) {
+    if (inventory2[i].data.health > 0) {
       attack = inventory2[i].data.damage;
         
     }
