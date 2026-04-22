@@ -194,7 +194,7 @@ function preload() {
   level_parmesan = loadImage("dev/assets/level_parmesan.png");
 
   homepage_sound = loadSound("dev/assets/homepage_sound.mp3");
-  level_theme = loadSound("dev/assets/Game_Soundtrack.mp3");
+  level_theme = loadSound("dev/assets/Game_SoundtrackUpdated.mp3");
   potion_sound = loadSound("dev/assets/Potion_sound.mp3");
   overmusic = loadSound("dev/assets/GameOver.mp3");
   slides_track = loadSound("dev/assets/Slides1.0.mp3");
