@@ -65,6 +65,7 @@ var planet = 1;
 var g = 0;
 var page = 3;
 var scale = 1;
+var lives = 3;
 
 const pageWidth = 600;
 const pageHeight = 400;
@@ -1006,9 +1007,15 @@ function gameStart() {
   drawEnemy();
   pop();
 
-
-  IU(3, playerHealth, inventory1, inventory2);
-
+  
+  IU(lives, playerHealth, inventory1, inventory2);
+  if (playerHealth <= 0 && lives <= 0) {
+    page = 3; // game over
+  } else if (playerHealth <= 0) {
+    lives--;
+    playerHealth = 100;
+    page = 3; // game over
+  }
   if (g == 0) {
     initMapObjects(currentMap);
     console.log("spikeWalls:", spikeWalls.length);
