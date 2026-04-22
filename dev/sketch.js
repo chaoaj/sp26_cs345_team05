@@ -63,7 +63,7 @@
 
 var planet = 1;
 var g = 0;
-var page = 5;
+var page = 3;
 var scale = 1;
 
 const pageWidth = 600;
