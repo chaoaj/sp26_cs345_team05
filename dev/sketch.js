@@ -63,7 +63,7 @@
 
 var planet = 1;
 var g = 0;
-var page = 3;
+var page = 5;
 var scale = 1;
 
 const pageWidth = 600;
@@ -154,6 +154,11 @@ const RAT_FRAME_W = 32;
 const RAT_FRAME_H = [43, 21, 43, 21]; 
 const RAT_ROW_Y = [0, 43, 64, 107];   
 
+// for the boss:
+// const RAT_FRAME_W = 400;
+// const RAT_FRAME_H = [538, 263, 538, 263]; 
+// const RAT_ROW_Y   = [0, 538, 800, 1338];
+
 
 
 function preload() {
@@ -194,6 +199,7 @@ function preload() {
   skin_selection = loadImage("assets/skin_select_button.png");
 
   rat1 = loadImage("assets/rat.png");
+  rat_boss = loadImage("assets/rat_boss.png");
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -257,10 +263,13 @@ function setup() {
   playerY = spawn.y;
 
   cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
-cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
-  enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
-  enemyY = spawn.y + random(-100, 100);
+  // enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
+  // enemyY = spawn.y + random(-100, 100);
+
+  enemyX = spawn.x;
+  enemyY = spawn.y - 100;
 
   swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 , health: 0 });
   swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 , health: 0});
@@ -792,7 +801,7 @@ function drawEnemy() {
   let sw = RAT_FRAME_W;
   let sh = RAT_FRAME_H[dirRow];
 
-  image(rat1, enemyX, enemyY, sw, sh, sx, sy, sw, sh);
+  image(rat1, enemyX, enemyY, sw / 1, sh / 1, sx, sy, sw, sh);
 
   if (frameCount % 5 === 0) {
     currentFrameRat++;
@@ -810,6 +819,12 @@ function drawEnemy() {
   attackCooldown--; // Decrease cooldown each frame
 }
 
+
+const RAT_HITBOX_LEFT   = 14;
+const RAT_HITBOX_RIGHT  = 14;
+const RAT_HITBOX_TOP    = 6;
+const RAT_HITBOX_BOTTOM = 10;
+
 // enemy border mechanic
 function moveEnemy(moveX, moveY, dirRow) {
   if (moveX === 0 && moveY === 0) return;
@@ -817,22 +832,26 @@ function moveEnemy(moveX, moveY, dirRow) {
   let nextX = enemyX + moveX;
   let nextY = enemyY + moveY;
 
-  let w = RAT_FRAME_W;
-  let h = RAT_FRAME_H[dirRow];
+  let left   = nextX + RAT_HITBOX_LEFT;
+  let right  = nextX + RAT_FRAME_W - RAT_HITBOX_RIGHT - 1;
+  let top    = nextY + RAT_HITBOX_TOP;
+  let bottom = nextY + RAT_FRAME_H[dirRow] - RAT_HITBOX_BOTTOM - 1;
 
-  if (!isWallTile(nextX, enemyY) &&
-      !isWallTile(nextX + w - 1, enemyY) &&
-      !isWallTile(nextX, enemyY + h - 1) &&
-      !isWallTile(nextX + w - 1, enemyY + h - 1)) {
-    enemyX = nextX;
-  }
+  // X movement
+if (!isWallTile(left, enemyY + RAT_HITBOX_TOP) &&
+    !isWallTile(right, enemyY + RAT_HITBOX_TOP) &&
+    !isWallTile(left, enemyY + RAT_FRAME_H[dirRow] - RAT_HITBOX_BOTTOM - 1) &&
+    !isWallTile(right, enemyY + RAT_FRAME_H[dirRow] - RAT_HITBOX_BOTTOM - 1)) {
+  enemyX = nextX;
+}
 
-  if (!isWallTile(enemyX, nextY) &&
-      !isWallTile(enemyX + w - 1, nextY) &&
-      !isWallTile(enemyX, nextY + h - 1) &&
-      !isWallTile(enemyX + w - 1, nextY + h - 1)) {
-    enemyY = nextY;
-  }
+// Y movement
+if (!isWallTile(enemyX + RAT_HITBOX_LEFT, top) &&
+    !isWallTile(enemyX + RAT_FRAME_W - RAT_HITBOX_RIGHT - 1, top) &&
+    !isWallTile(enemyX + RAT_HITBOX_LEFT, bottom) &&
+    !isWallTile(enemyX + RAT_FRAME_W - RAT_HITBOX_RIGHT - 1, bottom)) {
+  enemyY = nextY;
+}
 }
 
 function getEquippedItem() {
@@ -1081,9 +1100,21 @@ function isWallTile(worldX, worldY) {
   return !hasFloor;
 }
 
+const HITBOX_LEFT   = 14;
+const HITBOX_RIGHT  = 14;
+const HITBOX_TOP    = 10;  // more space above (head)
+const HITBOX_BOTTOM = -5;   // less below (feet touch walls properly)
+
 function collidesWithWall(X, Y) {
-  return isWallTile(X, Y) || isWallTile(X + SPRITE_W - 1, Y) ||
-         isWallTile(X, Y + SPRITE_H - 1) || isWallTile(X + SPRITE_W - 1, Y + SPRITE_H - 1);
+  let left   = X + HITBOX_LEFT;
+  let right  = X + SPRITE_W - HITBOX_RIGHT - 1;
+  let top    = Y + HITBOX_TOP;
+  let bottom = Y + SPRITE_H - HITBOX_BOTTOM - 1;
+
+  return isWallTile(left, top) ||
+         isWallTile(right, top) ||
+         isWallTile(left, bottom) ||
+         isWallTile(right, bottom);
 }
 
 function gameover() {
