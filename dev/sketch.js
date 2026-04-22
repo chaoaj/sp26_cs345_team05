@@ -1099,6 +1099,8 @@ function collidesWithWall(X, Y) {
 
 function gameover() {
   scale = 1;
+  lives = 3;
+  playerHealth = 100;
   if (!overmusic.isPlaying()) {
     overmusic.loop();
   }
