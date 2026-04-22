@@ -142,6 +142,9 @@ let enemyMoveTimer = 0;
 let enemyDirX = 1;
 let enemyDirY = 0;
 
+let enemyHealth = 100;
+let playerHealth = 100;
+
 const ENEMY_ATTACK = 10;
 const PLAYER_ATTACK = 10;
 
@@ -733,7 +736,7 @@ function drawSpikeWalls() {
 }
 
 function drawEnemy() {
-  healthBarEnemy(enemyX, enemyY - 5, 100, 100); // example health bar above enemy
+  healthBarEnemy(enemyX, enemyY - 5, enemyHealth, 100); // example health bar above enemy
   let dx = playerX - enemyX;
   let dy = playerY - enemyY;
   let d  = dist(playerX, playerY, enemyX, enemyY);
@@ -787,6 +790,12 @@ function drawEnemy() {
     currentFrameRat++;
     if (currentFrameRat >= 3) currentFrameRat = 0;
   }
+
+  if (key == " " && enemyState === "attack") {
+    if (d <= enemyAttackRange) {
+      playerHealth -= ENEMY_ATTACK;
+    }
+  }
 }
 
 // enemy border mechanic
@@ -815,6 +824,7 @@ function moveEnemy(moveX, moveY, dirRow) {
 }
 
 function drawCat(player) {
+  healthBarEnemy(playerX, playerY - 5, playerHealth, 100); // example health bar above cat
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
@@ -860,6 +870,13 @@ function drawCat(player) {
     } else {
       currentFrame = frontR ? 3 : 0;
       frontR = !frontR;
+    }
+  }
+  if (enemyState === "attack") {
+    if (playerHealth <= 0) {
+      playerHealth = 0;
+    } else {
+      playerHealth -= PLAYER_ATTACK;
     }
   }
   // print(frameCurrRow);
