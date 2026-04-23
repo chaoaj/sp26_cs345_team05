@@ -65,7 +65,6 @@ var planet = 1;
 var g = 0;
 var page = 0;
 var scale = 1;
-var lives = 3;
 
 const pageWidth = 600;
 const pageHeight = 400;
