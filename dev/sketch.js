@@ -681,6 +681,7 @@ function initMapObjects(map) {
 }
 
 function loadRandomPlanet() {
+  console.log("loading planet, current:", planet, "completed:", completedPlanets);
   const bossPlanet = 4;
   const normalPlanets = [1, 2, 3];
   const remaining = normalPlanets.filter(p => !completedPlanets.includes(p) && p !== planet);
@@ -696,15 +697,18 @@ function loadRandomPlanet() {
 
   planet = next;
 
-  if (next === 1) {
+  if (next === 1 && typeof mapData_nacho !== 'undefined') {
     currentMap = mapData_nacho;
-  } else if (next === 2) {
+  } else if (next === 2 && typeof mapData_parmesan !== 'undefined') {
     currentMap = mapData_parmesan;
-  } else if (next === 3) {
+  } else if (next === 3 && typeof mapData_blueCheese !== 'undefined') {
     currentMap = mapData_blueCheese;
-  } else if (next === 4) {
+  } else if (next === 4 && typeof mapData_cheeseCake !== 'undefined') {
     currentMap = mapData_cheeseCake;
-    // boss planet
+  } else {
+    // fallback to nacho if map not ready yet
+    currentMap = mapData_nacho;
+    planet = 1;
   }
 
   currentMapFloor = floorTileset;
@@ -1661,6 +1665,8 @@ function IU(life, health, inventory1, inventory2) {
 
 function draw() {
   background(220);
+  if (planet === 2) background(100, 150, 200); // blue tint for snow map
+  else background(220);
   screen(page);
   mouseJustPressed = false;
 }
