@@ -722,7 +722,7 @@ function drawChests() {
         chest.opened = true;
 
         if (openchestSound) {
-          openchestSound.setVolume(0.3);
+          openchestSound.setVolume(0.2);
           openchestSound.play();
         }
         const chestLayer = currentMap.layers.find(l => l.name === "chests");
@@ -1195,7 +1195,7 @@ function gameover() {
   lives = 3;
   playerHealth = 100;
   if (!overmusic.isPlaying()) {
-    overmusic.setVolume(0.4);
+    overmusic.setVolume(0.3);
     overmusic.loop();
   }
   if (level_theme.isPlaying()) {
@@ -1347,6 +1347,8 @@ function chestItem(x, y) {
     if (keyCode === 57) {
       if (chestInventory[planet-1][0] != null) {
         chestInventory[planet-1][0].selected = true;
+        sword_sound.setVolume(0.1);
+        sword_sound.play();
       }
       if (chestInventory[planet-1][1] != null) {
         chestInventory[planet-1][1].selected = false;
@@ -1357,6 +1359,8 @@ function chestItem(x, y) {
       }
       if (chestInventory[planet-1][1] != null) {
         chestInventory[planet-1][1].selected = true;
+        potion_sound.setVolume(0.1);
+        potion_sound.play(3, 0.1, 1, 1, 3);
       }
     }
   }
