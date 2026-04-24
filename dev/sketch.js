@@ -1372,8 +1372,6 @@ function chestItem(x, y) {
       }
       if (chestInventory[planet - 1][1] != null) {
         chestInventory[planet - 1][1].selected = true;
-        potion_sound.setVolume(0.1);
-        potion_sound.play(3, 0.1, 1, 1, 3);
       }
     }
   }
