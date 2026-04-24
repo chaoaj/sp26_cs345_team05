@@ -1112,7 +1112,7 @@ function gameStart() {
   } else if (playerHealth <= 0) {
     lives--;
     playerHealth = 100;
-    page = 3; // game over
+    
   }
   if (g == 0) {
     initMapObjects(currentMap);
