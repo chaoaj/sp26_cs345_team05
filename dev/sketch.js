@@ -65,6 +65,7 @@ var planet = 1;
 var g = 0;
 var page = 0;
 var scale = 1;
+var lives = 3;
 
 const pageWidth = 600;
 const pageHeight = 400;
@@ -1357,8 +1358,8 @@ function chestItem(x, y) {
 
   function chestSelect() {
     if (keyCode === 57) {
-      if (chestInventory[planet-1][0] != null) {
-        chestInventory[planet-1][0].selected = true;
+      if (chestInventory[planet - 1][0] != null) {
+        chestInventory[planet - 1][0].selected = true;
         sword_sound.setVolume(0.1);
         sword_sound.play();
       }
@@ -1369,8 +1370,8 @@ function chestItem(x, y) {
       if (chestInventory[planet - 1][0] != null) {
         chestInventory[planet - 1][0].selected = false;
       }
-      if (chestInventory[planet-1][1] != null) {
-        chestInventory[planet-1][1].selected = true;
+      if (chestInventory[planet - 1][1] != null) {
+        chestInventory[planet - 1][1].selected = true;
         potion_sound.setVolume(0.1);
         potion_sound.play(3, 0.1, 1, 1, 3);
       }
