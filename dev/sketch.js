@@ -244,6 +244,7 @@ function preload() {
   floorTileset = loadImage("assets/atlas_floor-16x16.png");
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
   chestTileset = loadImage("assets/Chest.png");
+  snowTileset = loadImage("assets/FE8 - Snowy Bern.png");
 }
 
 function getSpawnPoint(map) {
@@ -621,7 +622,8 @@ function initMapObjects(map) {
             w: obj.width * mapScale,
             h: obj.height * mapScale,
             cleared: false,
-            active: false
+            active: false,
+            activateTimer: -1
           });
         }
       }
@@ -678,14 +680,68 @@ function initMapObjects(map) {
   }
 }
 
+function loadRandomPlanet() {
+  const bossPlanet = 4;
+  const normalPlanets = [1, 2, 3];
+  const remaining = normalPlanets.filter(p => !completedPlanets.includes(p) && p !== planet);
+
+  completedPlanets.push(planet);
+
+  let next;
+  if (remaining.length === 0) {
+    next = bossPlanet;
+  } else {
+    next = remaining[floor(random(remaining.length))];
+  }
+
+  planet = next;
+
+  if (next === 1) {
+    currentMap = mapData_nacho;
+  } else if (next === 2) {
+    currentMap = mapData_parmesan;
+  } else if (next === 3) {
+    currentMap = mapData_blueCheese;
+  } else if (next === 4) {
+    currentMap = mapData_cheeseCake;
+    // boss planet
+  }
+
+  currentMapFloor = floorTileset;
+  currentMapWall = wallTileset;
+
+  // Reset map objects for new planet
+  g = 0;
+  fightRooms = [];
+  chests = [];
+  spikeWalls = [];
+
+  // Respawn player at new map spawn point
+  const spawn = getSpawnPoint(currentMap);
+  playerX = spawn.x;
+  playerY = spawn.y;
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
+
+  if (next === bossPlanet && completedPlanets.includes(bossPlanet)) {
+    page = 4; // victory
+  }
+}
+
 function updateFightRooms() {
   for (let i = 0; i < fightRooms.length; i++) {
     let r = fightRooms[i];
     if (r.cleared) continue;
+
     let inRoom = playerX > r.x && playerX < r.x + r.w &&
-      playerY > r.y && playerY < r.y + r.h;
-    if (inRoom && !r.active) {
-      console.log("entered fight room", i);
+                 playerY > r.y && playerY < r.y + r.h;
+
+    if (inRoom && !r.active && r.activateTimer === -1) {
+      r.activateTimer = millis(); // start the timer when player enters
+    }
+
+    // raise spikes after 1500ms delay
+    if (r.activateTimer > 0 && millis() - r.activateTimer > 1000 && !r.active) {
       r.active = true;
       for (let spike of spikeWalls) {
         if (spike.roomIndex === i) {
@@ -701,6 +757,7 @@ function updateFightRooms() {
       if (allEnemiesDefeated) {
         r.cleared = true;
         r.active = false;
+        r.activateTimer = -1;
         for (let spike of spikeWalls) {
           if (spike.roomIndex === i) {
             spike.raised = false;
@@ -1121,10 +1178,16 @@ function gameStart() {
     g++;
   }
 }
+function keyPressed() {
+  if (key === 'p' || key === 'P') {
+    loadRandomPlanet();
+  }
+}
 
 function drawMap(map, floorTS, wallTS) {
   const tileW = 16;
   const mapCols = map.width;
+  const isSnowMap = (map === mapData_parmesan);
 
   for (let layer of map.layers) {
     if (layer.type !== "tilelayer") continue;
@@ -1136,7 +1199,13 @@ function drawMap(map, floorTS, wallTS) {
       const row = Math.floor(i / mapCols);
       const x = col * tileW * mapScale;
       const y = row * tileW * mapScale;
-
+      if (isSnowMap) {
+        // Snow tileset: firstgid 1, 32 columns, 16x16 tiles
+        const localID = tileId - 1;
+        const srcX = (localID % 32) * tileW;
+        const srcY = Math.floor(localID / 32) * tileW;
+        image(snowTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+      } else {
       if (tileId >= 194) {
         const localID = tileId - 194;
         const srcX = (localID % 3) * tileW;
@@ -1162,6 +1231,7 @@ function drawMap(map, floorTS, wallTS) {
         const srcX = (localID % 7) * tileW;
         const srcY = Math.floor(localID / 7) * tileW;
         image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+       }
       }
     }
   }
@@ -1172,17 +1242,25 @@ function isWallTile(worldX, worldY) {
   const col = Math.floor(worldX / tileW);
   const row = Math.floor(worldY / tileW);
   if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
+  const isSnowMap = (currentMap === mapData_parmesan);
 
   let hasFloor = false;
   for (let layer of currentMap.layers) {
     if (layer.type !== "tilelayer") continue;
+    if (isSnowMap) {
+      if (layer.name !== "Floors" && layer.name !== "Walls") continue;
+      const tileId = layer.data[row * currentMap.width + col];
+      if (layer.name === "Walls" && tileId !== 0) return true;
+      if (layer.name === "Floors" && tileId !== 0) hasFloor = true;
+    } else {
     if (layer.name !== "floors" && layer.name !== "walls") continue;
-
     const tileId = layer.data[row * currentMap.width + col];
     if (tileId >= 50 && tileId <= 193) return true; // high walls + low walls
     if (tileId === 179) return true;                 // void blocks movement
     if (tileId >= 1 && tileId <= 49) hasFloor = true;
+    }
   }
+
   return !hasFloor;
 }
 
@@ -1197,10 +1275,24 @@ function collidesWithWall(X, Y) {
   let top = Y + HITBOX_TOP;
   let bottom = Y + SPRITE_H - HITBOX_BOTTOM - 1;
 
-  return isWallTile(left, top) ||
+  // Check map walls
+  if (isWallTile(left, top) ||
     isWallTile(right, top) ||
     isWallTile(left, bottom) ||
-    isWallTile(right, bottom);
+    isWallTile(right, bottom)) return true;
+
+  // Check raised spike walls
+  for (let spike of spikeWalls) {
+    if (!spike.raised) continue;
+    let sw = 16 * mapScale;
+    let sh = 16 * mapScale;
+    if (right > spike.x && left < spike.x + sw &&
+        bottom > spike.y && top < spike.y + sh) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function gameover() {
