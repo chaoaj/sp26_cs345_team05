@@ -1,4 +1,4 @@
-/*const backstorySlides = [
+const backstorySlides = [
   {
     title: "A Long Time Ago…",
     text: [
@@ -59,7 +59,7 @@
     ],
     emoji: "🌠🐾✨"
   }
-]; */
+];
 
 var planet = 1;
 var g = 0;
