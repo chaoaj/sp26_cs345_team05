@@ -514,50 +514,98 @@ function storySlides() {
   if (!backstoryActive) {
     startBackstory();
   }
+
+  // music handling
   if (audioUnlocked && !slides_track.isPlaying()) {
     slides_track.setVolume(0.4);
     slides_track.loop();
   }
 
-  if (homepage_sound.isPlaying()) {
-    homepage_sound.stop();
-  }
-  if (overmusic.isPlaying()) {
-    overmusic.stop();
-  }
+  if (homepage_sound.isPlaying()) homepage_sound.stop();
+  if (overmusic.isPlaying()) overmusic.stop();
 
-  // Draw current gif fullscreen
+  // --- BACKGROUND GIF ---
   const storyGifs = [story1, story2, story3, story4];
   if (currentSlide < storyGifs.length) {
     image(storyGifs[currentSlide], 0, 0, pageWidth, pageHeight);
   }
 
-  // Black overlay for fade transition
+  // --- FADE OVERLAY ---
   fill(0, 0, 0, 255 - slideAlpha);
   noStroke();
   rect(0, 0, pageWidth, pageHeight);
 
-  // Reuse same fade + timer logic
+  // --- TEXT CONTENT ---
+  let slide = backstorySlides[currentSlide];
+
+  if (slide) {
+    push();
+
+    textAlign(CENTER);
+
+    // Title shadow
+    fill(0);
+    textSize(26);
+    text(slide.title, pageWidth / 2 + 2, 62);
+
+    // Title
+    fill(255);
+    text(slide.title, pageWidth / 2, 60);
+
+    // Body text
+    textSize(14);
+    for (let i = 0; i < slide.text.length; i++) {
+      // shadow
+      fill(0);
+      text(slide.text[i], pageWidth / 2 + 1, 122 + i * 20);
+
+      // main text
+      fill(255);
+      text(slide.text[i], pageWidth / 2, 120 + i * 20);
+    }
+
+    // Emoji
+    textSize(30);
+    fill(255);
+    text(slide.emoji, pageWidth / 2, 310);
+
+    pop();
+  }
+
+  // --- FADE LOGIC ---
   if (fadeState === "in") {
     slideAlpha = min(slideAlpha + FADE_SPEED, 255);
-    if (slideAlpha >= 255) { fadeState = "hold"; fadeTimer = 0; }
+    if (slideAlpha >= 255) {
+      fadeState = "hold";
+      fadeTimer = 0;
+    }
   } else if (fadeState === "hold") {
     fadeTimer++;
-    if (fadeTimer >= HOLD_FRAMES) { fadeState = "out"; }
+    if (fadeTimer >= HOLD_FRAMES) {
+      fadeState = "out";
+    }
   } else if (fadeState === "out") {
     slideAlpha = max(slideAlpha - FADE_SPEED, 0);
     if (slideAlpha <= 0) {
       currentSlide++;
-      if (currentSlide >= storyGifs.length) { onBackstoryComplete(); return; }
+
+      // stop when either gifs OR text runs out
+      if (
+        currentSlide >= storyGifs.length ||
+        currentSlide >= backstorySlides.length
+      ) {
+        onBackstoryComplete();
+        return;
+      }
+
       fadeState = "in";
     }
   }
 
-  // skip button
+  // --- SKIP BUTTON ---
   button(skip2, 475, 345, skip2.width / 14, skip2.height / 12);
 
-
-  // temporary "show controls area"
+  // --- DEBUG BOX (optional, remove later) ---
   push();
   fill(255);
   rect(150, 350, 250, 30);
