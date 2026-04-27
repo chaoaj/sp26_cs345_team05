@@ -1,4 +1,4 @@
-/*const backstorySlides = [
+const backstorySlides = [
   {
     title: "A Long Time Ago…",
     text: [
@@ -59,7 +59,7 @@
     ],
     emoji: "🌠🐾✨"
   }
-]; */
+];
 
 var planet = 1;
 var g = 0;
@@ -139,22 +139,13 @@ let chests = [];
 let spikeWalls = [];
 let chestTileset;
 
-let enemyState = "wander"; // "wander" | "chase" | "attack"
-let enemyX;
-let enemyY;
-let enemySpeed = 0.7;
-let enemyDetectionRange = 150;
-let enemyAttackRange = 25;
-let enemyMoveTimer = 0;
-let enemyDirX = 1;
-let enemyDirY = 0;
-
-let enemyHealth = 100;
+let enemies = [];
 let playerHealth = 100;
 let attackCooldown = 0; // frames until enemy can damage player again
 
-//let enemies = [];
-let enemyAlive = true;
+
+
+
 
 const ENEMY_ATTACK = 5;
 const PLAYER_ATTACK = 10;
@@ -286,9 +277,6 @@ function setup() {
 
   // enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
   // enemyY = spawn.y + random(-100, 100);
-
-  enemyX = spawn.x;
-  enemyY = spawn.y - 100;
 
   swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 });
   swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 });
@@ -640,6 +628,12 @@ function initMapObjects(map) {
             tileRow: Math.floor(obj.y / 16)
           });
         }
+        if (obj.name === "enemySpawn") {
+          enemies.push(new Enemy(obj.x * mapScale, obj.y * mapScale, "rat"));
+        }
+        if (obj.name === "BossSpawn") {
+          enemies.push(new Enemy(obj.x * mapScale, obj.y * mapScale, "boss"));
+        }
       }
     }
   }
@@ -681,6 +675,7 @@ function initMapObjects(map) {
 }
 
 function loadRandomPlanet() {
+  console.log("loading planet, current:", planet, "completed:", completedPlanets);
   const bossPlanet = 4;
   const normalPlanets = [1, 2, 3];
   const remaining = normalPlanets.filter(p => !completedPlanets.includes(p) && p !== planet);
@@ -696,15 +691,18 @@ function loadRandomPlanet() {
 
   planet = next;
 
-  if (next === 1) {
+  if (next === 1 && typeof mapData_nacho !== 'undefined') {
     currentMap = mapData_nacho;
-  } else if (next === 2) {
+  } else if (next === 2 && typeof mapData_parmesan !== 'undefined') {
     currentMap = mapData_parmesan;
-  } else if (next === 3) {
+  } else if (next === 3 && typeof mapData_blueCheese !== 'undefined') {
     currentMap = mapData_blueCheese;
-  } else if (next === 4) {
+  } else if (next === 4 && typeof mapData_cheeseCake !== 'undefined') {
     currentMap = mapData_cheeseCake;
-    // boss planet
+  } else {
+    // fallback to nacho if map not ready yet
+    currentMap = mapData_nacho;
+    planet = 1;
   }
 
   currentMapFloor = floorTileset;
@@ -753,7 +751,7 @@ function updateFightRooms() {
     }
 
     if (r.active) {
-      let allEnemiesDefeated = false;
+      let allEnemiesDefeated = enemies.length > 0 && enemies.every(e => !e.alive);
       if (allEnemiesDefeated) {
         r.cleared = true;
         r.active = false;
@@ -850,86 +848,73 @@ function drawSpikeWalls() {
 //}
 
 function drawEnemy() {
-  if (!enemyAlive) return;
-  //for (let i = enemies.length - 1; i >= 0; i--) {
-  //let enemy = enemies[i];
-
-  //if (enemy.health <= 0) {
-  //enemies.splice(i, 1);
-  //continue;
-  //}
-  //}
-  healthBarEnemy(enemyX, enemyY - 5, enemyHealth, 100); // example health bar above enemy
-  let dx = playerX - enemyX;
-  let dy = playerY - enemyY;
-  let d = dist(playerX, playerY, enemyX, enemyY);
-
-  if (d <= enemyAttackRange) {
-    enemyState = "attack";
-  } else if (d <= enemyDetectionRange) {
-    enemyState = "chase";
-  } else {
-    enemyState = "wander";
-  }
-
-  // changes direction based on player location
-  let dirRow;
-  if (Math.abs(dx) > Math.abs(dy)) {
-    dirRow = dx > 0 ? 1 : 3;   // right / left
-  } else {
-    dirRow = dy > 0 ? 2 : 0;   // down / up
-  }
-
-  let moveX = 0;
-  let moveY = 0;
-
-  if (enemyState === "chase" && d > 0) {
-    moveX = (dx / d) * enemySpeed;
-    moveY = (dy / d) * enemySpeed;
-  } else if (enemyState === "wander") {
-    enemyMoveTimer--;
-    if (enemyMoveTimer <= 0) {
-      let angle = random(TWO_PI);
-      enemyDirX = cos(angle);
-      enemyDirY = sin(angle);
-      enemyMoveTimer = floor(random(30, 90));
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let e = enemies[i];
+    if (!e.alive) {
+      enemies.splice(i, 1);
+      continue;
     }
-    moveX = enemyDirX * enemySpeed * 0.5;
-    moveY = enemyDirY * enemySpeed * 0.5;
-  } else if (enemyState === "attack") {
-    console.log("Enemy attacks!");
-  }
 
-  moveEnemy(moveX, moveY, dirRow);
+    let dx = playerX - e.x;
+    let dy = playerY - e.y;
+    let d = dist(playerX, playerY, e.x, e.y);
 
-  let sx = currentFrameRat * RAT_FRAME_W;
-  let sy = RAT_ROW_Y[dirRow];
-  let sw = RAT_FRAME_W;
-  let sh = RAT_FRAME_H[dirRow];
+    if (d <= e.attackRange) e.state = "attack";
+    else if (d <= e.detectionRange) e.state = "chase";
+    else e.state = "wander";
 
-  image(rat1, enemyX, enemyY, sw / 1, sh / 1, sx, sy, sw, sh);
+    let dirRow;
+    if (Math.abs(dx) > Math.abs(dy)) dirRow = dx > 0 ? 1 : 3;
+    else dirRow = dy > 0 ? 2 : 0;
 
-  if (frameCount % 5 === 0) {
-    currentFrameRat++;
-    if (currentFrameRat >= 3) currentFrameRat = 0;
-  }
+    let moveX = 0, moveY = 0;
 
-  if (enemyState === "attack" && attackCooldown <= 0) {
-    if (playerHealth <= 0) {
-      playerHealth = 0;
-    } else {
-      playerHealth -= PLAYER_ATTACK;
-      attackCooldown = 60; // Set cooldown period
+    if (e.state === "chase" && d > 0) {
+      moveX = (dx / d) * e.speed;
+      moveY = (dy / d) * e.speed;
+    } else if (e.state === "wander") {
+      e.moveTimer--;
+      if (e.moveTimer <= 0) {
+        let angle = random(TWO_PI);
+        e.dirX = cos(angle);
+        e.dirY = sin(angle);
+        e.moveTimer = floor(random(30, 90));
+      }
+      moveX = e.dirX * e.speed * 0.5;
+      moveY = e.dirY * e.speed * 0.5;
+    } else if (e.state === "attack" && e.attackCooldown <= 0) {
+      playerHealth = max(0, playerHealth - ENEMY_ATTACK);
+      e.attackCooldown = 60;
     }
-  }
 
-  if (attackCooldown > 0) {
-    attackCooldown--;
-  }
+    if (e.attackCooldown > 0) e.attackCooldown--;
 
-  if (enemyHealth <= 0) {
-    enemyHealth = 0;
-    enemyAlive = false;
+    // move enemy
+    let nextX = e.x + moveX;
+    let nextY = e.y + moveY;
+    let w = RAT_FRAME_W, h = RAT_FRAME_H[dirRow];
+    if (!isWallTile(nextX + RAT_HITBOX_LEFT, e.y + RAT_HITBOX_TOP) &&
+      !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
+      !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
+      !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + h - RAT_HITBOX_BOTTOM - 1)) {
+      e.x = nextX;
+    }
+    if (!isWallTile(e.x + RAT_HITBOX_LEFT, nextY + RAT_HITBOX_TOP) &&
+      !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + RAT_HITBOX_TOP) &&
+      !isWallTile(e.x + RAT_HITBOX_LEFT, nextY + h - RAT_HITBOX_BOTTOM - 1) &&
+      !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + h - RAT_HITBOX_BOTTOM - 1)) {
+      e.y = nextY;
+    }
+
+    // draw
+    let img = e.type === "boss" ? rat_boss : rat1;
+    let sx = (frameCount % 15 < 5 ? 0 : frameCount % 15 < 10 ? 1 : 2) * RAT_FRAME_W;
+    let sy = RAT_ROW_Y[dirRow];
+    image(img, e.x, e.y, RAT_FRAME_W, RAT_FRAME_H[dirRow], sx, sy, RAT_FRAME_W, RAT_FRAME_H[dirRow]);
+
+    healthBarEnemy(e.x, e.y - 5, e.health, e.maxHealth);
+
+    if (e.health <= 0) e.alive = false;
   }
 }
 
@@ -939,34 +924,6 @@ const RAT_HITBOX_RIGHT = 14;
 const RAT_HITBOX_TOP = 6;
 const RAT_HITBOX_BOTTOM = 10;
 
-// enemy border mechanic
-function moveEnemy(moveX, moveY, dirRow) {
-  if (moveX === 0 && moveY === 0) return;
-
-  let nextX = enemyX + moveX;
-  let nextY = enemyY + moveY;
-
-  let left = nextX + RAT_HITBOX_LEFT;
-  let right = nextX + RAT_FRAME_W - RAT_HITBOX_RIGHT - 1;
-  let top = nextY + RAT_HITBOX_TOP;
-  let bottom = nextY + RAT_FRAME_H[dirRow] - RAT_HITBOX_BOTTOM - 1;
-
-  // X movement
-  if (!isWallTile(left, enemyY + RAT_HITBOX_TOP) &&
-    !isWallTile(right, enemyY + RAT_HITBOX_TOP) &&
-    !isWallTile(left, enemyY + RAT_FRAME_H[dirRow] - RAT_HITBOX_BOTTOM - 1) &&
-    !isWallTile(right, enemyY + RAT_FRAME_H[dirRow] - RAT_HITBOX_BOTTOM - 1)) {
-    enemyX = nextX;
-  }
-
-  // Y movement
-  if (!isWallTile(enemyX + RAT_HITBOX_LEFT, top) &&
-    !isWallTile(enemyX + RAT_FRAME_W - RAT_HITBOX_RIGHT - 1, top) &&
-    !isWallTile(enemyX + RAT_HITBOX_LEFT, bottom) &&
-    !isWallTile(enemyX + RAT_FRAME_W - RAT_HITBOX_RIGHT - 1, bottom)) {
-    enemyY = nextY;
-  }
-}
 
 function getEquippedItem() {
   for (let i = 0; i < size; i++) {
@@ -978,7 +935,6 @@ function getEquippedItem() {
 }
 
 function drawCat(player) {
-  let d = dist(playerX, playerY, enemyX, enemyY);
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
@@ -1086,22 +1042,17 @@ function drawCat(player) {
     }
   }
 
-  if (keyIsDown(32)) { // player hits spacebar to attack
-    if (enemyState === "attack" && d <= enemyAttackRange && attackCooldown == 0) {
-      enemyHealth -= PLAYER_ATTACK;
-      attackCooldown = 60; // Set cooldown period
-
-      if (enemyHealth < 0) {
-        enemyHealth = 0;
+  if (keyIsDown(32)) {
+    for (let e of enemies) {
+      if (!e.alive) continue;
+      let d = dist(playerX, playerY, e.x, e.y);
+      if (e.state === "attack" && d <= e.attackRange && attackCooldown === 0) {
+        e.health -= PLAYER_ATTACK;
+        attackCooldown = 60;
+        break;
       }
     }
   }
-
-  if (enemyHealth <= 0) {
-    enemyHealth = 0;
-    enemyAlive = false;
-  }
-  // print(frameCurrRow);
 }
 
 function drawSwap() {
@@ -1429,6 +1380,26 @@ class Item {
   }
 }
 
+class Enemy {
+  constructor(x, y, type = "rat") {
+    this.x = x;
+    this.y = y;
+    this.type = type;
+    this.health = type === "boss" ? 300 : 100;
+    this.maxHealth = this.health;
+    this.state = "wander";
+    this.speed = type === "boss" ? 1.2 : 0.7;
+    this.detectionRange = type === "boss" ? 250 : 150;
+    this.attackRange = type === "boss" ? 35 : 25;
+    this.alive = true;
+    this.dirX = 1;
+    this.dirY = 0;
+    this.moveTimer = 0;
+    this.animFrame = 0;
+    this.attackCooldown = 0;
+  }
+}
+
 function chestItem(x, y) {
   chestSelect();
   displayItem();
@@ -1661,6 +1632,8 @@ function IU(life, health, inventory1, inventory2) {
 
 function draw() {
   background(220);
+  if (planet === 2) background(100, 150, 200); // blue tint for snow map
+  else background(220);
   screen(page);
   mouseJustPressed = false;
 }
