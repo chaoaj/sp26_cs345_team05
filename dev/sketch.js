@@ -780,7 +780,7 @@ function updateFightRooms() {
     if (r.cleared) continue;
 
     let inRoom = playerX > r.x && playerX < r.x + r.w &&
-                 playerY > r.y && playerY < r.y + r.h;
+      playerY > r.y && playerY < r.y + r.h;
 
     if (inRoom && !r.active && r.activateTimer === -1) {
       r.activateTimer = millis(); // start the timer when player enters
@@ -942,15 +942,15 @@ function drawEnemy() {
     let nextY = e.y + moveY;
     let w = RAT_FRAME_W, h = RAT_FRAME_H[dirRow];
     if (!isWallTile(nextX + RAT_HITBOX_LEFT, e.y + RAT_HITBOX_TOP) &&
-        !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
-        !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
-        !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + h - RAT_HITBOX_BOTTOM - 1)) {
+      !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
+      !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
+      !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + h - RAT_HITBOX_BOTTOM - 1)) {
       e.x = nextX;
     }
     if (!isWallTile(e.x + RAT_HITBOX_LEFT, nextY + RAT_HITBOX_TOP) &&
-        !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + RAT_HITBOX_TOP) &&
-        !isWallTile(e.x + RAT_HITBOX_LEFT, nextY + h - RAT_HITBOX_BOTTOM - 1) &&
-        !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + h - RAT_HITBOX_BOTTOM - 1)) {
+      !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + RAT_HITBOX_TOP) &&
+      !isWallTile(e.x + RAT_HITBOX_LEFT, nextY + h - RAT_HITBOX_BOTTOM - 1) &&
+      !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + h - RAT_HITBOX_BOTTOM - 1)) {
       e.y = nextY;
     }
 
@@ -1012,7 +1012,6 @@ function drawCat(player) {
       offsetY = centerY - 12;
     }
 
-    // 👇 DRAW UNDER if facing up
     if (frameCurrRow === 1) {
       image(img, playerX + offsetX, playerY + offsetY, 12, 12);
     }
@@ -1020,13 +1019,12 @@ function drawCat(player) {
     // draw cat
     image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
 
-    // 👇 DRAW OVER for other directions
     if (frameCurrRow !== 1) {
       image(img, playerX + offsetX, playerY + offsetY, 12, 12);
     }
 
   } else {
-    // no item → just draw cat
+    // there is no item
     image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
   }
 
@@ -1091,13 +1089,13 @@ function drawCat(player) {
   }
 
   if (keyIsDown(32)) {
-  for (let e of enemies) {
-    if (!e.alive) continue;
-    let d = dist(playerX, playerY, e.x, e.y);
-    if (e.state === "attack" && d <= e.attackRange && attackCooldown === 0) {
-      e.health -= PLAYER_ATTACK;
-      attackCooldown = 60;
-      break;
+    for (let e of enemies) {
+      if (!e.alive) continue;
+      let d = dist(playerX, playerY, e.x, e.y);
+      if (e.state === "attack" && d <= e.attackRange && attackCooldown === 0) {
+        e.health -= PLAYER_ATTACK;
+        attackCooldown = 60;
+        break;
       }
     }
   }
@@ -1168,7 +1166,7 @@ function gameStart() {
   } else if (playerHealth <= 0) {
     lives--;
     playerHealth = 100;
-    
+
   }
   if (g == 0) {
     initMapObjects(currentMap);
@@ -1205,32 +1203,32 @@ function drawMap(map, floorTS, wallTS) {
         const srcY = Math.floor(localID / 32) * tileW;
         image(snowTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
       } else {
-      if (tileId >= 194) {
-        const localID = tileId - 194;
-        const srcX = (localID % 3) * tileW;
-        const srcY = Math.floor(localID / 3) * tileW;
-        image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-      } else if (tileId >= 146) {
-        if (tileId === 179) {
-          fill(0); noStroke();
-          rect(x, y, tileW * mapScale, tileW * mapScale);
+        if (tileId >= 194) {
+          const localID = tileId - 194;
+          const srcX = (localID % 3) * tileW;
+          const srcY = Math.floor(localID / 3) * tileW;
+          image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        } else if (tileId >= 146) {
+          if (tileId === 179) {
+            fill(0); noStroke();
+            rect(x, y, tileW * mapScale, tileW * mapScale);
+          } else {
+            const localID = tileId - 146;
+            const srcX = (localID % 12) * tileW;
+            const srcY = Math.floor(localID / 12) * tileW;
+            image(wallTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+          }
+        } else if (tileId >= 50) {
+          const localID = tileId - 50;
+          const srcX = (localID % 24) * tileW;
+          const srcY = Math.floor(localID / 24) * 32;
+          image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
         } else {
-          const localID = tileId - 146;
-          const srcX = (localID % 12) * tileW;
-          const srcY = Math.floor(localID / 12) * tileW;
-          image(wallTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+          const localID = tileId - 1;
+          const srcX = (localID % 7) * tileW;
+          const srcY = Math.floor(localID / 7) * tileW;
+          image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
         }
-      } else if (tileId >= 50) {
-        const localID = tileId - 50;
-        const srcX = (localID % 24) * tileW;
-        const srcY = Math.floor(localID / 24) * 32;
-        image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
-      } else {
-        const localID = tileId - 1;
-        const srcX = (localID % 7) * tileW;
-        const srcY = Math.floor(localID / 7) * tileW;
-        image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-       }
       }
     }
   }
@@ -1252,11 +1250,11 @@ function isWallTile(worldX, worldY) {
       if (layer.name === "Walls" && tileId !== 0) return true;
       if (layer.name === "Floors" && tileId !== 0) hasFloor = true;
     } else {
-    if (layer.name !== "floors" && layer.name !== "walls") continue;
-    const tileId = layer.data[row * currentMap.width + col];
-    if (tileId >= 50 && tileId <= 193) return true; // high walls + low walls
-    if (tileId === 179) return true;                 // void blocks movement
-    if (tileId >= 1 && tileId <= 49) hasFloor = true;
+      if (layer.name !== "floors" && layer.name !== "walls") continue;
+      const tileId = layer.data[row * currentMap.width + col];
+      if (tileId >= 50 && tileId <= 193) return true; // high walls + low walls
+      if (tileId === 179) return true;                 // void blocks movement
+      if (tileId >= 1 && tileId <= 49) hasFloor = true;
     }
   }
 
@@ -1286,7 +1284,7 @@ function collidesWithWall(X, Y) {
     let sw = 16 * mapScale;
     let sh = 16 * mapScale;
     if (right > spike.x && left < spike.x + sw &&
-        bottom > spike.y && top < spike.y + sh) {
+      bottom > spike.y && top < spike.y + sh) {
       return true;
     }
   }
