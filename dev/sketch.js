@@ -604,8 +604,6 @@ function storySlides() {
 
   // --- SKIP BUTTON ---
   button(skip2, 475, 345, skip2.width / 14, skip2.height / 12);
-
-  // --- DEBUG BOX (optional, remove later) ---
   push();
   fill(255);
   rect(150, 350, 250, 30);
