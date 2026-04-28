@@ -244,6 +244,30 @@ function preload() {
   floorTileset = loadImage("assets/atlas_floor-16x16.png");
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
   chestTileset = loadImage("assets/Chest.png");
+
+  arrow_up = loadImage("assets/arrow_up.png");
+  arrow = loadImage("assets/arrow.png");
+  arrow_down = loadImage("assets/arrow_down.png");
+  arrow_left = loadImage("assets/arrow_left.png");
+  arrow_right = loadImage("assets/arrow_right.png");
+  number = loadImage("assets/number.png");
+  number_1 = loadImage("assets/number_1.png");
+  number_2 = loadImage("assets/number_2.png");
+  number_3 = loadImage("assets/number_3.png");
+  enter = loadImage("assets/enter.png");
+  enter_selected = loadImage("assets/enter_selected.png");
+  backspace = loadImage("assets/backspace.png");
+  backspace_selected = loadImage("assets/backspace_selected.png");
+  shift = loadImage("assets/shift.png");
+  shift_selected = loadImage("assets/shift_selected.png");
+  controls_1 = loadImage("assets/controls.png");
+  wasd = loadImage("assets/wasd.png");
+  wasd_s = loadImage("assets/wasd_s.png");
+  wasd_a = loadImage("assets/wasd_a.png");
+  wasd_d = loadImage("assets/wasd_d.png");
+  wasd_w = loadImage("assets/wasd_w.png");
+  spacebar = loadImage("assets/spacebar.png");
+  spacebar_selected = loadImage("assets/spacebar_selected.png");
 }
 
 function getSpawnPoint(map) {
@@ -314,16 +338,16 @@ function button(image1, x, y, w, h) {
     if (image1 === start_game2) {
       image(start_game1, 275, 150, start_game1.width / 7 * scale, start_game1.height / 6 * scale);
     } else if (image1 === skins2) {
-      image(skins1, 410, 250, skins1.width / 7 * scale, skins1.height / 6 * scale);
+      image(skins1, x, y, skins1.width / 7 * scale, skins1.height / 6 * scale);
     } else if (image1 === return2) {
       // return button from skins screen
-      if (page === 1) {
-        image(return1, 20, 20, return1.width / 7 * scale, return1.height / 6 * scale);
+      if (page === 1 || page === 6) {
+        image(return1, x, y, return1.width / 7 * scale, return1.height / 6 * scale);
       }
 
       // return button from game over / victory screen
       if (page === 3 || page === 4) {
-        image(return1, 205, 260, return1.width / 4 * scale, return1.height / 4 * scale);
+        image(return1, x, y, return1.width / 4 * scale, return1.height / 4 * scale);
       }
     } else if (image1 === skip2) {
       image(skip1, 475, 345, skip1.width / 14, skip1.height / 12);
@@ -340,6 +364,8 @@ function button(image1, x, y, w, h) {
       page = 0;
     } else if (image1 === skip2) {
       onBackstoryComplete();
+    } else if (image1 === controls_1) {
+      page = 6;
     }
 
     print(page);
@@ -367,6 +393,77 @@ function screen() {
     victoryPage();
   } else if (page === 5) {
     gameStart();
+  } else if (page === 6) {
+    controls();
+  }
+}
+
+function controls() {
+  button(return2, 20, 20, return2.width / 7 * scale, return2.height / 6 * scale);
+  image(controls_1, 250, 50, controls_1.width / 7 * scale, controls_1.height / 6 * scale);
+
+  textSize(16);
+  text("Move using WASD", 450, 220);
+  text("or Arrow Keys", 450, 240);
+
+  if (keyCode === UP_ARROW || key === "w") {
+    image(wasd_w, 350, 180, wasd_w.width / 7 * scale, wasd_w.height / 6 * scale);
+    image(arrow_up, 330, 250, arrow_up.width / 7 * scale, arrow_up.height / 6 * scale);
+  } else if (keyCode === DOWN_ARROW || key === "s") {
+    image(wasd_s, 350, 180, wasd_s.width / 7 * scale, wasd_s.height / 6 * scale);
+    image(arrow_down, 330, 250, arrow_down.width / 7 * scale, arrow_down.height / 6 * scale);
+  } else if (keyCode === LEFT_ARROW || key === "a") {
+    image(wasd_a, 350, 180, wasd_a.width / 7 * scale, wasd_a.height / 6 * scale);
+    image(arrow_left, 330, 250, arrow_left.width / 7 * scale, arrow_left.height / 6 * scale);
+  } else if (keyCode === RIGHT_ARROW || key === "d") {
+    image(wasd_d, 350, 180, wasd_d.width / 7 * scale, wasd_d.height / 6 * scale);
+    image(arrow_right, 330, 250, arrow_right.width / 7 * scale, arrow_right.height / 6 * scale);
+  } else {
+    image(wasd, 350, 180, wasd.width / 7 * scale, wasd.height / 6 * scale);
+    image(arrow, 330, 250, arrow.width / 7 * scale, arrow.height / 6 * scale);
+  }
+
+  text("press enter to pick up", 100, 300);
+  text("or swap selected item", 100, 320);
+  if (keyCode === ENTER) {
+    image(enter_selected, 30, 280, enter_selected.width / 7 * scale, enter_selected.height / 6 * scale);
+  } else {
+    image(enter, 30, 280, enter.width / 7 * scale, enter.height / 6 * scale);
+  }
+
+  text("press backspace to", 100, 250);
+  text("drop selected item", 100, 270);
+  if (keyCode === BACKSPACE) {
+    image(backspace_selected, 30, 230, backspace_selected.width / 7 * scale, backspace_selected.height / 6 * scale);
+  } else {
+    image(backspace, 30, 230, backspace.width / 7 * scale, backspace.height / 6 * scale);
+  }
+
+  text("press shift to", 100, 350);
+  text("use selected potion", 100, 370);
+  if (keyCode === SHIFT) {
+    image(shift_selected, 30, 330, shift_selected.width / 7 * scale, shift_selected.height / 6 * scale);
+  } else {
+    image(shift, 30, 330, shift.width / 7 * scale, shift.height / 6 * scale);
+  }
+
+  text("use number keys 1-3 to", 150, 170);
+  text("select item in inventory", 150, 190);
+  if (key === "1") {
+    image(number_1, 50, 150, number_1.width / 7 * scale, number_1.height / 6 * scale);
+  } else if (key === "2") {
+    image(number_2, 50, 150, number_2.width / 7 * scale, number_2.height / 6 * scale);
+  } else if (key === "3") {
+    image(number_3, 50, 150, number_3.width / 7 * scale, number_3.height / 6 * scale);
+  } else {
+    image(number, 50, 150, number.width / 7 * scale, number.height / 6 * scale);
+  }
+
+  text("attack using spacebar", 380, 360);
+  if (key === " ") {
+    image(spacebar_selected, 260, 330, spacebar_selected.width / 7 * scale, spacebar_selected.height / 6 * scale);
+  } else {
+    image(spacebar, 260, 330, spacebar.width / 7 * scale, spacebar.height / 6 * scale);
   }
 }
 
@@ -426,8 +523,9 @@ function homePage() {
   button(start_game2, 275, 150, start_game2.width / 7 * scale, start_game2.height / 6 * scale);
 
   // skins button
-  button(skins2, 410, 250, skins2.width / 7 * scale, skins2.height / 6 * scale);
+  button(skins2, 410, 300, skins2.width / 7 * scale, skins2.height / 6 * scale);
 
+  button(controls_1, 410, 250, controls_1.width / 7 * scale, controls_1.height / 6 * scale);
 }
 
 function skinScreen() {
