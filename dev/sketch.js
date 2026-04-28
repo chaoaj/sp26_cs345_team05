@@ -759,6 +759,7 @@ function loadRandomPlanet() {
   fightRooms = [];
   chests = [];
   spikeWalls = [];
+  enemies = [];
 
   // Respawn player at new map spawn point
   const spawn = getSpawnPoint(currentMap);
@@ -802,6 +803,7 @@ function updateFightRooms() {
         r.cleared = true;
         r.active = false;
         r.activateTimer = -1;
+        enemies = enemies.filter(e => e.roomIndex !== i);
         for (let spike of spikeWalls) {
           if (spike.roomIndex === i) {
             spike.raised = false;
@@ -896,10 +898,7 @@ function drawSpikeWalls() {
 function drawEnemy() {
   for (let i = enemies.length - 1; i >= 0; i--) {
     let e = enemies[i];
-    if (!e.alive) {
-      enemies.splice(i, 1);
-      continue;
-    }
+    if (!e.alive) continue;
 
     let dx = playerX - e.x;
     let dy = playerY - e.y;
@@ -1441,6 +1440,7 @@ class Enemy {
     this.moveTimer = 0;
     this.animFrame = 0;
     this.attackCooldown = 0;
+    this.roomIndex = -1;
   }
 }
 
