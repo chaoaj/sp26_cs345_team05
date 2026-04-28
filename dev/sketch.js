@@ -362,7 +362,7 @@ function screen() {
 function homePage() {
   scale = 1;
   backgroundMoveSpeed = 0.5;
-  // stopAllSounds();
+  overmusic.stop();
 
   if (audioUnlocked && !homepage_sound.isPlaying()) {
     homepage_sound.loop();
