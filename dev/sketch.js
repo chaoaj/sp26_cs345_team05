@@ -1,4 +1,4 @@
-/*const backstorySlides = [
+const backstorySlides = [
   {
     title: "A Long Time Ago…",
     text: [
@@ -59,7 +59,7 @@
     ],
     emoji: "🌠🐾✨"
   }
-]; */
+];
 
 var planet = 1;
 var g = 0;
@@ -139,22 +139,13 @@ let chests = [];
 let spikeWalls = [];
 let chestTileset;
 
-let enemyState = "wander"; // "wander" | "chase" | "attack"
-let enemyX;
-let enemyY;
-let enemySpeed = 0.7;
-let enemyDetectionRange = 150;
-let enemyAttackRange = 25;
-let enemyMoveTimer = 0;
-let enemyDirX = 1;
-let enemyDirY = 0;
-
-let enemyHealth = 100;
+let enemies = [];
 let playerHealth = 100;
 let attackCooldown = 0; // frames until enemy can damage player again
 
-//let enemies = [];
-let enemyAlive = true;
+
+
+
 
 const ENEMY_ATTACK = 5;
 const PLAYER_ATTACK = 10;
@@ -268,6 +259,7 @@ function preload() {
   wasd_w = loadImage("assets/wasd_w.png");
   spacebar = loadImage("assets/spacebar.png");
   spacebar_selected = loadImage("assets/spacebar_selected.png");
+  snowTileset = loadImage("assets/FE8 - Snowy Bern.png");
 }
 
 function getSpawnPoint(map) {
@@ -309,9 +301,6 @@ function setup() {
 
   // enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
   // enemyY = spawn.y + random(-100, 100);
-
-  enemyX = spawn.x;
-  enemyY = spawn.y - 100;
 
   swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 });
   swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 });
@@ -470,7 +459,7 @@ function controls() {
 function homePage() {
   scale = 1;
   backgroundMoveSpeed = 0.5;
-  // stopAllSounds();
+  overmusic.stop();
 
   if (audioUnlocked && !homepage_sound.isPlaying()) {
     homepage_sound.loop();
@@ -623,50 +612,96 @@ function storySlides() {
   if (!backstoryActive) {
     startBackstory();
   }
+
+  // music handling
   if (audioUnlocked && !slides_track.isPlaying()) {
     slides_track.setVolume(0.4);
     slides_track.loop();
   }
 
-  if (homepage_sound.isPlaying()) {
-    homepage_sound.stop();
-  }
-  if (overmusic.isPlaying()) {
-    overmusic.stop();
-  }
+  if (homepage_sound.isPlaying()) homepage_sound.stop();
+  if (overmusic.isPlaying()) overmusic.stop();
 
-  // Draw current gif fullscreen
+  // --- BACKGROUND GIF ---
   const storyGifs = [story1, story2, story3, story4];
   if (currentSlide < storyGifs.length) {
     image(storyGifs[currentSlide], 0, 0, pageWidth, pageHeight);
   }
 
-  // Black overlay for fade transition
+  // --- FADE OVERLAY ---
   fill(0, 0, 0, 255 - slideAlpha);
   noStroke();
   rect(0, 0, pageWidth, pageHeight);
 
-  // Reuse same fade + timer logic
+  // --- TEXT CONTENT ---
+  let slide = backstorySlides[currentSlide];
+
+  if (slide) {
+    push();
+
+    textAlign(CENTER);
+
+    // Title shadow
+    fill(0);
+    textSize(26);
+    text(slide.title, pageWidth / 2 + 2, 62);
+
+    // Title
+    fill(255);
+    text(slide.title, pageWidth / 2, 60);
+
+    // Body text
+    textSize(14);
+    for (let i = 0; i < slide.text.length; i++) {
+      // shadow
+      fill(0);
+      text(slide.text[i], pageWidth / 2 + 1, 122 + i * 20);
+
+      // main text
+      fill(255);
+      text(slide.text[i], pageWidth / 2, 120 + i * 20);
+    }
+
+    // Emoji
+    textSize(30);
+    fill(255);
+    text(slide.emoji, pageWidth / 2, 310);
+
+    pop();
+  }
+
+  // --- FADE LOGIC ---
   if (fadeState === "in") {
     slideAlpha = min(slideAlpha + FADE_SPEED, 255);
-    if (slideAlpha >= 255) { fadeState = "hold"; fadeTimer = 0; }
+    if (slideAlpha >= 255) {
+      fadeState = "hold";
+      fadeTimer = 0;
+    }
   } else if (fadeState === "hold") {
     fadeTimer++;
-    if (fadeTimer >= HOLD_FRAMES) { fadeState = "out"; }
+    if (fadeTimer >= HOLD_FRAMES) {
+      fadeState = "out";
+    }
   } else if (fadeState === "out") {
     slideAlpha = max(slideAlpha - FADE_SPEED, 0);
     if (slideAlpha <= 0) {
       currentSlide++;
-      if (currentSlide >= storyGifs.length) { onBackstoryComplete(); return; }
+
+      // stop when either gifs OR text runs out
+      if (
+        currentSlide >= storyGifs.length ||
+        currentSlide >= backstorySlides.length
+      ) {
+        onBackstoryComplete();
+        return;
+      }
+
       fadeState = "in";
     }
   }
 
-  // skip button
+  // --- SKIP BUTTON ---
   button(skip2, 475, 345, skip2.width / 14, skip2.height / 12);
-
-
-  // temporary "show controls area"
   push();
   fill(255);
   rect(150, 350, 250, 30);
@@ -719,7 +754,8 @@ function initMapObjects(map) {
             w: obj.width * mapScale,
             h: obj.height * mapScale,
             cleared: false,
-            active: false
+            active: false,
+            activateTimer: -1
           });
         }
       }
@@ -735,6 +771,12 @@ function initMapObjects(map) {
             tileCol: Math.floor(obj.x / 16),
             tileRow: Math.floor(obj.y / 16)
           });
+        }
+        if (obj.name === "enemySpawn") {
+          enemies.push(new Enemy(obj.x * mapScale, obj.y * mapScale, "rat"));
+        }
+        if (obj.name === "BossSpawn") {
+          enemies.push(new Enemy(obj.x * mapScale, obj.y * mapScale, "boss"));
         }
       }
     }
@@ -776,14 +818,73 @@ function initMapObjects(map) {
   }
 }
 
+function loadRandomPlanet() {
+  console.log("loading planet, current:", planet, "completed:", completedPlanets);
+  const bossPlanet = 4;
+  const normalPlanets = [1, 2, 3];
+  const remaining = normalPlanets.filter(p => !completedPlanets.includes(p) && p !== planet);
+
+  completedPlanets.push(planet);
+
+  let next;
+  if (remaining.length === 0) {
+    next = bossPlanet;
+  } else {
+    next = remaining[floor(random(remaining.length))];
+  }
+
+  planet = next;
+
+  if (next === 1 && typeof mapData_nacho !== 'undefined') {
+    currentMap = mapData_nacho;
+  } else if (next === 2 && typeof mapData_parmesan !== 'undefined') {
+    currentMap = mapData_parmesan;
+  } else if (next === 3 && typeof mapData_blueCheese !== 'undefined') {
+    currentMap = mapData_blueCheese;
+  } else if (next === 4 && typeof mapData_cheeseCake !== 'undefined') {
+    currentMap = mapData_cheeseCake;
+  } else {
+    // fallback to nacho if map not ready yet
+    currentMap = mapData_nacho;
+    planet = 1;
+  }
+
+  currentMapFloor = floorTileset;
+  currentMapWall = wallTileset;
+
+  // Reset map objects for new planet
+  g = 0;
+  fightRooms = [];
+  chests = [];
+  spikeWalls = [];
+  enemies = [];
+
+  // Respawn player at new map spawn point
+  const spawn = getSpawnPoint(currentMap);
+  playerX = spawn.x;
+  playerY = spawn.y;
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
+
+  if (next === bossPlanet && completedPlanets.includes(bossPlanet)) {
+    page = 4; // victory
+  }
+}
+
 function updateFightRooms() {
   for (let i = 0; i < fightRooms.length; i++) {
     let r = fightRooms[i];
     if (r.cleared) continue;
+
     let inRoom = playerX > r.x && playerX < r.x + r.w &&
       playerY > r.y && playerY < r.y + r.h;
-    if (inRoom && !r.active) {
-      console.log("entered fight room", i);
+
+    if (inRoom && !r.active && r.activateTimer === -1) {
+      r.activateTimer = millis(); // start the timer when player enters
+    }
+
+    // raise spikes after 1500ms delay
+    if (r.activateTimer > 0 && millis() - r.activateTimer > 1000 && !r.active) {
       r.active = true;
       for (let spike of spikeWalls) {
         if (spike.roomIndex === i) {
@@ -795,10 +896,12 @@ function updateFightRooms() {
     }
 
     if (r.active) {
-      let allEnemiesDefeated = false;
+      let allEnemiesDefeated = enemies.length > 0 && enemies.every(e => !e.alive);
       if (allEnemiesDefeated) {
         r.cleared = true;
         r.active = false;
+        r.activateTimer = -1;
+        enemies = enemies.filter(e => e.roomIndex !== i);
         for (let spike of spikeWalls) {
           if (spike.roomIndex === i) {
             spike.raised = false;
@@ -891,86 +994,70 @@ function drawSpikeWalls() {
 //}
 
 function drawEnemy() {
-  if (!enemyAlive) return;
-  //for (let i = enemies.length - 1; i >= 0; i--) {
-  //let enemy = enemies[i];
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let e = enemies[i];
+    if (!e.alive) continue;
 
-  //if (enemy.health <= 0) {
-  //enemies.splice(i, 1);
-  //continue;
-  //}
-  //}
-  healthBarEnemy(enemyX, enemyY - 5, enemyHealth, 100); // example health bar above enemy
-  let dx = playerX - enemyX;
-  let dy = playerY - enemyY;
-  let d = dist(playerX, playerY, enemyX, enemyY);
+    let dx = playerX - e.x;
+    let dy = playerY - e.y;
+    let d = dist(playerX, playerY, e.x, e.y);
 
-  if (d <= enemyAttackRange) {
-    enemyState = "attack";
-  } else if (d <= enemyDetectionRange) {
-    enemyState = "chase";
-  } else {
-    enemyState = "wander";
-  }
+    if (d <= e.attackRange) e.state = "attack";
+    else if (d <= e.detectionRange) e.state = "chase";
+    else e.state = "wander";
 
-  // changes direction based on player location
-  let dirRow;
-  if (Math.abs(dx) > Math.abs(dy)) {
-    dirRow = dx > 0 ? 1 : 3;   // right / left
-  } else {
-    dirRow = dy > 0 ? 2 : 0;   // down / up
-  }
+    let dirRow;
+    if (Math.abs(dx) > Math.abs(dy)) dirRow = dx > 0 ? 1 : 3;
+    else dirRow = dy > 0 ? 2 : 0;
 
-  let moveX = 0;
-  let moveY = 0;
+    let moveX = 0, moveY = 0;
 
-  if (enemyState === "chase" && d > 0) {
-    moveX = (dx / d) * enemySpeed;
-    moveY = (dy / d) * enemySpeed;
-  } else if (enemyState === "wander") {
-    enemyMoveTimer--;
-    if (enemyMoveTimer <= 0) {
-      let angle = random(TWO_PI);
-      enemyDirX = cos(angle);
-      enemyDirY = sin(angle);
-      enemyMoveTimer = floor(random(30, 90));
+    if (e.state === "chase" && d > 0) {
+      moveX = (dx / d) * e.speed;
+      moveY = (dy / d) * e.speed;
+    } else if (e.state === "wander") {
+      e.moveTimer--;
+      if (e.moveTimer <= 0) {
+        let angle = random(TWO_PI);
+        e.dirX = cos(angle);
+        e.dirY = sin(angle);
+        e.moveTimer = floor(random(30, 90));
+      }
+      moveX = e.dirX * e.speed * 0.5;
+      moveY = e.dirY * e.speed * 0.5;
+    } else if (e.state === "attack" && e.attackCooldown <= 0) {
+      playerHealth = max(0, playerHealth - ENEMY_ATTACK);
+      e.attackCooldown = 60;
     }
-    moveX = enemyDirX * enemySpeed * 0.5;
-    moveY = enemyDirY * enemySpeed * 0.5;
-  } else if (enemyState === "attack") {
-    console.log("Enemy attacks!");
-  }
 
-  moveEnemy(moveX, moveY, dirRow);
+    if (e.attackCooldown > 0) e.attackCooldown--;
 
-  let sx = currentFrameRat * RAT_FRAME_W;
-  let sy = RAT_ROW_Y[dirRow];
-  let sw = RAT_FRAME_W;
-  let sh = RAT_FRAME_H[dirRow];
-
-  image(rat1, enemyX, enemyY, sw / 1, sh / 1, sx, sy, sw, sh);
-
-  if (frameCount % 5 === 0) {
-    currentFrameRat++;
-    if (currentFrameRat >= 3) currentFrameRat = 0;
-  }
-
-  if (enemyState === "attack" && attackCooldown <= 0) {
-    if (playerHealth <= 0) {
-      playerHealth = 0;
-    } else {
-      playerHealth -= PLAYER_ATTACK;
-      attackCooldown = 60; // Set cooldown period
+    // move enemy
+    let nextX = e.x + moveX;
+    let nextY = e.y + moveY;
+    let w = RAT_FRAME_W, h = RAT_FRAME_H[dirRow];
+    if (!isWallTile(nextX + RAT_HITBOX_LEFT, e.y + RAT_HITBOX_TOP) &&
+      !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
+      !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
+      !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + h - RAT_HITBOX_BOTTOM - 1)) {
+      e.x = nextX;
     }
-  }
+    if (!isWallTile(e.x + RAT_HITBOX_LEFT, nextY + RAT_HITBOX_TOP) &&
+      !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + RAT_HITBOX_TOP) &&
+      !isWallTile(e.x + RAT_HITBOX_LEFT, nextY + h - RAT_HITBOX_BOTTOM - 1) &&
+      !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + h - RAT_HITBOX_BOTTOM - 1)) {
+      e.y = nextY;
+    }
 
-  if (attackCooldown > 0) {
-    attackCooldown--;
-  }
+    // draw
+    let img = e.type === "boss" ? rat_boss : rat1;
+    let sx = (frameCount % 15 < 5 ? 0 : frameCount % 15 < 10 ? 1 : 2) * RAT_FRAME_W;
+    let sy = RAT_ROW_Y[dirRow];
+    image(img, e.x, e.y, RAT_FRAME_W, RAT_FRAME_H[dirRow], sx, sy, RAT_FRAME_W, RAT_FRAME_H[dirRow]);
 
-  if (enemyHealth <= 0) {
-    enemyHealth = 0;
-    enemyAlive = false;
+    healthBarEnemy(e.x, e.y - 5, e.health, e.maxHealth);
+
+    if (e.health <= 0) e.alive = false;
   }
 }
 
@@ -980,34 +1067,6 @@ const RAT_HITBOX_RIGHT = 14;
 const RAT_HITBOX_TOP = 6;
 const RAT_HITBOX_BOTTOM = 10;
 
-// enemy border mechanic
-function moveEnemy(moveX, moveY, dirRow) {
-  if (moveX === 0 && moveY === 0) return;
-
-  let nextX = enemyX + moveX;
-  let nextY = enemyY + moveY;
-
-  let left = nextX + RAT_HITBOX_LEFT;
-  let right = nextX + RAT_FRAME_W - RAT_HITBOX_RIGHT - 1;
-  let top = nextY + RAT_HITBOX_TOP;
-  let bottom = nextY + RAT_FRAME_H[dirRow] - RAT_HITBOX_BOTTOM - 1;
-
-  // X movement
-  if (!isWallTile(left, enemyY + RAT_HITBOX_TOP) &&
-    !isWallTile(right, enemyY + RAT_HITBOX_TOP) &&
-    !isWallTile(left, enemyY + RAT_FRAME_H[dirRow] - RAT_HITBOX_BOTTOM - 1) &&
-    !isWallTile(right, enemyY + RAT_FRAME_H[dirRow] - RAT_HITBOX_BOTTOM - 1)) {
-    enemyX = nextX;
-  }
-
-  // Y movement
-  if (!isWallTile(enemyX + RAT_HITBOX_LEFT, top) &&
-    !isWallTile(enemyX + RAT_FRAME_W - RAT_HITBOX_RIGHT - 1, top) &&
-    !isWallTile(enemyX + RAT_HITBOX_LEFT, bottom) &&
-    !isWallTile(enemyX + RAT_FRAME_W - RAT_HITBOX_RIGHT - 1, bottom)) {
-    enemyY = nextY;
-  }
-}
 
 function getEquippedItem() {
   for (let i = 0; i < size; i++) {
@@ -1019,7 +1078,6 @@ function getEquippedItem() {
 }
 
 function drawCat(player) {
-  let d = dist(playerX, playerY, enemyX, enemyY);
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
@@ -1049,7 +1107,6 @@ function drawCat(player) {
       offsetY = centerY - 12;
     }
 
-    // 👇 DRAW UNDER if facing up
     if (frameCurrRow === 1) {
       image(img, playerX + offsetX, playerY + offsetY, 12, 12);
     }
@@ -1057,13 +1114,12 @@ function drawCat(player) {
     // draw cat
     image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
 
-    // 👇 DRAW OVER for other directions
     if (frameCurrRow !== 1) {
       image(img, playerX + offsetX, playerY + offsetY, 12, 12);
     }
 
   } else {
-    // no item → just draw cat
+    // there is no item
     image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
   }
 
@@ -1127,22 +1183,17 @@ function drawCat(player) {
     }
   }
 
-  if (keyIsDown(32)) { // player hits spacebar to attack
-    if (enemyState === "attack" && d <= enemyAttackRange && attackCooldown == 0) {
-      enemyHealth -= PLAYER_ATTACK;
-      attackCooldown = 60; // Set cooldown period
-
-      if (enemyHealth < 0) {
-        enemyHealth = 0;
+  if (keyIsDown(32)) {
+    for (let e of enemies) {
+      if (!e.alive) continue;
+      let d = dist(playerX, playerY, e.x, e.y);
+      if (e.state === "attack" && d <= e.attackRange && attackCooldown === 0) {
+        e.health -= PLAYER_ATTACK;
+        attackCooldown = 60;
+        break;
       }
     }
   }
-
-  if (enemyHealth <= 0) {
-    enemyHealth = 0;
-    enemyAlive = false;
-  }
-  // print(frameCurrRow);
 }
 
 function drawSwap() {
@@ -1210,7 +1261,7 @@ function gameStart() {
   } else if (playerHealth <= 0) {
     lives--;
     playerHealth = 100;
-    
+
   }
   if (g == 0) {
     initMapObjects(currentMap);
@@ -1219,10 +1270,16 @@ function gameStart() {
     g++;
   }
 }
+function keyPressed() {
+  if (key === 'p' || key === 'P') {
+    loadRandomPlanet();
+  }
+}
 
 function drawMap(map, floorTS, wallTS) {
   const tileW = 16;
   const mapCols = map.width;
+  const isSnowMap = (map === mapData_parmesan);
 
   for (let layer of map.layers) {
     if (layer.type !== "tilelayer") continue;
@@ -1234,32 +1291,39 @@ function drawMap(map, floorTS, wallTS) {
       const row = Math.floor(i / mapCols);
       const x = col * tileW * mapScale;
       const y = row * tileW * mapScale;
-
-      if (tileId >= 194) {
-        const localID = tileId - 194;
-        const srcX = (localID % 3) * tileW;
-        const srcY = Math.floor(localID / 3) * tileW;
-        image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-      } else if (tileId >= 146) {
-        if (tileId === 179) {
-          fill(0); noStroke();
-          rect(x, y, tileW * mapScale, tileW * mapScale);
-        } else {
-          const localID = tileId - 146;
-          const srcX = (localID % 12) * tileW;
-          const srcY = Math.floor(localID / 12) * tileW;
-          image(wallTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-        }
-      } else if (tileId >= 50) {
-        const localID = tileId - 50;
-        const srcX = (localID % 24) * tileW;
-        const srcY = Math.floor(localID / 24) * 32;
-        image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
-      } else {
+      if (isSnowMap) {
+        // Snow tileset: firstgid 1, 32 columns, 16x16 tiles
         const localID = tileId - 1;
-        const srcX = (localID % 7) * tileW;
-        const srcY = Math.floor(localID / 7) * tileW;
-        image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        const srcX = (localID % 32) * tileW;
+        const srcY = Math.floor(localID / 32) * tileW;
+        image(snowTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+      } else {
+        if (tileId >= 194) {
+          const localID = tileId - 194;
+          const srcX = (localID % 3) * tileW;
+          const srcY = Math.floor(localID / 3) * tileW;
+          image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        } else if (tileId >= 146) {
+          if (tileId === 179) {
+            fill(0); noStroke();
+            rect(x, y, tileW * mapScale, tileW * mapScale);
+          } else {
+            const localID = tileId - 146;
+            const srcX = (localID % 12) * tileW;
+            const srcY = Math.floor(localID / 12) * tileW;
+            image(wallTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+          }
+        } else if (tileId >= 50) {
+          const localID = tileId - 50;
+          const srcX = (localID % 24) * tileW;
+          const srcY = Math.floor(localID / 24) * 32;
+          image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
+        } else {
+          const localID = tileId - 1;
+          const srcX = (localID % 7) * tileW;
+          const srcY = Math.floor(localID / 7) * tileW;
+          image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        }
       }
     }
   }
@@ -1270,17 +1334,25 @@ function isWallTile(worldX, worldY) {
   const col = Math.floor(worldX / tileW);
   const row = Math.floor(worldY / tileW);
   if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
+  const isSnowMap = (currentMap === mapData_parmesan);
 
   let hasFloor = false;
   for (let layer of currentMap.layers) {
     if (layer.type !== "tilelayer") continue;
-    if (layer.name !== "floors" && layer.name !== "walls") continue;
-
-    const tileId = layer.data[row * currentMap.width + col];
-    if (tileId >= 50 && tileId <= 193) return true; // high walls + low walls
-    if (tileId === 179) return true;                 // void blocks movement
-    if (tileId >= 1 && tileId <= 49) hasFloor = true;
+    if (isSnowMap) {
+      if (layer.name !== "Floors" && layer.name !== "Walls") continue;
+      const tileId = layer.data[row * currentMap.width + col];
+      if (layer.name === "Walls" && tileId !== 0) return true;
+      if (layer.name === "Floors" && tileId !== 0) hasFloor = true;
+    } else {
+      if (layer.name !== "floors" && layer.name !== "walls") continue;
+      const tileId = layer.data[row * currentMap.width + col];
+      if (tileId >= 50 && tileId <= 193) return true; // high walls + low walls
+      if (tileId === 179) return true;                 // void blocks movement
+      if (tileId >= 1 && tileId <= 49) hasFloor = true;
+    }
   }
+
   return !hasFloor;
 }
 
@@ -1295,10 +1367,24 @@ function collidesWithWall(X, Y) {
   let top = Y + HITBOX_TOP;
   let bottom = Y + SPRITE_H - HITBOX_BOTTOM - 1;
 
-  return isWallTile(left, top) ||
+  // Check map walls
+  if (isWallTile(left, top) ||
     isWallTile(right, top) ||
     isWallTile(left, bottom) ||
-    isWallTile(right, bottom);
+    isWallTile(right, bottom)) return true;
+
+  // Check raised spike walls
+  for (let spike of spikeWalls) {
+    if (!spike.raised) continue;
+    let sw = 16 * mapScale;
+    let sh = 16 * mapScale;
+    if (right > spike.x && left < spike.x + sw &&
+      bottom > spike.y && top < spike.y + sh) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function gameover() {
@@ -1432,6 +1518,27 @@ class Item {
     } else {
       return this.image[0];
     }
+  }
+}
+
+class Enemy {
+  constructor(x, y, type = "rat") {
+    this.x = x;
+    this.y = y;
+    this.type = type;
+    this.health = type === "boss" ? 300 : 100;
+    this.maxHealth = this.health;
+    this.state = "wander";
+    this.speed = type === "boss" ? 1.2 : 0.7;
+    this.detectionRange = type === "boss" ? 250 : 150;
+    this.attackRange = type === "boss" ? 35 : 25;
+    this.alive = true;
+    this.dirX = 1;
+    this.dirY = 0;
+    this.moveTimer = 0;
+    this.animFrame = 0;
+    this.attackCooldown = 0;
+    this.roomIndex = -1;
   }
 }
 
@@ -1667,6 +1774,8 @@ function IU(life, health, inventory1, inventory2) {
 
 function draw() {
   background(220);
+  if (planet === 2) background(100, 150, 200); // blue tint for snow map
+  else background(220);
   screen(page);
   mouseJustPressed = false;
 }

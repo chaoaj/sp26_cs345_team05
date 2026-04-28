@@ -1,4 +1,4 @@
-/*const backstorySlides = [
+const backstorySlides = [
   {
     title: "A Long Time Ago…",
     text: [
@@ -59,11 +59,13 @@
     ],
     emoji: "🌠🐾✨"
   }
-]; */
+];
 
+var planet = 1;
 var g = 0;
 var page = 0;
 var scale = 1;
+var lives = 3;
 
 const pageWidth = 600;
 const pageHeight = 400;
@@ -73,6 +75,9 @@ let homepageY = 0;
 
 // used to prevent spamming buttons
 let mouseJustPressed = false;
+
+// prevent audio spam
+let audioUnlocked = false;
 
 // sprite sheet settings
 let currentFrame = 0;
@@ -107,8 +112,8 @@ let slideAlpha = 0;          // 0–255 fade value
 let fadeState = "in";        // "in" | "hold" | "out"
 let fadeTimer = 0;
 
-const FADE_SPEED   = 4;      // alpha change per frame
-const HOLD_FRAMES  = 60;    // frames to hold each slide (3s at 60fps)
+const FADE_SPEED = 4;      // alpha change per frame
+const HOLD_FRAMES = 60;    // frames to hold each slide (3s at 60fps)
 let backstoryActive = false;
 
 let size = 0;
@@ -116,6 +121,11 @@ var inventory2 = [];
 var droppedInventory = [];
 var droppedSize = 0;
 var click = true;
+var chestInventory_blueCheese = [];
+var chestInventory_parmesan = [];
+var chestInventory_cheeseCake = [];
+var chestInventory_nacho = [];
+var chestInventory = [chestInventory_nacho, chestInventory_blueCheese, chestInventory_parmesan, chestInventory_cheeseCake];
 
 let floorTileset, wallTileset;
 let cam = { x: 0, y: 0 };
@@ -129,20 +139,26 @@ let chests = [];
 let spikeWalls = [];
 let chestTileset;
 
-let enemyState = "wander"; // "wander" | "chase" | "attack"
-let enemyX;
-let enemyY;
-let enemySpeed = 0.7;
-let enemyDetectionRange = 150;
-let enemyAttackRange = 30;
-let enemyMoveTimer = 0;
-let enemyDirX = 1;
-let enemyDirY = 0;
+let enemies = [];
+let playerHealth = 100;
+let attackCooldown = 0; // frames until enemy can damage player again
+
+
+
+
+
+const ENEMY_ATTACK = 5;
+const PLAYER_ATTACK = 10;
 
 let currentFrameRat = 0;
 const RAT_FRAME_W = 32;
-const RAT_FRAME_H = [43, 21, 43, 21]; 
-const RAT_ROW_Y = [0, 43, 64, 107];   
+const RAT_FRAME_H = [43, 21, 43, 21];
+const RAT_ROW_Y = [0, 43, 64, 107];
+
+// for the boss:
+// const RAT_FRAME_W = 400;
+// const RAT_FRAME_H = [538, 263, 538, 263]; 
+// const RAT_ROW_Y   = [0, 538, 800, 1338];
 
 
 
@@ -184,6 +200,7 @@ function preload() {
   skin_selection = loadImage("dev/assets/skin_select_button.png");
 
   rat1 = loadImage("dev/assets/rat.png");
+  rat_boss = loadImage("dev/assets/rat_boss.png");
 
   icu = loadImage("dev/assets/interface.png");
   heart = loadImage("dev/assets/heart.png");
@@ -194,16 +211,16 @@ function preload() {
   level_parmesan = loadImage("dev/assets/level_parmesan.png");
 
   homepage_sound = loadSound("dev/assets/homepage_sound.mp3");
-  level_theme = loadSound("dev/assets/Game_SoundtrackUpdated.mp3");
+  level_theme = loadSound("dev/assets/Game_SoundTrackUpdated.mp3");
   potion_sound = loadSound("dev/assets/Potion_sound.mp3");
   overmusic = loadSound("dev/assets/GameOver.mp3");
-  slides_track = loadSound("dev/assets/Slides1.0.mp3");
+  slides_track = loadSound("dev/assets/slides1.0.mp3");
   sword_sound = loadSound("dev/assets/sword_effect.mp3");
   victory_music = loadSound("dev/assets/Victory.mp3");
-  openchest_sound = loadSound("dev/assets/tp_chest_open.mp3");
+  openchestSound = loadSound("dev/assets/tp_chest_open.mp3");
 
   button_beep = loadSound("dev/assets/button_beep.mp3");
-  
+
   sword_nacho = loadImage("dev/assets/sword_nacho.png");
   sword_blueCheese = loadImage("dev/assets/sword_blueCheese.png");
   sword_parmesan = loadImage("dev/assets/sword_parmesan.png");
@@ -218,6 +235,7 @@ function preload() {
   floorTileset = loadImage("dev/assets/atlas_floor-16x16.png");
   wallTileset = loadImage("dev/assets/atlas_walls_high-16x32.png");
   chestTileset = loadImage("dev/assets/Chest.png");
+  snowTileset = loadImage("dev/assets/FE8 - Snowy Bern.png");
 }
 
 function getSpawnPoint(map) {
@@ -225,7 +243,7 @@ function getSpawnPoint(map) {
     if (layer.type !== "objectgroup") continue;
     for (let obj of layer.objects) {
       if (obj.name === "playerSpawn") {
-        return { x: obj.x * mapScale, y: obj.y * mapScale};
+        return { x: obj.x * mapScale, y: obj.y * mapScale };
       }
     }
   }
@@ -233,6 +251,14 @@ function getSpawnPoint(map) {
   return { x: pageWidth / 2, y: pageHeight / 2 };
 }
 
+function mousePressed() {
+  mouseJustPressed = true;
+
+  if (!audioUnlocked) {
+    userStartAudio();
+    audioUnlocked = true;
+  }
+}
 
 function setup() {
   console.log("mapData_nacho:", mapData_nacho);
@@ -246,15 +272,28 @@ function setup() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
-  enemyY = spawn.y + random(-100, 100);
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
-  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10 });
-  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15 });
-  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20 });
-  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25 });
-  potionItem = new Item([potion, potion_selected], false, { health: 50 });
-  
+  // enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
+  // enemyY = spawn.y + random(-100, 100);
+
+  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 });
+  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 });
+  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 });
+  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 });
+  potionItem_nacho = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_blueCheese = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_parmesan = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_cheeseCake = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  chestInventory_nacho[0] = (swordNacho);
+  chestInventory_nacho[1] = (potionItem_nacho);
+  chestInventory_blueCheese[0] = (swordBlueCheese);
+  chestInventory_blueCheese[1] = (potionItem_blueCheese);
+  chestInventory_parmesan[0] = (swordParmesan);
+  chestInventory_parmesan[1] = (potionItem_parmesan);
+  chestInventory_cheeseCake[0] = (swordCheeseCake);
+  chestInventory_cheeseCake[1] = (potionItem_cheeseCake);
 }
 
 
@@ -262,21 +301,21 @@ function button(image1, x, y, w, h) {
   image(image1, x, y, w, h);
   if (mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
     if (image1 === start_game2) {
-      image(start_game1, 275, 150, start_game1.width/7 * scale, start_game1.height/6 * scale);
+      image(start_game1, 275, 150, start_game1.width / 7 * scale, start_game1.height / 6 * scale);
     } else if (image1 === skins2) {
-      image(skins1, 410, 250, skins1.width/7 * scale, skins1.height/6 * scale);
+      image(skins1, 410, 250, skins1.width / 7 * scale, skins1.height / 6 * scale);
     } else if (image1 === return2) {
       // return button from skins screen
       if (page === 1) {
-      image(return1, 20, 20, return1.width/7 * scale, return1.height/6 * scale);
-      } 
+        image(return1, 20, 20, return1.width / 7 * scale, return1.height / 6 * scale);
+      }
 
       // return button from game over / victory screen
       if (page === 3 || page === 4) {
-        image(return1, 205, 260, return1.width/4 * scale, return1.height/4 * scale);
+        image(return1, 205, 260, return1.width / 4 * scale, return1.height / 4 * scale);
       }
     } else if (image1 === skip2) {
-      image(skip1, 475, 345, skip1.width/14, skip1.height/12);
+      image(skip1, 475, 345, skip1.width / 14, skip1.height / 12);
     }
   }
   if (mouseJustPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
@@ -293,7 +332,7 @@ function button(image1, x, y, w, h) {
     }
 
     print(page);
-    
+
   }
 }
 
@@ -323,59 +362,60 @@ function screen() {
 function homePage() {
   scale = 1;
   backgroundMoveSpeed = 0.5;
+  // stopAllSounds();
 
-  if (!homepage_sound.isPlaying()) {
+  if (audioUnlocked && !homepage_sound.isPlaying()) {
     homepage_sound.loop();
   }
 
-  if (mouseX > pageWidth/2 && homepageX < 0) {
+  if (mouseX > pageWidth / 2 && homepageX < 0) {
     homepageX += backgroundMoveSpeed;
-  } else  if (mouseX < pageWidth/2 && mouseX != 0 && homepageX > -pageWidth / 50) {
+  } else if (mouseX < pageWidth / 2 && mouseX != 0 && homepageX > -pageWidth / 50) {
     homepageX -= backgroundMoveSpeed;
   }
 
-  if (mouseY > pageHeight/2 && homepageY < 0) {
+  if (mouseY > pageHeight / 2 && homepageY < 0) {
     homepageY += backgroundMoveSpeed;
-  } else  if (mouseY < pageHeight/2 && mouseY != 0 && homepageY > -pageHeight / 50) {
+  } else if (mouseY < pageHeight / 2 && mouseY != 0 && homepageY > -pageHeight / 50) {
     homepageY -= backgroundMoveSpeed;
   }
 
   image(
-    homepage_background, 
-    homepageX, homepageY, 
+    homepage_background,
+    homepageX, homepageY,
     pageWidth + pageWidth / 50, pageHeight + pageHeight / 50
   );
 
   // randomized if statement for flicker effect
   if (Math.floor(random(0, 15)) === 0) {
     image(
-      title1, 
-      50, -10, 
-      1429/3, 500/3
-    );    
+      title1,
+      50, -10,
+      1429 / 3, 500 / 3
+    );
 
   } else {
     image(
-      title2, 
-      50, -10, 
-      1429/3, 500/3
+      title2,
+      50, -10,
+      1429 / 3, 500 / 3
     );
-    
+
     scale -= 0.005;
   }
 
   // CAT
   image(
-    homepage_cat, 
-    0, 90, 
-    homepage_cat.width * scale/2, homepage_cat.height * scale/2   
+    homepage_cat,
+    0, 90,
+    homepage_cat.width * scale / 2, homepage_cat.height * scale / 2
   );
 
   // start game button
-  button(start_game2, 275, 150, start_game2.width/7 * scale, start_game2.height/6 * scale);
+  button(start_game2, 275, 150, start_game2.width / 7 * scale, start_game2.height / 6 * scale);
 
   // skins button
-  button(skins2, 410, 250, skins2.width/7 * scale, skins2.height/6 * scale);
+  button(skins2, 410, 250, skins2.width / 7 * scale, skins2.height / 6 * scale);
 
 }
 
@@ -383,73 +423,73 @@ function skinScreen() {
   scale = 1;
   backgroundMoveSpeed = 0.5;
 
-  if (mouseX > pageWidth/2 && homepageX < 0) {
+  if (mouseX > pageWidth / 2 && homepageX < 0) {
     homepageX += backgroundMoveSpeed;
-  } else  if (mouseX < pageWidth/2 && mouseX != 0 && homepageX > -pageWidth / 50) {
+  } else if (mouseX < pageWidth / 2 && mouseX != 0 && homepageX > -pageWidth / 50) {
     homepageX -= backgroundMoveSpeed;
-  } 
-  if (mouseY > pageHeight/2 && homepageY < 0) {
+  }
+  if (mouseY > pageHeight / 2 && homepageY < 0) {
     homepageY += backgroundMoveSpeed;
-  } else  if (mouseY < pageHeight/2 && mouseY != 0 && homepageY > -pageHeight / 50) {
+  } else if (mouseY < pageHeight / 2 && mouseY != 0 && homepageY > -pageHeight / 50) {
     homepageY -= backgroundMoveSpeed;
   }
 
   image(
-    homepage_background, 
-    homepageX, homepageY, 
+    homepage_background,
+    homepageX, homepageY,
     pageWidth + pageWidth / 50, pageHeight + pageHeight / 50
   );
 
   // randomized if statement for flicker effect
   if (Math.floor(random(0, 6)) === 0) {
     image(
-      title1, 
-      200, 0, 
-      title1.width/4, title1.height/4
-    );    
+      title1,
+      200, 0,
+      title1.width / 4, title1.height / 4
+    );
   } else {
     image(
-      title2, 
-      200, 0, 
-      title2.width/4, title1.height/4
+      title2,
+      200, 0,
+      title2.width / 4, title1.height / 4
     );
-    
+
     scale -= 0.005;
   }
 
   // return button
-  button(return2, 20, 20, return2.width/7 * scale, return2.height/6 * scale);
-    
+  button(return2, 20, 20, return2.width / 7 * scale, return2.height / 6 * scale);
+
   if (millis() - skinAnimTimer > 400) {
-  skinAnimTimer = millis();
-  skinFrame = !skinFrame;
-}
+    skinAnimTimer = millis();
+    skinFrame = !skinFrame;
+  }
 
-// list of cat skins
-let cats = [cat_white, cat_tan, cat_orange, cat_charzard];
+  // list of cat skins
+  let cats = [cat_white, cat_tan, cat_orange, cat_charzard];
 
-for (let i = 0; i < 4; i++) {
-  let x = 20 + i * (frameWidth / 5 + 10);
+  for (let i = 0; i < 4; i++) {
+    let x = 20 + i * (frameWidth / 5 + 10);
 
-  // draw cat
-  image(
-    cats[i],
-    x, 180,
-    frameWidth / 5, frameHeight / 5,
-    skinFrame ? 3 * frameWidth : 0, 0,
-    frameWidth, frameHeight
-  );
+    // draw cat
+    image(
+      cats[i],
+      x, 180,
+      frameWidth / 5, frameHeight / 5,
+      skinFrame ? 3 * frameWidth : 0, 0,
+      frameWidth, frameHeight
+    );
 
-  // draw selection button
-  button(skin_selection, x, 170, skin_selection.width/5 * scale, skin_selection.height/5 * scale);
+    // draw selection button
+    button(skin_selection, x, 170, skin_selection.width / 5 * scale, skin_selection.height / 5 * scale);
 
-  // highlights skin
-  if (skinChoice === cats[i]) {
-    noFill();
-    stroke(191, 141, 247);
-    strokeWeight(5);
-    rect(x, 170, skin_selection.width/5, skin_selection.height/5);
-    noStroke();
+    // highlights skin
+    if (skinChoice === cats[i]) {
+      noFill();
+      stroke(191, 141, 247);
+      strokeWeight(5);
+      rect(x, 170, skin_selection.width / 5, skin_selection.height / 5);
+      noStroke();
     }
   }
 
@@ -465,18 +505,25 @@ for (let i = 0; i < 4; i++) {
   }
 
 }
+function stopAllSounds() {
+  level_theme.stop();
+  homepage_sound.stop();
+}
 
 function storySlides() {
   if (!backstoryActive) {
     startBackstory();
   }
-  if (!slides_track.isPlaying()) {
+  if (audioUnlocked && !slides_track.isPlaying()) {
     slides_track.setVolume(0.4);
     slides_track.loop();
   }
 
   if (homepage_sound.isPlaying()) {
     homepage_sound.stop();
+  }
+  if (overmusic.isPlaying()) {
+    overmusic.stop();
   }
 
   // Draw current gif fullscreen
@@ -507,7 +554,7 @@ function storySlides() {
   }
 
   // skip button
-  button(skip2, 475, 345, skip2.width/14, skip2.height/12);
+  button(skip2, 475, 345, skip2.width / 14, skip2.height / 12);
 
 
   // temporary "show controls area"
@@ -522,10 +569,10 @@ function storySlides() {
 }
 
 function startBackstory() {
-  currentSlide  = 0;
-  slideAlpha    = 0;
-  fadeState     = "in";
-  fadeTimer     = 0;
+  currentSlide = 0;
+  slideAlpha = 0;
+  fadeState = "in";
+  fadeTimer = 0;
   backstoryActive = true;
 }
 
@@ -539,8 +586,11 @@ function onBackstoryComplete() {
   playerX = spawn.x;
   playerY = spawn.y;
 
-  page = 5;
+  // Initialize camera directly at player position — no lerp delay
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
+  page = 5;
 }
 
 function initMapObjects(map) {
@@ -560,7 +610,8 @@ function initMapObjects(map) {
             w: obj.width * mapScale,
             h: obj.height * mapScale,
             cleared: false,
-            active: false
+            active: false,
+            activateTimer: -1
           });
         }
       }
@@ -576,6 +627,12 @@ function initMapObjects(map) {
             tileCol: Math.floor(obj.x / 16),
             tileRow: Math.floor(obj.y / 16)
           });
+        }
+        if (obj.name === "enemySpawn") {
+          enemies.push(new Enemy(obj.x * mapScale, obj.y * mapScale, "rat"));
+        }
+        if (obj.name === "BossSpawn") {
+          enemies.push(new Enemy(obj.x * mapScale, obj.y * mapScale, "boss"));
         }
       }
     }
@@ -617,14 +674,72 @@ function initMapObjects(map) {
   }
 }
 
+function loadRandomPlanet() {
+  console.log("loading planet, current:", planet, "completed:", completedPlanets);
+  const bossPlanet = 4;
+  const normalPlanets = [1, 2, 3];
+  const remaining = normalPlanets.filter(p => !completedPlanets.includes(p) && p !== planet);
+
+  completedPlanets.push(planet);
+
+  let next;
+  if (remaining.length === 0) {
+    next = bossPlanet;
+  } else {
+    next = remaining[floor(random(remaining.length))];
+  }
+
+  planet = next;
+
+  if (next === 1 && typeof mapData_nacho !== 'undefined') {
+    currentMap = mapData_nacho;
+  } else if (next === 2 && typeof mapData_parmesan !== 'undefined') {
+    currentMap = mapData_parmesan;
+  } else if (next === 3 && typeof mapData_blueCheese !== 'undefined') {
+    currentMap = mapData_blueCheese;
+  } else if (next === 4 && typeof mapData_cheeseCake !== 'undefined') {
+    currentMap = mapData_cheeseCake;
+  } else {
+    // fallback to nacho if map not ready yet
+    currentMap = mapData_nacho;
+    planet = 1;
+  }
+
+  currentMapFloor = floorTileset;
+  currentMapWall = wallTileset;
+
+  // Reset map objects for new planet
+  g = 0;
+  fightRooms = [];
+  chests = [];
+  spikeWalls = [];
+
+  // Respawn player at new map spawn point
+  const spawn = getSpawnPoint(currentMap);
+  playerX = spawn.x;
+  playerY = spawn.y;
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
+
+  if (next === bossPlanet && completedPlanets.includes(bossPlanet)) {
+    page = 4; // victory
+  }
+}
+
 function updateFightRooms() {
   for (let i = 0; i < fightRooms.length; i++) {
     let r = fightRooms[i];
     if (r.cleared) continue;
+
     let inRoom = playerX > r.x && playerX < r.x + r.w &&
-                 playerY > r.y && playerY < r.y + r.h;
-    if (inRoom && !r.active) {
-      console.log("entered fight room", i);
+      playerY > r.y && playerY < r.y + r.h;
+
+    if (inRoom && !r.active && r.activateTimer === -1) {
+      r.activateTimer = millis(); // start the timer when player enters
+    }
+
+    // raise spikes after 1500ms delay
+    if (r.activateTimer > 0 && millis() - r.activateTimer > 1000 && !r.active) {
       r.active = true;
       for (let spike of spikeWalls) {
         if (spike.roomIndex === i) {
@@ -636,10 +751,11 @@ function updateFightRooms() {
     }
 
     if (r.active) {
-      let allEnemiesDefeated = false; 
+      let allEnemiesDefeated = enemies.length > 0 && enemies.every(e => !e.alive);
       if (allEnemiesDefeated) {
         r.cleared = true;
         r.active = false;
+        r.activateTimer = -1;
         for (let spike of spikeWalls) {
           if (spike.roomIndex === i) {
             spike.raised = false;
@@ -656,7 +772,10 @@ function drawChests() {
   const OPEN_TILE = 199;
 
   for (let chest of chests) {
-    if (chest.opened) continue;
+    if (chest.opened) {
+      chestItem(chest.x, chest.y);
+      continue;
+    }
     let d = dist(playerX, playerY, chest.x, chest.y);
     if (d < 30 * mapScale) {
       push();
@@ -669,6 +788,11 @@ function drawChests() {
 
       if (keyIsDown(69)) {
         chest.opened = true;
+
+        if (openchestSound) {
+          openchestSound.setVolume(0.2);
+          openchestSound.play();
+        }
         const chestLayer = currentMap.layers.find(l => l.name === "chests");
         if (chestLayer) {
           const idx = chest.tileRow * currentMap.width + chest.tileCol;
@@ -679,7 +803,7 @@ function drawChests() {
   }
 }
 
-const SPIKE_FRAMES_RAISE  = [[21, 100], [22, 100], [23, 100], [24, 2000]];
+const SPIKE_FRAMES_RAISE = [[21, 100], [22, 100], [23, 100], [24, 2000]];
 const SPIKE_FRAMES_RETRACT = [[24, 100], [23, 100], [22, 100], [21, 2000]];
 
 function drawSpikeWalls() {
@@ -712,97 +836,155 @@ function drawSpikeWalls() {
   }
 }
 
+//function createEnemy(x, y, enemyType, damage, health) {
+//enemies.push({ 
+//x: x, 
+//y: y, 
+//health: health,
+//state: "wander",
+//dirX: random([-1, 1]),
+//dirY: random([-1, 1])
+//});
+//}
+
 function drawEnemy() {
-  healthBarEnemy(enemyX, enemyY - 5, 100, 100); // example health bar above enemy
-  let dx = playerX - enemyX;
-  let dy = playerY - enemyY;
-  let d  = dist(playerX, playerY, enemyX, enemyY);
-
-  if (d <= enemyAttackRange) {
-    enemyState = "attack";
-  } else if (d <= enemyDetectionRange) {
-    enemyState = "chase";
-  } else {
-    enemyState = "wander";
-  }
-
-  // changes direction based on player location
-  let dirRow;
-  if (Math.abs(dx) > Math.abs(dy)) {
-    dirRow = dx > 0 ? 1 : 3;   // right / left
-  } else {
-    dirRow = dy > 0 ? 2 : 0;   // down / up
-  }
-
-  let moveX = 0;
-  let moveY = 0;
-
-  if (enemyState === "chase" && d > 0) {
-    moveX = (dx / d) * enemySpeed;
-    moveY = (dy / d) * enemySpeed;
-  } else if (enemyState === "wander") {
-    enemyMoveTimer--;
-    if (enemyMoveTimer <= 0) {
-      let angle = random(TWO_PI);
-      enemyDirX = cos(angle);
-      enemyDirY = sin(angle);
-      enemyMoveTimer = floor(random(30, 90));
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let e = enemies[i];
+    if (!e.alive) {
+      enemies.splice(i, 1);
+      continue;
     }
-    moveX = enemyDirX * enemySpeed * 0.5;
-    moveY = enemyDirY * enemySpeed * 0.5;
-  } else if (enemyState === "attack") {
-    console.log("Enemy attacks!");
-  }
 
-  moveEnemy(moveX, moveY, dirRow);
+    let dx = playerX - e.x;
+    let dy = playerY - e.y;
+    let d = dist(playerX, playerY, e.x, e.y);
 
-  let sx = currentFrameRat * RAT_FRAME_W;
-  let sy = RAT_ROW_Y[dirRow];
-  let sw = RAT_FRAME_W;
-  let sh = RAT_FRAME_H[dirRow];
+    if (d <= e.attackRange) e.state = "attack";
+    else if (d <= e.detectionRange) e.state = "chase";
+    else e.state = "wander";
 
-  image(rat1, enemyX, enemyY, sw, sh, sx, sy, sw, sh);
+    let dirRow;
+    if (Math.abs(dx) > Math.abs(dy)) dirRow = dx > 0 ? 1 : 3;
+    else dirRow = dy > 0 ? 2 : 0;
 
-  if (frameCount % 5 === 0) {
-    currentFrameRat++;
-    if (currentFrameRat >= 3) currentFrameRat = 0;
+    let moveX = 0, moveY = 0;
+
+    if (e.state === "chase" && d > 0) {
+      moveX = (dx / d) * e.speed;
+      moveY = (dy / d) * e.speed;
+    } else if (e.state === "wander") {
+      e.moveTimer--;
+      if (e.moveTimer <= 0) {
+        let angle = random(TWO_PI);
+        e.dirX = cos(angle);
+        e.dirY = sin(angle);
+        e.moveTimer = floor(random(30, 90));
+      }
+      moveX = e.dirX * e.speed * 0.5;
+      moveY = e.dirY * e.speed * 0.5;
+    } else if (e.state === "attack" && e.attackCooldown <= 0) {
+      playerHealth = max(0, playerHealth - ENEMY_ATTACK);
+      e.attackCooldown = 60;
+    }
+
+    if (e.attackCooldown > 0) e.attackCooldown--;
+
+    // move enemy
+    let nextX = e.x + moveX;
+    let nextY = e.y + moveY;
+    let w = RAT_FRAME_W, h = RAT_FRAME_H[dirRow];
+    if (!isWallTile(nextX + RAT_HITBOX_LEFT, e.y + RAT_HITBOX_TOP) &&
+      !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
+      !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
+      !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + h - RAT_HITBOX_BOTTOM - 1)) {
+      e.x = nextX;
+    }
+    if (!isWallTile(e.x + RAT_HITBOX_LEFT, nextY + RAT_HITBOX_TOP) &&
+      !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + RAT_HITBOX_TOP) &&
+      !isWallTile(e.x + RAT_HITBOX_LEFT, nextY + h - RAT_HITBOX_BOTTOM - 1) &&
+      !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + h - RAT_HITBOX_BOTTOM - 1)) {
+      e.y = nextY;
+    }
+
+    // draw
+    let img = e.type === "boss" ? rat_boss : rat1;
+    let sx = (frameCount % 15 < 5 ? 0 : frameCount % 15 < 10 ? 1 : 2) * RAT_FRAME_W;
+    let sy = RAT_ROW_Y[dirRow];
+    image(img, e.x, e.y, RAT_FRAME_W, RAT_FRAME_H[dirRow], sx, sy, RAT_FRAME_W, RAT_FRAME_H[dirRow]);
+
+    healthBarEnemy(e.x, e.y - 5, e.health, e.maxHealth);
+
+    if (e.health <= 0) e.alive = false;
   }
 }
 
-// enemy border mechanic
-function moveEnemy(moveX, moveY, dirRow) {
-  if (moveX === 0 && moveY === 0) return;
 
-  let nextX = enemyX + moveX;
-  let nextY = enemyY + moveY;
+const RAT_HITBOX_LEFT = 14;
+const RAT_HITBOX_RIGHT = 14;
+const RAT_HITBOX_TOP = 6;
+const RAT_HITBOX_BOTTOM = 10;
 
-  let w = RAT_FRAME_W;
-  let h = RAT_FRAME_H[dirRow];
 
-  if (!isWallTile(nextX, enemyY) &&
-      !isWallTile(nextX + w - 1, enemyY) &&
-      !isWallTile(nextX, enemyY + h - 1) &&
-      !isWallTile(nextX + w - 1, enemyY + h - 1)) {
-    enemyX = nextX;
+function getEquippedItem() {
+  for (let i = 0; i < size; i++) {
+    if (inventory2[i] != null && inventory2[i].selected) {
+      return inventory2[i];
+    }
   }
-
-  if (!isWallTile(enemyX, nextY) &&
-      !isWallTile(enemyX + w - 1, nextY) &&
-      !isWallTile(enemyX, nextY + h - 1) &&
-      !isWallTile(enemyX + w - 1, nextY + h - 1)) {
-    enemyY = nextY;
-  }
+  return null;
 }
 
 function drawCat(player) {
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
-  image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+  let equipped = getEquippedItem();
 
-  let up    = keyIsDown(UP_ARROW)    || keyIsDown(87);
-  let down  = keyIsDown(DOWN_ARROW)  || keyIsDown(83);
-  let left  = keyIsDown(LEFT_ARROW)  || keyIsDown(65);
+
+  if (equipped != null) {
+    let img = equipped.image_display();
+
+    let centerX = SPRITE_W / 2;
+    let centerY = SPRITE_H / 2;
+
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (frameCurrRow === 3) { // right
+      offsetX = centerX + 4;
+      offsetY = centerY - 4;
+    } else if (frameCurrRow === 2) { // left
+      offsetX = centerX - 12;
+      offsetY = centerY - 4;
+    } else if (frameCurrRow === 0) { // down
+      offsetX = centerX - 4;
+      offsetY = centerY + 2;
+    } else if (frameCurrRow === 1) { // up
+      offsetX = centerX + 2;
+      offsetY = centerY - 12;
+    }
+
+    // 👇 DRAW UNDER if facing up
+    if (frameCurrRow === 1) {
+      image(img, playerX + offsetX, playerY + offsetY, 12, 12);
+    }
+
+    // draw cat
+    image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+
+    // 👇 DRAW OVER for other directions
+    if (frameCurrRow !== 1) {
+      image(img, playerX + offsetX, playerY + offsetY, 12, 12);
+    }
+
+  } else {
+    // no item → just draw cat
+    image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+  }
+
+  let up = keyIsDown(UP_ARROW) || keyIsDown(87);
+  let down = keyIsDown(DOWN_ARROW) || keyIsDown(83);
+  let left = keyIsDown(LEFT_ARROW) || keyIsDown(65);
   let right = keyIsDown(RIGHT_ARROW) || keyIsDown(68);
   let moving = up || down || left || right;
 
@@ -814,18 +996,18 @@ function drawCat(player) {
     let prevX = playerX;
     let prevY = playerY;
 
-    if (left)  playerX -= speed;
+    if (left) playerX -= speed;
     if (right) playerX += speed;
-    if (collidesWithWall(playerX, playerY)) playerX = prevX;  
+    if (collidesWithWall(playerX, playerY)) playerX = prevX;
 
-    if (up)    playerY -= speed;
-    if (down)  playerY += speed;
+    if (up) playerY -= speed;
+    if (down) playerY += speed;
     if (collidesWithWall(playerX, playerY)) playerY = prevY;
 
-    if (up)          frameCurrRow = 1;
-    else if (down)   frameCurrRow = 0;
-    else if (right)  frameCurrRow = 3;
-    else if (left)   frameCurrRow = 2;
+    if (up) frameCurrRow = 1;
+    else if (down) frameCurrRow = 0;
+    else if (right) frameCurrRow = 3;
+    else if (left) frameCurrRow = 2;
 
     playerX = constrain(playerX, 0, currentMap.width * 16 * mapScale - SPRITE_W);
     playerY = constrain(playerY, 0, currentMap.height * 16 * mapScale - SPRITE_H);
@@ -842,27 +1024,55 @@ function drawCat(player) {
       frontR = !frontR;
     }
   }
-  // print(frameCurrRow);
+
+  if (attackCooldown > 0) {
+    attackCooldown--;
+  }
+
+  if (playerHealth <= 0) {
+    playerHealth = 0;
+    lives--;
+    if (lives > 0) {
+      const spawn = getSpawnPoint(currentMap);
+      playerX = spawn.x;
+      playerY = spawn.y;
+      playerHealth = 100;
+    } else {
+      page = 3; // Game over
+    }
+  }
+
+  if (keyIsDown(32)) {
+    for (let e of enemies) {
+      if (!e.alive) continue;
+      let d = dist(playerX, playerY, e.x, e.y);
+      if (e.state === "attack" && d <= e.attackRange && attackCooldown === 0) {
+        e.health -= PLAYER_ATTACK;
+        attackCooldown = 60;
+        break;
+      }
+    }
+  }
 }
 
 function drawSwap() {
 
-    for (let i = 0; i < droppedSize; i++) {
-      if (droppedInventory[i] != null) {
-        if (dist(playerX, playerY, droppedInventory[i].x, droppedInventory[i].y) <20) {
-          droppedInventory[i].selected = true;
-        } else {
-          droppedInventory[i].selected = false;
-        }
-        text(droppedInventory[i].x, 200, 220 + i * 20);
-        text(droppedInventory[i].y, 250, 220 + i * 20);
-        image(droppedInventory[i].image_display(), droppedInventory[i].x, droppedInventory[i].y, 20, 20);
+  for (let i = 0; i < droppedSize; i++) {
+    if (droppedInventory[i] != null) {
+      if (dist(playerX, playerY, droppedInventory[i].x, droppedInventory[i].y) < 20) {
+        droppedInventory[i].selected = true;
+      } else {
+        droppedInventory[i].selected = false;
       }
+      text(droppedInventory[i].x, 200, 220 + i * 20);
+      text(droppedInventory[i].y, 250, 220 + i * 20);
+      image(droppedInventory[i].image_display(), droppedInventory[i].x, droppedInventory[i].y, 20, 20);
     }
   }
+}
 
 function gameStart() {
-  if (!level_theme.isPlaying()) {
+  if (audioUnlocked && !level_theme.isPlaying()) {
     level_theme.setVolume(0.2);
     level_theme.loop();
   }
@@ -903,22 +1113,32 @@ function gameStart() {
   drawEnemy();
   pop();
 
-  IU(3, 100, 1, inventory1, inventory2);
 
+  IU(lives, playerHealth, inventory1, inventory2);
+  if (playerHealth <= 0 && lives <= 0) {
+    page = 3; // game over
+  } else if (playerHealth <= 0) {
+    lives--;
+    playerHealth = 100;
+
+  }
   if (g == 0) {
     initMapObjects(currentMap);
     console.log("spikeWalls:", spikeWalls.length);
     console.log("fightRooms:", fightRooms.length);
-    addItem(swordNacho);
-    addItem(potionItem);
-    addItem(swordBlueCheese);
     g++;
+  }
+}
+function keyPressed() {
+  if (key === 'p' || key === 'P') {
+    loadRandomPlanet();
   }
 }
 
 function drawMap(map, floorTS, wallTS) {
   const tileW = 16;
   const mapCols = map.width;
+  const isSnowMap = (map === mapData_parmesan);
 
   for (let layer of map.layers) {
     if (layer.type !== "tilelayer") continue;
@@ -930,32 +1150,39 @@ function drawMap(map, floorTS, wallTS) {
       const row = Math.floor(i / mapCols);
       const x = col * tileW * mapScale;
       const y = row * tileW * mapScale;
-
-      if (tileId >= 194) {
-        const localID = tileId - 194;
-        const srcX = (localID % 3) * tileW;
-        const srcY = Math.floor(localID / 3) * tileW;
-        image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-      } else if (tileId >= 146) {
-        if (tileId === 179) {
-          fill(0); noStroke();
-          rect(x, y, tileW * mapScale, tileW * mapScale);
-        } else {
-          const localID = tileId - 146;
-          const srcX = (localID % 12) * tileW;
-          const srcY = Math.floor(localID / 12) * tileW;
-          image(wallTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-        }
-      } else if (tileId >= 50) {
-        const localID = tileId - 50;
-        const srcX = (localID % 24) * tileW;
-        const srcY = Math.floor(localID / 24) * 32;
-        image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
-      } else {
+      if (isSnowMap) {
+        // Snow tileset: firstgid 1, 32 columns, 16x16 tiles
         const localID = tileId - 1;
-        const srcX = (localID % 7) * tileW;
-        const srcY = Math.floor(localID / 7) * tileW;
-        image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        const srcX = (localID % 32) * tileW;
+        const srcY = Math.floor(localID / 32) * tileW;
+        image(snowTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+      } else {
+        if (tileId >= 194) {
+          const localID = tileId - 194;
+          const srcX = (localID % 3) * tileW;
+          const srcY = Math.floor(localID / 3) * tileW;
+          image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        } else if (tileId >= 146) {
+          if (tileId === 179) {
+            fill(0); noStroke();
+            rect(x, y, tileW * mapScale, tileW * mapScale);
+          } else {
+            const localID = tileId - 146;
+            const srcX = (localID % 12) * tileW;
+            const srcY = Math.floor(localID / 12) * tileW;
+            image(wallTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+          }
+        } else if (tileId >= 50) {
+          const localID = tileId - 50;
+          const srcX = (localID % 24) * tileW;
+          const srcY = Math.floor(localID / 24) * 32;
+          image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
+        } else {
+          const localID = tileId - 1;
+          const srcX = (localID % 7) * tileW;
+          const srcY = Math.floor(localID / 7) * tileW;
+          image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        }
       }
     }
   }
@@ -966,28 +1193,65 @@ function isWallTile(worldX, worldY) {
   const col = Math.floor(worldX / tileW);
   const row = Math.floor(worldY / tileW);
   if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
+  const isSnowMap = (currentMap === mapData_parmesan);
 
   let hasFloor = false;
   for (let layer of currentMap.layers) {
     if (layer.type !== "tilelayer") continue;
-    if (layer.name !== "floors" && layer.name !== "walls") continue;
-    
-    const tileId = layer.data[row * currentMap.width + col];
-    if (tileId >= 50 && tileId <= 193) return true; // high walls + low walls
-    if (tileId === 179) return true;                 // void blocks movement
-    if (tileId >= 1 && tileId <= 49) hasFloor = true;
+    if (isSnowMap) {
+      if (layer.name !== "Floors" && layer.name !== "Walls") continue;
+      const tileId = layer.data[row * currentMap.width + col];
+      if (layer.name === "Walls" && tileId !== 0) return true;
+      if (layer.name === "Floors" && tileId !== 0) hasFloor = true;
+    } else {
+      if (layer.name !== "floors" && layer.name !== "walls") continue;
+      const tileId = layer.data[row * currentMap.width + col];
+      if (tileId >= 50 && tileId <= 193) return true; // high walls + low walls
+      if (tileId === 179) return true;                 // void blocks movement
+      if (tileId >= 1 && tileId <= 49) hasFloor = true;
+    }
   }
+
   return !hasFloor;
 }
 
+const HITBOX_LEFT = 14;
+const HITBOX_RIGHT = 14;
+const HITBOX_TOP = 10;  // more space above (head)
+const HITBOX_BOTTOM = -5;   // less below (feet touch walls properly)
+
 function collidesWithWall(X, Y) {
-  return isWallTile(X, Y) || isWallTile(X + SPRITE_W - 1, Y) ||
-         isWallTile(X, Y + SPRITE_H - 1) || isWallTile(X + SPRITE_W - 1, Y + SPRITE_H - 1);
+  let left = X + HITBOX_LEFT;
+  let right = X + SPRITE_W - HITBOX_RIGHT - 1;
+  let top = Y + HITBOX_TOP;
+  let bottom = Y + SPRITE_H - HITBOX_BOTTOM - 1;
+
+  // Check map walls
+  if (isWallTile(left, top) ||
+    isWallTile(right, top) ||
+    isWallTile(left, bottom) ||
+    isWallTile(right, bottom)) return true;
+
+  // Check raised spike walls
+  for (let spike of spikeWalls) {
+    if (!spike.raised) continue;
+    let sw = 16 * mapScale;
+    let sh = 16 * mapScale;
+    if (right > spike.x && left < spike.x + sw &&
+      bottom > spike.y && top < spike.y + sh) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function gameover() {
   scale = 1;
-  if (!overmusic.isPlaying()) {
+  lives = 3;
+  playerHealth = 100;
+  if (audioUnlocked && !overmusic.isPlaying()) {
+    overmusic.setVolume(0.4);
     overmusic.loop();
   }
   if (level_theme.isPlaying()) {
@@ -998,33 +1262,33 @@ function gameover() {
     0, 0,
     pageWidth, pageHeight
   );
-  
-    // randomized if statement for flicker effect
+
+  // randomized if statement for flicker effect
   if (Math.floor(random(0, 15)) === 0) {
     image(
       game_over1,
       70, 40,
-      game_over1.width/4, game_over1.height/4
+      game_over1.width / 4, game_over1.height / 4
     );
-    
+
   } else {
     image(
       game_over2,
       70, 40,
-      game_over2.width/4, game_over2.height/4
+      game_over2.width / 4, game_over2.height / 4
     );
-    
+
     scale -= 0.005;
   }
-  
+
 
   // return button
-  button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
+  button(return2, 205, 260, return2.width / 4 * scale, return2.height / 4 * scale);
 }
 
 function victoryPage() {
   scale = 1;
-  if (!victory_music.isPlaying()) {
+  if (audioUnlocked && !victory_music.isPlaying()) {
     victory_music.loop();
   }
 
@@ -1036,57 +1300,70 @@ function victoryPage() {
     0, 0,
     pageWidth, pageHeight
   );
-  
-    // randomized if statement for flicker effect
+
+  // randomized if statement for flicker effect
   if (Math.floor(random(0, 15)) === 0) {
     image(
       victory1,
       90, 40,
-      victory1.width/4, victory1.height/4
+      victory1.width / 4, victory1.height / 4
     );
-    
+
   } else {
     image(
       victory2,
       90, 40,
-      victory2.width/4, victory2.height/4
+      victory2.width / 4, victory2.height / 4
     );
-    
+
     scale -= 0.005;
   }
-  
+
 
   // return button
-  button(return2, 205, 260, return2.width/4 * scale, return2.height/4 * scale);
+  button(return2, 205, 260, return2.width / 4 * scale, return2.height / 4 * scale);
 }
+
 
 function healthBarEnemy(x, y, health, maxHealth) {
   fill(39, 28, 158);
-  rect(x+10, y, maxHealth * 0.3 +2, 8);
+  rect(x + 10, y, maxHealth * 0.3 + 2, 8);
   fill(255, 0, 0);
   rect(x + 10.5, y + 1.5, health * 0.3, 5);
   fill(183, 178, 237);
   square(x, y, 8);
   fill(0);
   textSize(4);
-  text(health, x+0.5, y+5);
+  text(health, x + 0.5, y + 5);
+}
+
+//returns player attack damage based on selected item in inventory, defaults to base attack if no item selected
+function playerAttack() {
+  var attack = 0;
+  for (let i = 0; i < size; i++) {
+    if (inventory2[i].data.health > 0) {
+      attack = inventory2[i].data.damage;
+
+    }
+  }
+  return PLAYER_ATTACK + attack;
 }
 
 //adds image item to inventory
 function addItem(item) {
-      if (size < 3) {
-        inventory2[size] = item;
-        size++;
-    }
+  if (size < 3) {
+    inventory2[size] = item;
+    size++;
   }
+}
 
-  
+
 
 class Item {
   // image: array of image not selected and image selected
   // selected: whether the item is currently selected in the inventory
   // data: any additional data about the item (e.g. health boost, damage, etc.)
-  constructor(image, selected, data, x , y ) {
+  constructor(image, selected, data, x, y) {
     this.image = image;
     this.selected = selected;
     this.data = data;
@@ -1102,24 +1379,86 @@ class Item {
     }
   }
 }
+
+class Enemy {
+  constructor(x, y, type = "rat") {
+    this.x = x;
+    this.y = y;
+    this.type = type;
+    this.health = type === "boss" ? 300 : 100;
+    this.maxHealth = this.health;
+    this.state = "wander";
+    this.speed = type === "boss" ? 1.2 : 0.7;
+    this.detectionRange = type === "boss" ? 250 : 150;
+    this.attackRange = type === "boss" ? 35 : 25;
+    this.alive = true;
+    this.dirX = 1;
+    this.dirY = 0;
+    this.moveTimer = 0;
+    this.animFrame = 0;
+    this.attackCooldown = 0;
+  }
+}
+
+function chestItem(x, y) {
+  chestSelect();
+  displayItem();
+
+
+  function displayItem() {
+    for (let i = 0; i < 2; i++) {
+      if (chestInventory[planet - 1][i] != null) {
+        image(chestInventory[planet - 1][i].image_display(), x - 20 + i * 20, y - 30, 20, 20);
+        textSize(8);
+        fill(255);
+        text("use 9 & 0 to select", x - 30, y - 40);
+        text("Enter to pick up", x - 30, y - 30);
+      }
+    }
+
+
+  }
+
+  function chestSelect() {
+    if (keyCode === 57) {
+      if (chestInventory[planet - 1][0] != null) {
+        chestInventory[planet - 1][0].selected = true;
+        sword_sound.setVolume(0.1);
+        sword_sound.play();
+      }
+      if (chestInventory[planet - 1][1] != null) {
+        chestInventory[planet - 1][1].selected = false;
+      }
+    } else if (keyCode === 48) {
+      if (chestInventory[planet - 1][0] != null) {
+        chestInventory[planet - 1][0].selected = false;
+      }
+      if (chestInventory[planet - 1][1] != null) {
+        chestInventory[planet - 1][1].selected = true;
+      }
+    }
+  }
+}
+
 //displays health, lives, inventory, and current planet level
-function IU(life, health, planet, inventory1, inventory2) {
-  var level = [level_nacho, level_cheeseCake, level_blueCheese, level_parmesan];
+function IU(life, health, inventory1, inventory2) {
+  var level = [level_nacho, level_blueCheese, level_parmesan, level_cheeseCake];
   image(
     icu,
     0, 0,
     pageWidth, pageHeight
   );
-  image(inventory1, 15, 350, inventory1.width/14, inventory1.height/14);
-  image(level[planet - 1], 480, 10, level[planet - 1].width/5, level[planet - 1].height/5);
+  image(inventory1, 15, 350, inventory1.width / 14, inventory1.height / 14);
+  image(level[planet - 1], 480, 10, level[planet - 1].width / 10, level[planet - 1].height / 10);
 
-  
+
 
   lives();
   healthBar();
   selectedItem();
   dropItem();
   swapItem();
+  usePotion();
   if (keyCode === ENTER) {
     click = false;
   } else {
@@ -1127,47 +1466,92 @@ function IU(life, health, planet, inventory1, inventory2) {
   }
   inventory();
 
-  
+  function usePotion() {
+    for (let i = 0; i < size; i++) {
+      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected) {
+        text("shift to use potion", 20, 395);
+      }
+      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT) {
+        playerHealth = min(playerHealth + inventory2[i].data.health, 100);
+        for (let j = i; j < size - 1; j++) {
+          inventory2[j] = inventory2[j + 1];
+        }
+        inventory2[size - 1] = null;
+        size--;
+        break;
+      }
+    }
+  }
+
 
   function swapItem() {
     var swapped = false;
-    
-        for (let i = 0; i < droppedSize; i++) {
-          
-          if (droppedInventory[i] != null && droppedInventory[i].selected && keyCode === ENTER && click) {
-            for (let j = 0; j < size; j++) {
-              if (inventory2[j].selected) {
-                inventory2[j].selected = false;
-                var temp = inventory2[j];
-                inventory2[j] = droppedInventory[i];
-                  droppedInventory[i] = temp;
-                  droppedInventory[i].x = playerX;
-                  droppedInventory[i].y = playerY;
-                swapped = true;
-                click = false;
-                break;
-              }
-              
-            }
-            
+
+    for (let i = 0; i < chestInventory[planet - 1].length; i++) {
+      if (chestInventory[planet - 1][i] != null && chestInventory[planet - 1][i].selected && keyCode === ENTER && click) {
+        for (let j = 0; j < size; j++) {
+          if (inventory2[j].selected) {
+            inventory2[j].selected = false;
+            var temp = inventory2[j];
+            inventory2[j] = chestInventory[planet - 1][i];
+            chestInventory[planet - 1][i] = temp;
+            chestInventory[planet - 1][i].x = playerX;
+            chestInventory[planet - 1][i].y = playerY;
+            swapped = true;
+            click = false;
+            break;
           }
-          
+
         }
-        if (!swapped && keyCode === ENTER && click) {
-          for (let i = 0; i < droppedSize; i++) {
-            if (droppedInventory[i] != null && droppedInventory[i].selected) {
-              addItem(droppedInventory[i]);
-              droppedInventory[i].selected = false;
-              droppedInventory[i] = null;
-            }
-          }
-        }
+
+      }
     }
-  
+    if (!swapped && keyCode === ENTER && click) {
+      for (let i = 0; i < chestInventory[planet - 1].length; i++) {
+        if (chestInventory[planet - 1][i] != null && chestInventory[planet - 1][i].selected) {
+          addItem(chestInventory[planet - 1][i]);
+          chestInventory[planet - 1][i].selected = false;
+          chestInventory[planet - 1][i] = null;
+        }
+      }
+    }
+
+    for (let i = 0; i < droppedSize; i++) {
+
+      if (droppedInventory[i] != null && droppedInventory[i].selected && keyCode === ENTER && click) {
+        for (let j = 0; j < size; j++) {
+          if (inventory2[j].selected) {
+            inventory2[j].selected = false;
+            var temp = inventory2[j];
+            inventory2[j] = droppedInventory[i];
+            droppedInventory[i] = temp;
+            droppedInventory[i].x = playerX;
+            droppedInventory[i].y = playerY;
+            swapped = true;
+            click = false;
+            break;
+          }
+
+        }
+
+      }
+
+    }
+    if (!swapped && keyCode === ENTER && click) {
+      for (let i = 0; i < droppedSize; i++) {
+        if (droppedInventory[i] != null && droppedInventory[i].selected) {
+          addItem(droppedInventory[i]);
+          droppedInventory[i].selected = false;
+          droppedInventory[i] = null;
+        }
+      }
+    }
+  }
+
   //removes selected item from inventory when backspace is pressed and shifts remaining items over
   function dropItem() {
     if (keyCode === BACKSPACE) {
-      
+
       for (let i = 0; i < size; i++) {
         if (inventory2[i].selected) {
           //text("drop item", 200, 200);
@@ -1189,20 +1573,20 @@ function IU(life, health, planet, inventory1, inventory2) {
   }
   function selectedItem() {
     if (keyCode === 49) {
-        if (inventory2[0] != null && size >= 1) {
-          inventory2[0].selected = true;
-        }
-        if (inventory2[1] != null && size >= 2) {
-          inventory2[1].selected = false;
-        }
-        if (inventory2[2] != null && size >= 3) {
-          inventory2[2].selected = false;
-        }
+      if (inventory2[0] != null && size >= 1) {
+        inventory2[0].selected = true;
+      }
+      if (inventory2[1] != null && size >= 2) {
+        inventory2[1].selected = false;
+      }
+      if (inventory2[2] != null && size >= 3) {
+        inventory2[2].selected = false;
+      }
     } else if (keyCode === 50) {
       if (inventory2[0] != null && size >= 1) {
         inventory2[0].selected = false;
       }
-      if (inventory2[1] != null && size >= 2) { 
+      if (inventory2[1] != null && size >= 2) {
         inventory2[1].selected = true;
       }
       if (inventory2[2] != null && size >= 3) {
@@ -1216,7 +1600,7 @@ function IU(life, health, planet, inventory1, inventory2) {
       if (inventory2[1] != null && size >= 2) {
         inventory2[1].selected = false;
       }
-      if (inventory2[2] != null && size >= 3) { 
+      if (inventory2[2] != null && size >= 3) {
         inventory2[2].selected = true;
       }
     }
@@ -1224,18 +1608,18 @@ function IU(life, health, planet, inventory1, inventory2) {
   function inventory() {
     for (let i = 0; i < size; i++) {
       var img = inventory2[i].image_display();
-      image(img, 25 + i * 32, 357, img.width/1.5, img.height/1.5);
+      image(img, 25 + i * 32, 357, img.width / 1.5, img.height / 1.5);
     }
   }
   function lives() {
     for (let i = 0; i < life; i++) {
-      image(heart, 25 + i * 30, 325, heart.width/24, heart.height/24);
+      image(heart, 25 + i * 30, 325, heart.width / 24, heart.height / 24);
     }
   }
-  
+
   function healthBar(maxHealth = 100) {
     fill(39, 28, 158);
-    rect(30, 5, maxHealth * 2 +10, 20);
+    rect(30, 5, maxHealth * 2 + 10, 20);
     fill(255, 0, 0);
     rect(35, 8, health * 2, 15);
     fill(183, 178, 237);
@@ -1245,13 +1629,11 @@ function IU(life, health, planet, inventory1, inventory2) {
   }
 }
 
-function mousePressed() {
-  mouseJustPressed = true;
-}
 
 function draw() {
   background(220);
+  if (planet === 2) background(100, 150, 200); // blue tint for snow map
+  else background(220);
   screen(page);
-
   mouseJustPressed = false;
 }
