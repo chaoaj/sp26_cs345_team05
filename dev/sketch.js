@@ -1668,9 +1668,7 @@ function IU(life, health, inventory1, inventory2) {
 
   function usePotion() {
     for (let i = 0; i < size; i++) {
-      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected) {
-        text("shift to use potion", 20, 395);
-      }
+      
       if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT && !potionJustUsed) {
         potionJustUsed = true;
         playerHealth = min(playerHealth + inventory2[i].data.health, 100);
