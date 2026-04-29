@@ -212,12 +212,14 @@ function preload() {
 
   homepage_sound = loadSound("assets/homepage_sound.mp3");
   level_theme = loadSound("assets/Game_SoundTrackUpdated.mp3");
-  potion_sound = loadSound("assets/Potion_sound.mp3");
   overmusic = loadSound("assets/GameOver.mp3");
   slides_track = loadSound("assets/slides1.0.mp3");
-  sword_sound = loadSound("assets/sword_effect.mp3");
   victory_music = loadSound("assets/Victory.mp3");
   openchestSound = loadSound("assets/tp_chest_open.mp3");
+  potion_drink = loadSound("assets/potion_drink.mp3");
+  potion_collect = loadSound("assets/potion_collect.mp3");
+  sword_collect = loadSound("assets/sword_collect.mp3");
+  sword_hit = loadSound("assets/sword_hit.mp3");
 
   button_beep = loadSound("assets/button_beep.mp3");
 
@@ -1190,6 +1192,8 @@ function drawCat(player) {
       if (e.state === "attack" && d <= e.attackRange && attackCooldown === 0) {
         e.health -= PLAYER_ATTACK;
         attackCooldown = 60;
+        sword_hit.setVolume(0.3);
+        sword_hit.play();
         break;
       }
     }
@@ -1565,8 +1569,6 @@ function chestItem(x, y) {
     if (keyCode === 57) {
       if (chestInventory[planet - 1][0] != null) {
         chestInventory[planet - 1][0].selected = true;
-        sword_sound.setVolume(0.1);
-        sword_sound.play();
       }
       if (chestInventory[planet - 1][1] != null) {
         chestInventory[planet - 1][1].selected = false;
@@ -1615,6 +1617,8 @@ function IU(life, health, inventory1, inventory2) {
       }
       if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT) {
         playerHealth = min(playerHealth + inventory2[i].data.health, 100);
+        potion_drink.setVolume(0.3);
+        potion_drink.play();
         for (let j = i; j < size - 1; j++) {
           inventory2[j] = inventory2[j + 1];
         }
@@ -1651,6 +1655,14 @@ function IU(life, health, inventory1, inventory2) {
     if (!swapped && keyCode === ENTER && click) {
       for (let i = 0; i < chestInventory[planet - 1].length; i++) {
         if (chestInventory[planet - 1][i] != null && chestInventory[planet - 1][i].selected) {
+          if (chestInventory[planet - 1][i].data.damage > 0) {
+            sword_collect.setVolume(0.3);
+            sword_collect.play();
+          } else {
+            potion_collect.setVolume(0.3);
+            potion_collect.play();
+          }
+
           addItem(chestInventory[planet - 1][i]);
           chestInventory[planet - 1][i].selected = false;
           chestInventory[planet - 1][i] = null;
@@ -1713,6 +1725,7 @@ function IU(life, health, inventory1, inventory2) {
       }
     }
   }
+
   function selectedItem() {
     if (keyCode === 49) {
       if (inventory2[0] != null && size >= 1) {
