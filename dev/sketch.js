@@ -63,7 +63,7 @@ const backstorySlides = [
 
 var planet = 1;
 var g = 0;
-var page = 0;
+var page = 6;
 var scale = 1;
 var lives = 3;
 
@@ -179,6 +179,8 @@ function preload() {
   story2 = loadImage("assets/story2.gif");
   story3 = loadImage("assets/story3.gif");
   story4 = loadImage("assets/story4.gif");
+  story5 = loadImage("assets/story5.gif");
+  story6 = loadImage("assets/story6.gif");
 
   return1 = loadImage("assets/return1.png");
   return2 = loadImage("assets/return2.png");
@@ -256,7 +258,9 @@ function preload() {
   backspace_selected = loadImage("assets/backspace_selected.png");
   shift = loadImage("assets/shift.png");
   shift_selected = loadImage("assets/shift_selected.png");
-  controls_1 = loadImage("assets/controls.png");
+  controls1 = loadImage("assets/controls1.png");
+  controls2 = loadImage("assets/controls2.png");
+
   wasd = loadImage("assets/wasd.png");
   wasd_s = loadImage("assets/wasd_s.png");
   wasd_a = loadImage("assets/wasd_a.png");
@@ -327,26 +331,38 @@ function setup() {
 
 
 function button(image1, x, y, w, h) {
+  // button(start_game2, 310, 150, start_game2.width / 7 * scale, start_game2.height / 6 * scale);
+
+  // // controls button
+  // button(controls2, 430, 330, controls2.width / 11 * scale, controls2.height / 9 * scale);
+
+  // // skins button
+  // button(skins2, 445, 240, skins2.width / 7 * scale, skins2.height / 6 * scale);
+
   image(image1, x, y, w, h);
   if (mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
     if (image1 === start_game2) {
-      image(start_game1, 275, 150, start_game1.width / 7 * scale, start_game1.height / 6 * scale);
+      image(start_game1, 310, 150, start_game1.width / 7 * scale, start_game1.height / 6 * scale);
     } else if (image1 === skins2) {
-      image(skins1, x, y, skins1.width / 7 * scale, skins1.height / 6 * scale);
-    } else if (image1 === return2) {
-      // return button from skins screen
-      if (page === 1 || page === 6) {
-        image(return1, x, y, return1.width / 7 * scale, return1.height / 6 * scale);
-      }
-
-      // return button from game over / victory screen
-      if (page === 3 || page === 4) {
-        image(return1, x, y, return1.width / 4 * scale, return1.height / 4 * scale);
-      }
-    } else if (image1 === skip2) {
-      image(skip1, 475, 345, skip1.width / 14, skip1.height / 12);
+      image(skins1, 445, 240, skins1.width / 7 * scale, skins1.height / 6 * scale);
+    } else if (image1 === controls2) {
+      button(controls1, 430, 330, controls1.width / 11 * scale, controls1.height / 9 * scale);
     }
+  } else if (image1 === return2) {
+    // return button from skins screen
+    if (page === 1 || page === 6) {
+      image(return1, x, y, return1.width / 7 * scale, return1.height / 6 * scale);
+    }
+
+    // return button from game over / victory screen
+    if (page === 3 || page === 4) {
+      image(return1, x, y, return1.width / 4 * scale, return1.height / 4 * scale);
+    }
+
+  } else if (image1 === skip2) {
+    image(skip1, 475, 345, skip1.width / 14, skip1.height / 12);
   }
+
   if (mouseJustPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
     button_beep.play();
 
@@ -359,7 +375,7 @@ function button(image1, x, y, w, h) {
       page = 0;
     } else if (image1 === skip2) {
       onBackstoryComplete();
-    } else if (image1 === controls_1) {
+    } else if (image1 === controls2) {
       page = 6;
     }
 
@@ -389,76 +405,100 @@ function screen() {
   } else if (page === 5) {
     gameStart();
   } else if (page === 6) {
-    controls();
+    controlsPage();
   }
 }
 
-function controls() {
+function controlsPage() {
+  scale = 1;
+  backgroundMoveSpeed = 0.5;
+
+  if (mouseX > pageWidth / 2 && homepageX < 0) {
+    homepageX += backgroundMoveSpeed;
+  } else if (mouseX < pageWidth / 2 && mouseX != 0 && homepageX > -pageWidth / 50) {
+    homepageX -= backgroundMoveSpeed;
+  }
+  if (mouseY > pageHeight / 2 && homepageY < 0) {
+    homepageY += backgroundMoveSpeed;
+  } else if (mouseY < pageHeight / 2 && mouseY != 0 && homepageY > -pageHeight / 50) {
+    homepageY -= backgroundMoveSpeed;
+  }
+
+  image(
+    homepage_background,
+    homepageX, homepageY,
+    pageWidth + pageWidth / 50, pageHeight + pageHeight / 50
+  );
+
+  if (Math.floor(random(0, 15)) === 0) {
+    scale -= 0.005;
+  }
+
   button(return2, 20, 20, return2.width / 7 * scale, return2.height / 6 * scale);
-  image(controls_1, 250, 50, controls_1.width / 7 * scale, controls_1.height / 6 * scale);
+  image(controls1, 350, 20, controls1.width / 7 * scale, controls1.height / 6 * scale);
 
   textSize(16);
   text("Move using WASD", 450, 220);
   text("or Arrow Keys", 450, 240);
 
   if (keyCode === UP_ARROW || key === "w") {
-    image(wasd_w, 350, 180, wasd_w.width / 7 * scale, wasd_w.height / 6 * scale);
-    image(arrow_up, 330, 250, arrow_up.width / 7 * scale, arrow_up.height / 6 * scale);
+    image(wasd_w, 320, 120, wasd_w.width / 6 * scale, wasd_w.height / 6 * scale);
+    image(arrow_up, 460, 148, arrow_up.width / 9 * scale, arrow_up.height / 9 * scale);
   } else if (keyCode === DOWN_ARROW || key === "s") {
-    image(wasd_s, 350, 180, wasd_s.width / 7 * scale, wasd_s.height / 6 * scale);
-    image(arrow_down, 330, 250, arrow_down.width / 7 * scale, arrow_down.height / 6 * scale);
+    image(wasd_s, 320, 120, wasd_s.width / 6 * scale, wasd_s.height / 6 * scale);
+    image(arrow_down, 460, 148, arrow_down.width / 9 * scale, arrow_down.height / 9 * scale);
   } else if (keyCode === LEFT_ARROW || key === "a") {
-    image(wasd_a, 350, 180, wasd_a.width / 7 * scale, wasd_a.height / 6 * scale);
-    image(arrow_left, 330, 250, arrow_left.width / 7 * scale, arrow_left.height / 6 * scale);
+    image(wasd_a, 320, 120, wasd_a.width / 6 * scale, wasd_a.height / 6 * scale);
+    image(arrow_left, 460, 148, arrow_left.width / 9 * scale, arrow_left.height / 9 * scale);
   } else if (keyCode === RIGHT_ARROW || key === "d") {
-    image(wasd_d, 350, 180, wasd_d.width / 7 * scale, wasd_d.height / 6 * scale);
-    image(arrow_right, 330, 250, arrow_right.width / 7 * scale, arrow_right.height / 6 * scale);
+    image(wasd_d, 320, 120, wasd_d.width / 6 * scale, wasd_d.height / 6 * scale);
+    image(arrow_right, 460, 148, arrow_right.width / 9 * scale, arrow_right.height / 9 * scale);
   } else {
-    image(wasd, 350, 180, wasd.width / 7 * scale, wasd.height / 6 * scale);
-    image(arrow, 330, 250, arrow.width / 7 * scale, arrow.height / 6 * scale);
+    image(wasd, 320, 120, wasd.width / 6 * scale, wasd.height / 6 * scale);
+    image(arrow, 460, 148, arrow.width / 9 * scale, arrow.height / 9 * scale);
   }
 
   text("press enter to pick up", 100, 300);
   text("or swap selected item", 100, 320);
   if (keyCode === ENTER) {
-    image(enter_selected, 30, 280, enter_selected.width / 7 * scale, enter_selected.height / 6 * scale);
+    image(enter_selected, 20, 270, enter_selected.width / 9 * scale, enter_selected.height / 9 * scale);
   } else {
-    image(enter, 30, 280, enter.width / 7 * scale, enter.height / 6 * scale);
+    image(enter, 20, 270, enter.width / 9 * scale, enter.height / 9 * scale);
   }
 
   text("press backspace to", 100, 250);
   text("drop selected item", 100, 270);
   if (keyCode === BACKSPACE) {
-    image(backspace_selected, 30, 230, backspace_selected.width / 7 * scale, backspace_selected.height / 6 * scale);
+    image(backspace_selected, 20, 202, backspace_selected.width / 9 * scale, backspace_selected.height / 9 * scale);
   } else {
-    image(backspace, 30, 230, backspace.width / 7 * scale, backspace.height / 6 * scale);
+    image(backspace, 20, 202, backspace.width / 9 * scale, backspace.height / 9 * scale);
   }
 
   text("press shift to", 100, 350);
   text("use selected potion", 100, 370);
   if (keyCode === SHIFT) {
-    image(shift_selected, 30, 330, shift_selected.width / 7 * scale, shift_selected.height / 6 * scale);
+    image(shift_selected, 20, 335, shift_selected.width / 9 * scale, shift_selected.height / 9 * scale);
   } else {
-    image(shift, 30, 330, shift.width / 7 * scale, shift.height / 6 * scale);
+    image(shift, 20, 335, shift.width / 9 * scale, shift.height / 9 * scale);
   }
 
   text("use number keys 1-3 to", 150, 170);
   text("select item in inventory", 150, 190);
   if (key === "1") {
-    image(number_1, 50, 150, number_1.width / 7 * scale, number_1.height / 6 * scale);
+    image(number_1, 20, 140, number.width / 11 * scale, number.height / 10 * scale);
   } else if (key === "2") {
-    image(number_2, 50, 150, number_2.width / 7 * scale, number_2.height / 6 * scale);
+    image(number_2, 20, 140, number.width / 11 * scale, number.height / 10 * scale);
   } else if (key === "3") {
-    image(number_3, 50, 150, number_3.width / 7 * scale, number_3.height / 6 * scale);
+    image(number_3, 20, 140, number.width / 11 * scale, number.height / 10 * scale);
   } else {
-    image(number, 50, 150, number.width / 7 * scale, number.height / 6 * scale);
+    image(number, 20, 140, number.width / 11 * scale, number.height / 10 * scale);
   }
 
   text("attack using spacebar", 380, 360);
   if (key === " ") {
-    image(spacebar_selected, 260, 330, spacebar_selected.width / 7 * scale, spacebar_selected.height / 6 * scale);
+    image(spacebar_selected, 260, 330, spacebar_selected.width / 9 * scale, spacebar_selected.height / 9 * scale);
   } else {
-    image(spacebar, 260, 330, spacebar.width / 7 * scale, spacebar.height / 6 * scale);
+    image(spacebar, 425, 330, spacebar.width / 9 * scale, spacebar.height / 9 * scale);
   }
 }
 
@@ -553,12 +593,13 @@ function homePage() {
   );
 
   // start game button
-  button(start_game2, 275, 150, start_game2.width / 7 * scale, start_game2.height / 6 * scale);
+  button(start_game2, 310, 150, start_game2.width / 7 * scale, start_game2.height / 6 * scale);
+
+  // controls button
+  button(controls2, 430, 330, controls2.width / 11 * scale, controls2.height / 9 * scale);
 
   // skins button
-  button(skins2, 410, 300, skins2.width / 7 * scale, skins2.height / 6 * scale);
-
-  button(controls_1, 410, 250, controls_1.width / 7 * scale, controls_1.height / 6 * scale);
+  button(skins2, 445, 240, skins2.width / 7 * scale, skins2.height / 6 * scale);
 }
 
 function skinScreen() {
@@ -667,7 +708,7 @@ function storySlides() {
   if (overmusic.isPlaying()) overmusic.stop();
 
   // --- BACKGROUND GIF ---
-  const storyGifs = [story1, story2, story3, story4];
+  const storyGifs = [story1, story2, story3, story4, story5, story6];
   if (currentSlide < storyGifs.length) {
     image(storyGifs[currentSlide], 0, 0, pageWidth, pageHeight);
   }
@@ -689,11 +730,11 @@ function storySlides() {
     textSize(26);
     text(slide.title, pageWidth / 2 + 2, 62);
 
-    
+
     fill(255);
     text(slide.title, pageWidth / 2, 60);
 
-    
+
     textSize(14);
     for (let i = 0; i < slide.text.length; i++) {
       // shadow
@@ -1667,7 +1708,7 @@ function IU(life, health, inventory1, inventory2) {
 
   function usePotion() {
     for (let i = 0; i < size; i++) {
-      
+
       if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT && !potionJustUsed) {
         potionJustUsed = true;
         playerHealth = min(playerHealth + inventory2[i].data.health, 100);
