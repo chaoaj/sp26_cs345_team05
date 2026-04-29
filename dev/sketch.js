@@ -147,7 +147,7 @@ let attackCooldown = 0; // frames until enemy can damage player again
 
 
 
-const ENEMY_ATTACK = 5;
+const ENEMY_ATTACK = 2;
 const PLAYER_ATTACK = 10;
 
 let currentFrameRat = 0;
@@ -220,6 +220,7 @@ function preload() {
   potion_collect = loadSound("assets/potion_collect.mp3");
   sword_collect = loadSound("assets/sword_collect.mp3");
   sword_hit = loadSound("assets/sword_hit.mp3");
+  punch_sound = loadSound("assets/punch.mp3");
 
   button_beep = loadSound("assets/button_beep.mp3");
 
@@ -1190,10 +1191,19 @@ function drawCat(player) {
       if (!e.alive) continue;
       let d = dist(playerX, playerY, e.x, e.y);
       if (e.state === "attack" && d <= e.attackRange && attackCooldown === 0) {
-        e.health -= PLAYER_ATTACK;
-        attackCooldown = 60;
-        sword_hit.setVolume(0.3);
-        sword_hit.play();
+        let equipped = getEquippedItem();
+        let damage = PLAYER_ATTACK + (equipped ? equipped.data.damage : 0);
+        e.health -= damage;
+        attackCooldown = 25;
+
+        if (equipped && equipped.data.damage > 0) {
+          sword_hit.setVolume(0.3);
+          sword_hit.play();
+        } else {
+          punch_sound.setVolume(0.3);
+          punch_sound.play();
+        }
+
         break;
       }
     }
@@ -1471,11 +1481,11 @@ function victoryPage() {
 
 
 function healthBarEnemy(x, y, health, maxHealth) {
-  fill(39, 28, 158);
+  fill(209, 197, 197);
   rect(x + 10, y, maxHealth * 0.3 + 2, 8);
-  fill(255, 0, 0);
+  fill(163, 77, 77);
   rect(x + 10.5, y + 1.5, health * 0.3, 5);
-  fill(183, 178, 237);
+  fill(209, 197, 197);
   square(x, y, 8);
   fill(0);
   textSize(4);
@@ -1533,13 +1543,13 @@ class Enemy {
     this.health = type === "boss" ? 300 : 100;
     this.maxHealth = this.health;
     this.state = "wander";
-    this.speed = type === "boss" ? 1.2 : 0.7;
+    this.speed = type === "boss" ? 1.2 : random(0.5, 0.9);
     this.detectionRange = type === "boss" ? 250 : 150;
     this.attackRange = type === "boss" ? 35 : 25;
     this.alive = true;
     this.dirX = 1;
     this.dirY = 0;
-    this.moveTimer = 0;
+    this.moveTimer = floor(random(0, 60));;
     this.animFrame = 0;
     this.attackCooldown = 0;
     this.roomIndex = -1;
@@ -1773,11 +1783,11 @@ function IU(life, health, inventory1, inventory2) {
   }
 
   function healthBar(maxHealth = 100) {
-    fill(39, 28, 158);
+    fill(209, 197, 197);
     rect(30, 5, maxHealth * 2 + 10, 20);
-    fill(255, 0, 0);
+    fill(163, 77, 77);
     rect(35, 8, health * 2, 15);
-    fill(183, 178, 237);
+    fill(209, 197, 197);
     square(3, 3, 25);
     fill(0);
     text(health, 5, 20);
