@@ -75,6 +75,7 @@ let homepageY = 0;
 
 // used to prevent spamming buttons
 let mouseJustPressed = false;
+let potionJustUsed = false;
 
 // prevent audio spam
 let audioUnlocked = false;
@@ -147,7 +148,7 @@ let attackCooldown = 0; // frames until enemy can damage player again
 
 
 
-const ENEMY_ATTACK = 2;
+const ENEMY_ATTACK = 20;
 const PLAYER_ATTACK = 10;
 
 let currentFrameRat = 0;
@@ -349,6 +350,7 @@ function button(image1, x, y, w, h) {
     button_beep.play();
 
     if (image1 === start_game2) {
+      resetGame();
       page = 2;
     } else if (image1 === skins2) {
       page = 1;
@@ -457,6 +459,44 @@ function controls() {
   } else {
     image(spacebar, 260, 330, spacebar.width / 7 * scale, spacebar.height / 6 * scale);
   }
+}
+
+function resetGame() {
+  // player stats
+  lives = 3;
+  playerHealth = 100;
+  attackCooldown = 0;
+
+  // map state
+  planet = 1;
+  completedPlanets = [];
+  g = 0;
+  fightRooms = [];
+  chests = [];
+  spikeWalls = [];
+  enemies = [];
+
+  // inventory
+  size = 0;
+  inventory2 = [];
+  droppedInventory = [];
+  droppedSize = 0;
+
+  // camera and player position
+  currentMap = mapData_nacho;
+  currentMapFloor = floorTileset;
+  currentMapWall = wallTileset;
+  const spawn = getSpawnPoint(currentMap);
+  playerX = spawn.x;
+  playerY = spawn.y;
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
+
+  // animation state
+  currentFrame = 0;
+  frameCurrRow = 0;
+  frontR = true;
+  walkToggle = false;
 }
 
 function homePage() {
@@ -1190,7 +1230,7 @@ function drawCat(player) {
     for (let e of enemies) {
       if (!e.alive) continue;
       let d = dist(playerX, playerY, e.x, e.y);
-      if (e.state === "attack" && d <= e.attackRange && attackCooldown === 0) {
+      if (e.state !== "wander" && d <= e.attackRange && attackCooldown === 0) {
         let equipped = getEquippedItem();
         let damage = PLAYER_ATTACK + (equipped ? equipped.data.damage : 0);
         e.health -= damage;
@@ -1607,7 +1647,7 @@ function IU(life, health, inventory1, inventory2) {
 
 
 
-  lives();
+  drawLives();
   healthBar();
   selectedItem();
   dropItem();
@@ -1625,7 +1665,8 @@ function IU(life, health, inventory1, inventory2) {
       if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected) {
         text("shift to use potion", 20, 395);
       }
-      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT) {
+      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT && !potionJustUsed) {
+        potionJustUsed = true;
         playerHealth = min(playerHealth + inventory2[i].data.health, 100);
         potion_drink.setVolume(0.3);
         potion_drink.play();
@@ -1636,6 +1677,7 @@ function IU(life, health, inventory1, inventory2) {
         size--;
         break;
       }
+      if (keyCode != SHIFT) potionJustUsed = false;
     }
   }
 
@@ -1776,7 +1818,7 @@ function IU(life, health, inventory1, inventory2) {
       image(img, 25 + i * 32, 357, img.width / 1.5, img.height / 1.5);
     }
   }
-  function lives() {
+  function drawLives() {
     for (let i = 0; i < life; i++) {
       image(heart, 25 + i * 30, 325, heart.width / 24, heart.height / 24);
     }
@@ -1796,7 +1838,6 @@ function IU(life, health, inventory1, inventory2) {
 
 
 function draw() {
-  background(220);
   if (planet === 2) background(100, 150, 200); // blue tint for snow map
   else background(220);
   screen(page);
