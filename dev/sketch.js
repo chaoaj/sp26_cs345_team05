@@ -141,7 +141,9 @@ let spikeWalls = [];
 let chestTileset;
 
 let enemies = [];
-let playerHealth = 100;
+
+const PLAYERHEALTHMAX = 200;
+let playerHealth = PLAYERHEALTHMAX;
 let attackCooldown = 0; // frames until enemy can damage player again
 
 
@@ -505,7 +507,7 @@ function controlsPage() {
 function resetGame() {
   // player stats
   lives = 3;
-  playerHealth = 100;
+  playerHealth = PLAYERHEALTHMAX;
   attackCooldown = 0;
 
   // map state
@@ -1261,7 +1263,7 @@ function drawCat(player) {
       const spawn = getSpawnPoint(currentMap);
       playerX = spawn.x;
       playerY = spawn.y;
-      playerHealth = 100;
+      playerHealth = PLAYERHEALTHMAX;
     } else {
       page = 3; // Game over
     }
@@ -1355,7 +1357,7 @@ function gameStart() {
     page = 3; // game over
   } else if (playerHealth <= 0) {
     lives--;
-    playerHealth = 100;
+    playerHealth = PLAYERHEALTHMAX;
 
   }
   if (g == 0) {
@@ -1490,7 +1492,7 @@ function collidesWithWall(X, Y) {
 function gameover() {
   scale = 1;
   lives = 3;
-  playerHealth = 100;
+  playerHealth = PLAYERHEALTHMAX;
   if (audioUnlocked && !overmusic.isPlaying()) {
     overmusic.setVolume(0.4);
     overmusic.loop();
@@ -1711,7 +1713,7 @@ function IU(life, health, inventory1, inventory2) {
 
       if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT && !potionJustUsed) {
         potionJustUsed = true;
-        playerHealth = min(playerHealth + inventory2[i].data.health, 100);
+        playerHealth = min(playerHealth + inventory2[i].data.health, PLAYERHEALTHMAX);
         potion_drink.setVolume(0.3);
         potion_drink.play();
         for (let j = i; j < size - 1; j++) {
@@ -1728,7 +1730,7 @@ function IU(life, health, inventory1, inventory2) {
 
   function swapItem() {
     var swapped = false;
-
+    /*
     for (let i = 0; i < chestInventory[planet - 1].length; i++) {
       if (chestInventory[planet - 1][i] != null && chestInventory[planet - 1][i].selected && keyCode === ENTER && click) {
         for (let j = 0; j < size; j++) {
@@ -1747,7 +1749,9 @@ function IU(life, health, inventory1, inventory2) {
         }
 
       }
+      
     }
+      */
     if (!swapped && keyCode === ENTER && click) {
       for (let i = 0; i < chestInventory[planet - 1].length; i++) {
         if (chestInventory[planet - 1][i] != null && chestInventory[planet - 1][i].selected) {
@@ -1868,7 +1872,7 @@ function IU(life, health, inventory1, inventory2) {
     }
   }
 
-  function healthBar(maxHealth = 100) {
+  function healthBar(maxHealth = PLAYERHEALTHMAX) {
     fill(209, 197, 197);
     rect(30, 5, maxHealth * 2 + 10, 20);
     fill(163, 77, 77);
