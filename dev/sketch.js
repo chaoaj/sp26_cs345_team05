@@ -75,6 +75,7 @@ let homepageY = 0;
 
 // used to prevent spamming buttons
 let mouseJustPressed = false;
+let potionJustUsed = false;
 
 // prevent audio spam
 let audioUnlocked = false;
@@ -147,7 +148,7 @@ let attackCooldown = 0; // frames until enemy can damage player again
 
 
 
-const ENEMY_ATTACK = 5;
+const ENEMY_ATTACK = 8;
 const PLAYER_ATTACK = 10;
 
 let currentFrameRat = 0;
@@ -212,14 +213,18 @@ function preload() {
 
   homepage_sound = loadSound("assets/homepage_sound.mp3");
   level_theme = loadSound("assets/Game_SoundTrackUpdated.mp3");
-  potion_sound = loadSound("assets/Potion_sound.mp3");
   overmusic = loadSound("assets/GameOver.mp3");
   slides_track = loadSound("assets/slides1.0.mp3");
-  sword_sound = loadSound("assets/sword_effect.mp3");
   victory_music = loadSound("assets/Victory.mp3");
   openchestSound = loadSound("assets/tp_chest_open.mp3");
+  potion_drink = loadSound("assets/potion_drink.mp3");
+  potion_collect = loadSound("assets/potion_collect.mp3");
+  sword_collect = loadSound("assets/sword_collect.mp3");
+  sword_hit = loadSound("assets/sword_hit.mp3");
+  punch_sound = loadSound("assets/punch.mp3");
 
   button_beep = loadSound("assets/button_beep.mp3");
+  meow = loadSound("assets/meow.mp3");
 
   sword_nacho = loadImage("assets/sword_nacho.png");
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
@@ -235,6 +240,30 @@ function preload() {
   floorTileset = loadImage("assets/atlas_floor-16x16.png");
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
   chestTileset = loadImage("assets/Chest.png");
+
+  arrow_up = loadImage("assets/arrow_up.png");
+  arrow = loadImage("assets/arrow.png");
+  arrow_down = loadImage("assets/arrow_down.png");
+  arrow_left = loadImage("assets/arrow_left.png");
+  arrow_right = loadImage("assets/arrow_right.png");
+  number = loadImage("assets/number.png");
+  number_1 = loadImage("assets/number_1.png");
+  number_2 = loadImage("assets/number_2.png");
+  number_3 = loadImage("assets/number_3.png");
+  enter = loadImage("assets/enter.png");
+  enter_selected = loadImage("assets/enter_selected.png");
+  backspace = loadImage("assets/backspace.png");
+  backspace_selected = loadImage("assets/backspace_selected.png");
+  shift = loadImage("assets/shift.png");
+  shift_selected = loadImage("assets/shift_selected.png");
+  controls_1 = loadImage("assets/controls.png");
+  wasd = loadImage("assets/wasd.png");
+  wasd_s = loadImage("assets/wasd_s.png");
+  wasd_a = loadImage("assets/wasd_a.png");
+  wasd_d = loadImage("assets/wasd_d.png");
+  wasd_w = loadImage("assets/wasd_w.png");
+  spacebar = loadImage("assets/spacebar.png");
+  spacebar_selected = loadImage("assets/spacebar_selected.png");
   snowTileset = loadImage("assets/FE8 - Snowy Bern.png");
 }
 
@@ -303,16 +332,16 @@ function button(image1, x, y, w, h) {
     if (image1 === start_game2) {
       image(start_game1, 275, 150, start_game1.width / 7 * scale, start_game1.height / 6 * scale);
     } else if (image1 === skins2) {
-      image(skins1, 410, 250, skins1.width / 7 * scale, skins1.height / 6 * scale);
+      image(skins1, x, y, skins1.width / 7 * scale, skins1.height / 6 * scale);
     } else if (image1 === return2) {
       // return button from skins screen
-      if (page === 1) {
-        image(return1, 20, 20, return1.width / 7 * scale, return1.height / 6 * scale);
+      if (page === 1 || page === 6) {
+        image(return1, x, y, return1.width / 7 * scale, return1.height / 6 * scale);
       }
 
       // return button from game over / victory screen
       if (page === 3 || page === 4) {
-        image(return1, 205, 260, return1.width / 4 * scale, return1.height / 4 * scale);
+        image(return1, x, y, return1.width / 4 * scale, return1.height / 4 * scale);
       }
     } else if (image1 === skip2) {
       image(skip1, 475, 345, skip1.width / 14, skip1.height / 12);
@@ -322,6 +351,7 @@ function button(image1, x, y, w, h) {
     button_beep.play();
 
     if (image1 === start_game2) {
+      resetGame();
       page = 2;
     } else if (image1 === skins2) {
       page = 1;
@@ -329,6 +359,8 @@ function button(image1, x, y, w, h) {
       page = 0;
     } else if (image1 === skip2) {
       onBackstoryComplete();
+    } else if (image1 === controls_1) {
+      page = 6;
     }
 
     print(page);
@@ -356,13 +388,122 @@ function screen() {
     victoryPage();
   } else if (page === 5) {
     gameStart();
+  } else if (page === 6) {
+    controls();
   }
+}
+
+function controls() {
+  button(return2, 20, 20, return2.width / 7 * scale, return2.height / 6 * scale);
+  image(controls_1, 250, 50, controls_1.width / 7 * scale, controls_1.height / 6 * scale);
+
+  textSize(16);
+  text("Move using WASD", 450, 220);
+  text("or Arrow Keys", 450, 240);
+
+  if (keyCode === UP_ARROW || key === "w") {
+    image(wasd_w, 350, 180, wasd_w.width / 7 * scale, wasd_w.height / 6 * scale);
+    image(arrow_up, 330, 250, arrow_up.width / 7 * scale, arrow_up.height / 6 * scale);
+  } else if (keyCode === DOWN_ARROW || key === "s") {
+    image(wasd_s, 350, 180, wasd_s.width / 7 * scale, wasd_s.height / 6 * scale);
+    image(arrow_down, 330, 250, arrow_down.width / 7 * scale, arrow_down.height / 6 * scale);
+  } else if (keyCode === LEFT_ARROW || key === "a") {
+    image(wasd_a, 350, 180, wasd_a.width / 7 * scale, wasd_a.height / 6 * scale);
+    image(arrow_left, 330, 250, arrow_left.width / 7 * scale, arrow_left.height / 6 * scale);
+  } else if (keyCode === RIGHT_ARROW || key === "d") {
+    image(wasd_d, 350, 180, wasd_d.width / 7 * scale, wasd_d.height / 6 * scale);
+    image(arrow_right, 330, 250, arrow_right.width / 7 * scale, arrow_right.height / 6 * scale);
+  } else {
+    image(wasd, 350, 180, wasd.width / 7 * scale, wasd.height / 6 * scale);
+    image(arrow, 330, 250, arrow.width / 7 * scale, arrow.height / 6 * scale);
+  }
+
+  text("press enter to pick up", 100, 300);
+  text("or swap selected item", 100, 320);
+  if (keyCode === ENTER) {
+    image(enter_selected, 30, 280, enter_selected.width / 7 * scale, enter_selected.height / 6 * scale);
+  } else {
+    image(enter, 30, 280, enter.width / 7 * scale, enter.height / 6 * scale);
+  }
+
+  text("press backspace to", 100, 250);
+  text("drop selected item", 100, 270);
+  if (keyCode === BACKSPACE) {
+    image(backspace_selected, 30, 230, backspace_selected.width / 7 * scale, backspace_selected.height / 6 * scale);
+  } else {
+    image(backspace, 30, 230, backspace.width / 7 * scale, backspace.height / 6 * scale);
+  }
+
+  text("press shift to", 100, 350);
+  text("use selected potion", 100, 370);
+  if (keyCode === SHIFT) {
+    image(shift_selected, 30, 330, shift_selected.width / 7 * scale, shift_selected.height / 6 * scale);
+  } else {
+    image(shift, 30, 330, shift.width / 7 * scale, shift.height / 6 * scale);
+  }
+
+  text("use number keys 1-3 to", 150, 170);
+  text("select item in inventory", 150, 190);
+  if (key === "1") {
+    image(number_1, 50, 150, number_1.width / 7 * scale, number_1.height / 6 * scale);
+  } else if (key === "2") {
+    image(number_2, 50, 150, number_2.width / 7 * scale, number_2.height / 6 * scale);
+  } else if (key === "3") {
+    image(number_3, 50, 150, number_3.width / 7 * scale, number_3.height / 6 * scale);
+  } else {
+    image(number, 50, 150, number.width / 7 * scale, number.height / 6 * scale);
+  }
+
+  text("attack using spacebar", 380, 360);
+  if (key === " ") {
+    image(spacebar_selected, 260, 330, spacebar_selected.width / 7 * scale, spacebar_selected.height / 6 * scale);
+  } else {
+    image(spacebar, 260, 330, spacebar.width / 7 * scale, spacebar.height / 6 * scale);
+  }
+}
+
+function resetGame() {
+  // player stats
+  lives = 3;
+  playerHealth = 100;
+  attackCooldown = 0;
+
+  // map state
+  planet = 1;
+  completedPlanets = [];
+  g = 0;
+  fightRooms = [];
+  chests = [];
+  spikeWalls = [];
+  enemies = [];
+
+  // inventory
+  size = 0;
+  inventory2 = [];
+  droppedInventory = [];
+  droppedSize = 0;
+
+  // camera and player position
+  currentMap = mapData_nacho;
+  currentMapFloor = floorTileset;
+  currentMapWall = wallTileset;
+  const spawn = getSpawnPoint(currentMap);
+  playerX = spawn.x;
+  playerY = spawn.y;
+  cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
+  cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
+
+  // animation state
+  currentFrame = 0;
+  frameCurrRow = 0;
+  frontR = true;
+  walkToggle = false;
 }
 
 function homePage() {
   scale = 1;
   backgroundMoveSpeed = 0.5;
-  // stopAllSounds();
+  overmusic.stop();
 
   if (audioUnlocked && !homepage_sound.isPlaying()) {
     homepage_sound.loop();
@@ -415,8 +556,9 @@ function homePage() {
   button(start_game2, 275, 150, start_game2.width / 7 * scale, start_game2.height / 6 * scale);
 
   // skins button
-  button(skins2, 410, 250, skins2.width / 7 * scale, skins2.height / 6 * scale);
+  button(skins2, 410, 300, skins2.width / 7 * scale, skins2.height / 6 * scale);
 
+  button(controls_1, 410, 250, controls_1.width / 7 * scale, controls_1.height / 6 * scale);
 }
 
 function skinScreen() {
@@ -758,6 +900,7 @@ function loadRandomPlanet() {
   fightRooms = [];
   chests = [];
   spikeWalls = [];
+  enemies = [];
 
   // Respawn player at new map spawn point
   const spawn = getSpawnPoint(currentMap);
@@ -777,7 +920,7 @@ function updateFightRooms() {
     if (r.cleared) continue;
 
     let inRoom = playerX > r.x && playerX < r.x + r.w &&
-                 playerY > r.y && playerY < r.y + r.h;
+      playerY > r.y && playerY < r.y + r.h;
 
     if (inRoom && !r.active && r.activateTimer === -1) {
       r.activateTimer = millis(); // start the timer when player enters
@@ -801,6 +944,7 @@ function updateFightRooms() {
         r.cleared = true;
         r.active = false;
         r.activateTimer = -1;
+        enemies = enemies.filter(e => e.roomIndex !== i);
         for (let spike of spikeWalls) {
           if (spike.roomIndex === i) {
             spike.raised = false;
@@ -895,10 +1039,7 @@ function drawSpikeWalls() {
 function drawEnemy() {
   for (let i = enemies.length - 1; i >= 0; i--) {
     let e = enemies[i];
-    if (!e.alive) {
-      enemies.splice(i, 1);
-      continue;
-    }
+    if (!e.alive) continue;
 
     let dx = playerX - e.x;
     let dy = playerY - e.y;
@@ -939,15 +1080,15 @@ function drawEnemy() {
     let nextY = e.y + moveY;
     let w = RAT_FRAME_W, h = RAT_FRAME_H[dirRow];
     if (!isWallTile(nextX + RAT_HITBOX_LEFT, e.y + RAT_HITBOX_TOP) &&
-        !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
-        !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
-        !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + h - RAT_HITBOX_BOTTOM - 1)) {
+      !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
+      !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
+      !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + h - RAT_HITBOX_BOTTOM - 1)) {
       e.x = nextX;
     }
     if (!isWallTile(e.x + RAT_HITBOX_LEFT, nextY + RAT_HITBOX_TOP) &&
-        !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + RAT_HITBOX_TOP) &&
-        !isWallTile(e.x + RAT_HITBOX_LEFT, nextY + h - RAT_HITBOX_BOTTOM - 1) &&
-        !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + h - RAT_HITBOX_BOTTOM - 1)) {
+      !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + RAT_HITBOX_TOP) &&
+      !isWallTile(e.x + RAT_HITBOX_LEFT, nextY + h - RAT_HITBOX_BOTTOM - 1) &&
+      !isWallTile(e.x + w - RAT_HITBOX_RIGHT - 1, nextY + h - RAT_HITBOX_BOTTOM - 1)) {
       e.y = nextY;
     }
 
@@ -1009,7 +1150,6 @@ function drawCat(player) {
       offsetY = centerY - 12;
     }
 
-    // 👇 DRAW UNDER if facing up
     if (frameCurrRow === 1) {
       image(img, playerX + offsetX, playerY + offsetY, 12, 12);
     }
@@ -1017,13 +1157,12 @@ function drawCat(player) {
     // draw cat
     image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
 
-    // 👇 DRAW OVER for other directions
     if (frameCurrRow !== 1) {
       image(img, playerX + offsetX, playerY + offsetY, 12, 12);
     }
 
   } else {
-    // no item → just draw cat
+    // there is no item
     image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
   }
 
@@ -1088,13 +1227,24 @@ function drawCat(player) {
   }
 
   if (keyIsDown(32)) {
-  for (let e of enemies) {
-    if (!e.alive) continue;
-    let d = dist(playerX, playerY, e.x, e.y);
-    if (e.state === "attack" && d <= e.attackRange && attackCooldown === 0) {
-      e.health -= PLAYER_ATTACK;
-      attackCooldown = 60;
-      break;
+    for (let e of enemies) {
+      if (!e.alive) continue;
+      let d = dist(playerX, playerY, e.x, e.y);
+      if (e.state !== "wander" && d <= e.attackRange && attackCooldown === 0) {
+        let equipped = getEquippedItem();
+        let damage = PLAYER_ATTACK + (equipped ? equipped.data.damage : 0);
+        e.health -= damage;
+        attackCooldown = 25;
+
+        if (equipped && equipped.data.damage > 0) {
+          sword_hit.setVolume(0.3);
+          sword_hit.play();
+        } else {
+          punch_sound.setVolume(0.3);
+          punch_sound.play();
+        }
+
+        break;
       }
     }
   }
@@ -1165,7 +1315,7 @@ function gameStart() {
   } else if (playerHealth <= 0) {
     lives--;
     playerHealth = 100;
-    
+
   }
   if (g == 0) {
     initMapObjects(currentMap);
@@ -1177,6 +1327,11 @@ function gameStart() {
 function keyPressed() {
   if (key === 'p' || key === 'P') {
     loadRandomPlanet();
+  }
+
+  if (key === "n" || key === "N") {
+    meow.stop();
+    meow.play();
   }
 }
 
@@ -1202,32 +1357,32 @@ function drawMap(map, floorTS, wallTS) {
         const srcY = Math.floor(localID / 32) * tileW;
         image(snowTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
       } else {
-      if (tileId >= 194) {
-        const localID = tileId - 194;
-        const srcX = (localID % 3) * tileW;
-        const srcY = Math.floor(localID / 3) * tileW;
-        image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-      } else if (tileId >= 146) {
-        if (tileId === 179) {
-          fill(0); noStroke();
-          rect(x, y, tileW * mapScale, tileW * mapScale);
+        if (tileId >= 194) {
+          const localID = tileId - 194;
+          const srcX = (localID % 3) * tileW;
+          const srcY = Math.floor(localID / 3) * tileW;
+          image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        } else if (tileId >= 146) {
+          if (tileId === 179) {
+            fill(0); noStroke();
+            rect(x, y, tileW * mapScale, tileW * mapScale);
+          } else {
+            const localID = tileId - 146;
+            const srcX = (localID % 12) * tileW;
+            const srcY = Math.floor(localID / 12) * tileW;
+            image(wallTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+          }
+        } else if (tileId >= 50) {
+          const localID = tileId - 50;
+          const srcX = (localID % 24) * tileW;
+          const srcY = Math.floor(localID / 24) * 32;
+          image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
         } else {
-          const localID = tileId - 146;
-          const srcX = (localID % 12) * tileW;
-          const srcY = Math.floor(localID / 12) * tileW;
-          image(wallTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+          const localID = tileId - 1;
+          const srcX = (localID % 7) * tileW;
+          const srcY = Math.floor(localID / 7) * tileW;
+          image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
         }
-      } else if (tileId >= 50) {
-        const localID = tileId - 50;
-        const srcX = (localID % 24) * tileW;
-        const srcY = Math.floor(localID / 24) * 32;
-        image(wallTS, x, y - 16 * mapScale, tileW * mapScale, 32 * mapScale, srcX, srcY, tileW, 32);
-      } else {
-        const localID = tileId - 1;
-        const srcX = (localID % 7) * tileW;
-        const srcY = Math.floor(localID / 7) * tileW;
-        image(floorTS, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-       }
       }
     }
   }
@@ -1249,11 +1404,11 @@ function isWallTile(worldX, worldY) {
       if (layer.name === "Walls" && tileId !== 0) return true;
       if (layer.name === "Floors" && tileId !== 0) hasFloor = true;
     } else {
-    if (layer.name !== "floors" && layer.name !== "walls") continue;
-    const tileId = layer.data[row * currentMap.width + col];
-    if (tileId >= 50 && tileId <= 193) return true; // high walls + low walls
-    if (tileId === 179) return true;                 // void blocks movement
-    if (tileId >= 1 && tileId <= 49) hasFloor = true;
+      if (layer.name !== "floors" && layer.name !== "walls") continue;
+      const tileId = layer.data[row * currentMap.width + col];
+      if (tileId >= 50 && tileId <= 193) return true; // high walls + low walls
+      if (tileId === 179) return true;                 // void blocks movement
+      if (tileId >= 1 && tileId <= 49) hasFloor = true;
     }
   }
 
@@ -1283,7 +1438,7 @@ function collidesWithWall(X, Y) {
     let sw = 16 * mapScale;
     let sh = 16 * mapScale;
     if (right > spike.x && left < spike.x + sw &&
-        bottom > spike.y && top < spike.y + sh) {
+      bottom > spike.y && top < spike.y + sh) {
       return true;
     }
   }
@@ -1371,11 +1526,11 @@ function victoryPage() {
 
 
 function healthBarEnemy(x, y, health, maxHealth) {
-  fill(39, 28, 158);
+  fill(209, 197, 197);
   rect(x + 10, y, maxHealth * 0.3 + 2, 8);
-  fill(255, 0, 0);
+  fill(163, 77, 77);
   rect(x + 10.5, y + 1.5, health * 0.3, 5);
-  fill(183, 178, 237);
+  fill(209, 197, 197);
   square(x, y, 8);
   fill(0);
   textSize(4);
@@ -1433,15 +1588,16 @@ class Enemy {
     this.health = type === "boss" ? 300 : 100;
     this.maxHealth = this.health;
     this.state = "wander";
-    this.speed = type === "boss" ? 1.2 : 0.7;
+    this.speed = type === "boss" ? 1.2 : random(0.5, 0.9);
     this.detectionRange = type === "boss" ? 250 : 150;
     this.attackRange = type === "boss" ? 35 : 25;
     this.alive = true;
     this.dirX = 1;
     this.dirY = 0;
-    this.moveTimer = 0;
+    this.moveTimer = floor(random(0, 60));;
     this.animFrame = 0;
     this.attackCooldown = 0;
+    this.roomIndex = -1;
   }
 }
 
@@ -1468,8 +1624,6 @@ function chestItem(x, y) {
     if (keyCode === 57) {
       if (chestInventory[planet - 1][0] != null) {
         chestInventory[planet - 1][0].selected = true;
-        sword_sound.setVolume(0.1);
-        sword_sound.play();
       }
       if (chestInventory[planet - 1][1] != null) {
         chestInventory[planet - 1][1].selected = false;
@@ -1498,7 +1652,7 @@ function IU(life, health, inventory1, inventory2) {
 
 
 
-  lives();
+  drawLives();
   healthBar();
   selectedItem();
   dropItem();
@@ -1516,8 +1670,11 @@ function IU(life, health, inventory1, inventory2) {
       if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected) {
         text("shift to use potion", 20, 395);
       }
-      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT) {
+      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT && !potionJustUsed) {
+        potionJustUsed = true;
         playerHealth = min(playerHealth + inventory2[i].data.health, 100);
+        potion_drink.setVolume(0.3);
+        potion_drink.play();
         for (let j = i; j < size - 1; j++) {
           inventory2[j] = inventory2[j + 1];
         }
@@ -1525,6 +1682,7 @@ function IU(life, health, inventory1, inventory2) {
         size--;
         break;
       }
+      if (keyCode != SHIFT) potionJustUsed = false;
     }
   }
 
@@ -1554,6 +1712,14 @@ function IU(life, health, inventory1, inventory2) {
     if (!swapped && keyCode === ENTER && click) {
       for (let i = 0; i < chestInventory[planet - 1].length; i++) {
         if (chestInventory[planet - 1][i] != null && chestInventory[planet - 1][i].selected) {
+          if (chestInventory[planet - 1][i].data.damage > 0) {
+            sword_collect.setVolume(0.3);
+            sword_collect.play();
+          } else {
+            potion_collect.setVolume(0.3);
+            potion_collect.play();
+          }
+
           addItem(chestInventory[planet - 1][i]);
           chestInventory[planet - 1][i].selected = false;
           chestInventory[planet - 1][i] = null;
@@ -1616,6 +1782,7 @@ function IU(life, health, inventory1, inventory2) {
       }
     }
   }
+
   function selectedItem() {
     if (keyCode === 49) {
       if (inventory2[0] != null && size >= 1) {
@@ -1656,18 +1823,18 @@ function IU(life, health, inventory1, inventory2) {
       image(img, 25 + i * 32, 357, img.width / 1.5, img.height / 1.5);
     }
   }
-  function lives() {
+  function drawLives() {
     for (let i = 0; i < life; i++) {
       image(heart, 25 + i * 30, 325, heart.width / 24, heart.height / 24);
     }
   }
 
   function healthBar(maxHealth = 100) {
-    fill(39, 28, 158);
+    fill(209, 197, 197);
     rect(30, 5, maxHealth * 2 + 10, 20);
-    fill(255, 0, 0);
+    fill(163, 77, 77);
     rect(35, 8, health * 2, 15);
-    fill(183, 178, 237);
+    fill(209, 197, 197);
     square(3, 3, 25);
     fill(0);
     text(health, 5, 20);
@@ -1676,7 +1843,6 @@ function IU(life, health, inventory1, inventory2) {
 
 
 function draw() {
-  background(220);
   if (planet === 2) background(100, 150, 200); // blue tint for snow map
   else background(220);
   screen(page);
