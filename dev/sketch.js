@@ -1689,7 +1689,7 @@ function IU(life, health, inventory1, inventory2) {
 
   function swapItem() {
     var swapped = false;
-
+    /*
     for (let i = 0; i < chestInventory[planet - 1].length; i++) {
       if (chestInventory[planet - 1][i] != null && chestInventory[planet - 1][i].selected && keyCode === ENTER && click) {
         for (let j = 0; j < size; j++) {
@@ -1708,7 +1708,9 @@ function IU(life, health, inventory1, inventory2) {
         }
 
       }
+      
     }
+      */
     if (!swapped && keyCode === ENTER && click) {
       for (let i = 0; i < chestInventory[planet - 1].length; i++) {
         if (chestInventory[planet - 1][i] != null && chestInventory[planet - 1][i].selected) {
