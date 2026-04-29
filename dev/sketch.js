@@ -114,7 +114,7 @@ let fadeState = "in";        // "in" | "hold" | "out"
 let fadeTimer = 0;
 
 const FADE_SPEED = 4;      // alpha change per frame
-const HOLD_FRAMES = 60;    // frames to hold each slide (3s at 60fps)
+const HOLD_FRAMES = 360;    // frames to hold each slide (3s at 60fps)
 let backstoryActive = false;
 
 let size = 0;
@@ -685,16 +685,15 @@ function storySlides() {
 
     textAlign(CENTER);
 
-    // Title shadow
     fill(0);
     textSize(26);
     text(slide.title, pageWidth / 2 + 2, 62);
 
-    // Title
+    
     fill(255);
     text(slide.title, pageWidth / 2, 60);
 
-    // Body text
+    
     textSize(14);
     for (let i = 0; i < slide.text.length; i++) {
       // shadow
@@ -719,7 +718,7 @@ function storySlides() {
     slideAlpha = min(slideAlpha + FADE_SPEED, 255);
     if (slideAlpha >= 255) {
       fadeState = "hold";
-      fadeTimer = 0;
+      fadeTimer = 20;
     }
   } else if (fadeState === "hold") {
     fadeTimer++;
