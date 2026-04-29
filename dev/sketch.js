@@ -437,11 +437,19 @@ function controlsPage() {
   }
 
   button(return2, 20, 20, return2.width / 7 * scale, return2.height / 6 * scale);
-  image(controls1, 350, 20, controls1.width / 7 * scale, controls1.height / 6 * scale);
+  image(controls1, 395, 20, controls1.width / 7 * scale, controls1.height / 6 * scale);
 
-  textSize(16);
-  text("Move using WASD", 450, 220);
-  text("or Arrow Keys", 450, 240);
+  textSize(11);
+  textFont('Courier New');
+
+  fill(0);
+  text("Move using WASD", 321, 226);
+  text("or Arrow Keys", 321, 246);
+  fill(255);
+  text("Move using WASD", 319, 225);
+  text("or Arrow Keys", 319, 245);
+  text("Move using WASD", 320, 225);
+  text("or Arrow Keys", 320, 245);
 
   if (keyCode === UP_ARROW || key === "w") {
     image(wasd_w, 320, 120, wasd_w.width / 6 * scale, wasd_w.height / 6 * scale);
@@ -460,32 +468,56 @@ function controlsPage() {
     image(arrow, 460, 148, arrow.width / 9 * scale, arrow.height / 9 * scale);
   }
 
-  text("press enter to pick up", 100, 300);
-  text("or swap selected item", 100, 320);
+  fill(0);
+  text("press enter to pick up", 141, 291);
+  text("or swap selected item", 141, 311);
+  fill(255);
+  text("press enter to pick up", 139, 290);
+  text("or swap selected item", 139, 310);
+  text("press enter to pick up", 140, 290);
+  text("or swap selected item", 140, 310);
   if (keyCode === ENTER) {
     image(enter_selected, 20, 270, enter_selected.width / 9 * scale, enter_selected.height / 9 * scale);
   } else {
     image(enter, 20, 270, enter.width / 9 * scale, enter.height / 9 * scale);
   }
 
-  text("press backspace to", 100, 250);
-  text("drop selected item", 100, 270);
+  fill(0);
+  text("press backspace to", 141, 231);
+  text("drop selected item", 141, 251);
+  fill(255);
+  text("press backspace to", 139, 230);
+  text("drop selected item", 139, 250);
+  text("press backspace to", 140, 230);
+  text("drop selected item", 140, 250);
   if (keyCode === BACKSPACE) {
     image(backspace_selected, 20, 202, backspace_selected.width / 9 * scale, backspace_selected.height / 9 * scale);
   } else {
     image(backspace, 20, 202, backspace.width / 9 * scale, backspace.height / 9 * scale);
   }
 
-  text("press shift to", 100, 350);
-  text("use selected potion", 100, 370);
+  fill(0);
+  text("press shift to", 141, 356);
+  text("use selected potion", 141, 376);
+  fill(255);
+  text("press shift to", 139, 355);
+  text("use selected potion", 139, 375);
+  text("press shift to", 140, 355);
+  text("use selected potion", 140, 375);
   if (keyCode === SHIFT) {
     image(shift_selected, 20, 335, shift_selected.width / 9 * scale, shift_selected.height / 9 * scale);
   } else {
     image(shift, 20, 335, shift.width / 9 * scale, shift.height / 9 * scale);
   }
 
-  text("use number keys 1-3 to", 150, 170);
-  text("select item in inventory", 150, 190);
+  fill(0);
+  text("use number keys 1-3 to", 141, 161);
+  text("select item in inventory", 141, 181);
+  fill(255);
+  text("use number keys 1-3 to", 139, 160);
+  text("select item in inventory", 139, 180);
+  text("use number keys 1-3 to", 140, 160);
+  text("select item in inventory", 140, 180);
   if (key === "1") {
     image(number_1, 20, 140, number.width / 11 * scale, number.height / 10 * scale);
   } else if (key === "2") {
@@ -496,9 +528,13 @@ function controlsPage() {
     image(number, 20, 140, number.width / 11 * scale, number.height / 10 * scale);
   }
 
-  text("attack using spacebar", 380, 360);
+  fill(0);
+  text("attack using spacebar", 441, 321);
+  fill(255);
+  text("attack using spacebar", 440, 320);
+  text("attack using spacebar", 439, 320);
   if (key === " ") {
-    image(spacebar_selected, 260, 330, spacebar_selected.width / 9 * scale, spacebar_selected.height / 9 * scale);
+    image(spacebar_selected, 425, 330, spacebar_selected.width / 9 * scale, spacebar_selected.height / 9 * scale);
   } else {
     image(spacebar, 425, 330, spacebar.width / 9 * scale, spacebar.height / 9 * scale);
   }
