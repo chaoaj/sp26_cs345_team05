@@ -148,7 +148,7 @@ let attackCooldown = 0; // frames until enemy can damage player again
 
 
 
-const ENEMY_ATTACK = 20;
+const ENEMY_ATTACK = 8;
 const PLAYER_ATTACK = 10;
 
 let currentFrameRat = 0;
