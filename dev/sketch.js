@@ -224,6 +224,7 @@ function preload() {
   punch_sound = loadSound("assets/punch.mp3");
 
   button_beep = loadSound("assets/button_beep.mp3");
+  meow = loadSound("assets/meow.mp3");
 
   sword_nacho = loadImage("assets/sword_nacho.png");
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
@@ -1327,6 +1328,11 @@ function gameStart() {
 function keyPressed() {
   if (key === 'p' || key === 'P') {
     loadRandomPlanet();
+  }
+
+  if (key === "n" || key === "N") {
+    meow.stop();
+    meow.play();
   }
 }
 
