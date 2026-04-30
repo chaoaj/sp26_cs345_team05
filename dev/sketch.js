@@ -147,6 +147,15 @@ let playerHealth = PLAYERHEALTHMAX;
 let attackCooldown = 0; // frames until enemy can damage player again
 
 
+const ATTACK_FRAME_W = 32;
+const ATTACK_FRAME_H = 32;
+const ATTACK_FRAME_COUNT = 3;
+const ATTACK_INTERVAL = 80; // milliseconds between attack frames
+let isAttacking = false;
+let attackLastSwitch = 0;
+let attackFrame = 0;
+let lastAttackFrameTime = 0;
+
 
 
 
@@ -271,6 +280,12 @@ function preload() {
   spacebar = loadImage("assets/spacebar.png");
   spacebar_selected = loadImage("assets/spacebar_selected.png");
   snowTileset = loadImage("assets/FE8 - Snowy Bern.png");
+
+  //Attack Animations
+  attack_down = loadImage("assets/AttackAnimation/slash_down.png");
+  attack_up = loadImage("assets/AttackAnimation/slash_up.png");
+  attack_left = loadImage("assets/AttackAnimation/slash_left.png");
+  attack_right = loadImage("assets/AttackAnimation/slash_right.png");
 }
 
 function getSpawnPoint(map) {
@@ -1199,6 +1214,39 @@ function getEquippedItem() {
   return null;
 }
 
+function AttackAnimation() {
+  if (!isAttacking) return;
+
+  let attackImg;
+
+  if (frameCurrRow == 1) {
+    attackImg = attack_up;
+  } else if (frameCurrRow == 3) {
+    attackImg = attack_right;
+  } else if (frameCurrRow == 0) {
+    attackImg = attack_down;
+  } else if (frameCurrRow == 2) {
+    attackImg = attack_left;
+  } 
+
+  sx = attackFrame * ATTACK_FRAME_W;
+  sy = 0;
+  sw = ATTACK_FRAME_W;
+  sh = ATTACK_FRAME_H;
+
+  image(attackImg, playerX, playerY, sw, sh, sx, sy, sw, sh);
+
+  if (millis() - lastAttackFrameTime > ATTACK_INTERVAL) {
+    attackLastSwitch = millis();
+    attackFrame++;
+
+    if (attackFrame >= ATTACK_FRAME_COUNT) {
+      isAttacking = false;
+      attackFrame = 0;
+    }
+  }
+}
+
 function drawCat(player) {
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
@@ -1306,7 +1354,9 @@ function drawCat(player) {
   }
 
   if (keyIsDown(32)) {
+    isAttacking = true;
     for (let e of enemies) {
+      AttackAnimation();
       if (!e.alive) continue;
       let d = dist(playerX, playerY, e.x, e.y);
       if (e.state !== "wander" && d <= e.attackRange && attackCooldown === 0) {
@@ -1326,7 +1376,12 @@ function drawCat(player) {
         break;
       }
     }
+  } 
+  
+  if (frameCurrRow === 1 && isAttacking) { //The slash up animation will appear behind the cat
+    AttackAnimation();
   }
+  image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
 }
 
 function drawSwap() {
