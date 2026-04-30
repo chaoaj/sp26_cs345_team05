@@ -167,10 +167,9 @@ const RAT_FRAME_W = 32;
 const RAT_FRAME_H = [43, 21, 43, 21];
 const RAT_ROW_Y = [0, 43, 64, 107];
 
-// for the boss:
-// const RAT_FRAME_W = 400;
-// const RAT_FRAME_H = [538, 263, 538, 263]; 
-// const RAT_ROW_Y   = [0, 538, 800, 1338];
+const BOSS_FRAME_W = 400;
+const BOSS_FRAME_H = 400;
+const BOSS_ROW_Y = [0, 400, 800, 1200];
 
 
 
@@ -878,6 +877,7 @@ function initMapObjects(map) {
   fightRooms = [];
   chests = [];
   spikeWalls = [];
+  enemies = [];
 
   for (let layer of map.layers) {
     if (layer.type !== "objectgroup") continue;
@@ -952,6 +952,16 @@ function initMapObjects(map) {
       }
     }
     spike.roomIndex = closest;
+  }
+  for (let enemy of enemies) {
+    for (let i = 0; i < fightRooms.length; i++) {
+      let r = fightRooms[i];
+      if (enemy.x >= r.x && enemy.x <= r.x + r.w &&
+          enemy.y >= r.y && enemy.y <= r.y + r.h) {
+        enemy.roomIndex = i;
+        break;
+      }
+    }
   }
 }
 
@@ -1033,8 +1043,14 @@ function updateFightRooms() {
     }
 
     if (r.active) {
-      let allEnemiesDefeated = enemies.length > 0 && enemies.every(e => !e.alive);
-      if (allEnemiesDefeated) {
+      let roomEnemies = enemies.filter(e => e.roomIndex === i);
+      let alive = roomEnemies.filter(e => e.alive);
+      console.log("room", i, "roomEnemies:", roomEnemies.length, "alive:", roomEnemies.filter(e => e.alive).length);
+      for (let e of alive) {
+        console.log("  enemy at", Math.floor(e.x), Math.floor(e.y), "state:", e.state);
+      }
+      let allDefeated = roomEnemies.length > 0 && roomEnemies.every(e => !e.alive);
+      if (allDefeated) {
         r.cleared = true;
         r.active = false;
         r.activateTimer = -1;
@@ -1172,7 +1188,8 @@ function drawEnemy() {
     // move enemy
     let nextX = e.x + moveX;
     let nextY = e.y + moveY;
-    let w = RAT_FRAME_W, h = RAT_FRAME_H[dirRow];
+    let w = e.type === "boss" ? BOSS_FRAME_W * 0.15 : RAT_FRAME_W;
+    let h = e.type === "boss" ? BOSS_FRAME_H * 0.15 : RAT_FRAME_H[dirRow];
     if (!isWallTile(nextX + RAT_HITBOX_LEFT, e.y + RAT_HITBOX_TOP) &&
       !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
       !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
@@ -1187,10 +1204,24 @@ function drawEnemy() {
     }
 
     // draw
-    let img = e.type === "boss" ? rat_boss : rat1;
-    let sx = (frameCount % 15 < 5 ? 0 : frameCount % 15 < 10 ? 1 : 2) * RAT_FRAME_W;
-    let sy = RAT_ROW_Y[dirRow];
-    image(img, e.x, e.y, RAT_FRAME_W, RAT_FRAME_H[dirRow], sx, sy, RAT_FRAME_W, RAT_FRAME_H[dirRow]);
+    let img, fw, fh, ry;
+    if (e.type === "boss") {
+      img = rat_boss;
+      fw = BOSS_FRAME_W;
+      fh = BOSS_FRAME_H;
+      ry = BOSS_ROW_Y[dirRow];
+    } else {
+      img = rat1;
+      fw = RAT_FRAME_W;
+      fh = RAT_FRAME_H[dirRow];
+      ry = RAT_ROW_Y[dirRow];
+    }
+
+    let sx = (frameCount % 15 < 5 ? 0 : frameCount % 15 < 10 ? 1 : 2) * fw;
+    let drawW = e.type === "boss" ? fw * 0.15 : fw;
+    let drawH = e.type === "boss" ? fh * 0.15 : fh;
+
+    image(img, e.x, e.y, drawW, drawH, sx, ry, fw, fh);
 
     healthBarEnemy(e.x, e.y - 5, e.health, e.maxHealth);
 
