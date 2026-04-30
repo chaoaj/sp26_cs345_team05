@@ -335,14 +335,14 @@ function setup() {
   potionItem_blueCheese = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   potionItem_parmesan = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   potionItem_cheeseCake = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  chestInventory_nacho[0] = (swordNacho);
-  chestInventory_nacho[1] = (potionItem_nacho);
-  chestInventory_blueCheese[0] = (swordBlueCheese);
-  chestInventory_blueCheese[1] = (potionItem_blueCheese);
-  chestInventory_parmesan[0] = (swordParmesan);
-  chestInventory_parmesan[1] = (potionItem_parmesan);
-  chestInventory_cheeseCake[0] = (swordCheeseCake);
-  chestInventory_cheeseCake[1] = (potionItem_cheeseCake);
+  chestInventory_nacho[0] = ([swordNacho, potionItem_nacho]);
+  chestInventory_nacho[1] = ([potionItem_nacho]);
+  chestInventory_blueCheese[0] = ([swordBlueCheese, potionItem_blueCheese]);
+  chestInventory_blueCheese[1] = ([potionItem_blueCheese]);
+  chestInventory_parmesan[0] = ([swordParmesan, potionItem_parmesan]);
+  chestInventory_parmesan[1] = ([potionItem_parmesan]);
+  chestInventory_cheeseCake[0] = ([swordCheeseCake, potionItem_cheeseCake]);
+  chestInventory_cheeseCake[1] = ([potionItem_cheeseCake]);
 }
 
 
@@ -1069,10 +1069,10 @@ function updateFightRooms() {
 
 function drawChests() {
   const OPEN_TILE = 199;
-
+  var index = 0;
   for (let chest of chests) {
     if (chest.opened) {
-      chestItem(chest.x, chest.y);
+      chestItem(index, chest.x, chest.y);
       continue;
     }
     let d = dist(playerX, playerY, chest.x, chest.y);
@@ -1099,6 +1099,7 @@ function drawChests() {
         }
       }
     }
+    index++;
   }
 }
 
@@ -1766,15 +1767,16 @@ class Enemy {
   }
 }
 
-function chestItem(x, y) {
+function chestItem(index, x, y) {
   chestSelect();
   displayItem();
+  swapChest();
 
 
   function displayItem() {
     for (let i = 0; i < 2; i++) {
-      if (chestInventory[planet - 1][i] != null) {
-        image(chestInventory[planet - 1][i].image_display(), x - 20 + i * 20, y - 30, 20, 20);
+      if (chestInventory[planet - 1][index][i] != null) {
+        image(chestInventory[planet - 1][index][i].image_display(), x - 20 + i * 20, y - 30, 20, 20);
         textSize(8);
         fill(255);
         text("use 9 & 0 to select", x - 30, y - 40);
@@ -1787,18 +1789,39 @@ function chestItem(x, y) {
 
   function chestSelect() {
     if (keyCode === 57) {
-      if (chestInventory[planet - 1][0] != null) {
-        chestInventory[planet - 1][0].selected = true;
+      if (chestInventory[planet - 1][index][0] != null) {
+        chestInventory[planet - 1][index][0].selected = true;
       }
-      if (chestInventory[planet - 1][1] != null) {
-        chestInventory[planet - 1][1].selected = false;
+      if (chestInventory[planet - 1][index][1] != null) {
+        chestInventory[planet - 1][index][1].selected = false;
       }
     } else if (keyCode === 48) {
-      if (chestInventory[planet - 1][0] != null) {
-        chestInventory[planet - 1][0].selected = false;
+      if (chestInventory[planet - 1][index][0] != null) {
+        chestInventory[planet - 1][index][0].selected = false;
       }
-      if (chestInventory[planet - 1][1] != null) {
-        chestInventory[planet - 1][1].selected = true;
+      if (chestInventory[planet - 1][index][1] != null) {
+        chestInventory[planet - 1][index][1].selected = true;
+      }
+    }
+  }
+
+  function swapChest() {
+    var swapped = false;
+    if (!swapped && keyCode === ENTER && click) {
+      for (let i = 0; i < chestInventory[planet - 1][index].length; i++) {
+        if (chestInventory[planet - 1][index][i] != null && chestInventory[planet - 1][index][i].selected) {
+          if (chestInventory[planet - 1][index][i].data.damage > 0) {
+            sword_collect.setVolume(0.3);
+            sword_collect.play();
+          } else {
+            potion_collect.setVolume(0.3);
+            potion_collect.play();
+          }
+
+          addItem(chestInventory[planet - 1][index][i]);
+          chestInventory[planet - 1][index][i].selected = false;
+          chestInventory[planet - 1][index][i] = null;
+        }
       }
     }
   }
@@ -1852,46 +1875,7 @@ function IU(life, health, inventory1, inventory2) {
 
   function swapItem() {
     var swapped = false;
-    /*
-    for (let i = 0; i < chestInventory[planet - 1].length; i++) {
-      if (chestInventory[planet - 1][i] != null && chestInventory[planet - 1][i].selected && keyCode === ENTER && click) {
-        for (let j = 0; j < size; j++) {
-          if (inventory2[j].selected) {
-            inventory2[j].selected = false;
-            var temp = inventory2[j];
-            inventory2[j] = chestInventory[planet - 1][i];
-            chestInventory[planet - 1][i] = temp;
-            chestInventory[planet - 1][i].x = playerX;
-            chestInventory[planet - 1][i].y = playerY;
-            swapped = true;
-            click = false;
-            break;
-          }
-
-        }
-
-      }
-      
-    }
-      */
-    if (!swapped && keyCode === ENTER && click) {
-      for (let i = 0; i < chestInventory[planet - 1].length; i++) {
-        if (chestInventory[planet - 1][i] != null && chestInventory[planet - 1][i].selected) {
-          if (chestInventory[planet - 1][i].data.damage > 0) {
-            sword_collect.setVolume(0.3);
-            sword_collect.play();
-          } else {
-            potion_collect.setVolume(0.3);
-            potion_collect.play();
-          }
-
-          addItem(chestInventory[planet - 1][i]);
-          chestInventory[planet - 1][i].selected = false;
-          chestInventory[planet - 1][i] = null;
-        }
-      }
-    }
-
+    
     for (let i = 0; i < droppedSize; i++) {
 
       if (droppedInventory[i] != null && droppedInventory[i].selected && keyCode === ENTER && click) {
@@ -1911,8 +1895,9 @@ function IU(life, health, inventory1, inventory2) {
         }
 
       }
-
     }
+
+    
     if (!swapped && keyCode === ENTER && click) {
       for (let i = 0; i < droppedSize; i++) {
         if (droppedInventory[i] != null && droppedInventory[i].selected) {
@@ -1923,6 +1908,7 @@ function IU(life, health, inventory1, inventory2) {
       }
     }
   }
+
 
   //removes selected item from inventory when backspace is pressed and shifts remaining items over
   function dropItem() {
