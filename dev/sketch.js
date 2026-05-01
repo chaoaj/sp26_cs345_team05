@@ -838,14 +838,6 @@ function storySlides() {
 
   // --- SKIP BUTTON ---
   button(skip2, 475, 345, skip2.width / 14, skip2.height / 12);
-  push();
-  fill(255);
-  rect(150, 350, 250, 30);
-  fill(0);
-  textSize(13);
-  textAlign(CENTER);
-  text('temporary "show controls area"', 275, 367.5);
-  pop();
 }
 
 function startBackstory() {
@@ -957,7 +949,7 @@ function initMapObjects(map) {
     for (let i = 0; i < fightRooms.length; i++) {
       let r = fightRooms[i];
       if (enemy.x >= r.x && enemy.x <= r.x + r.w &&
-          enemy.y >= r.y && enemy.y <= r.y + r.h) {
+        enemy.y >= r.y && enemy.y <= r.y + r.h) {
         enemy.roomIndex = i;
         break;
       }
@@ -1259,7 +1251,7 @@ function AttackAnimation() {
     attackImg = attack_down;
   } else if (frameCurrRow == 2) {
     attackImg = attack_left;
-  } 
+  }
 
   sx = attackFrame * ATTACK_FRAME_W;
   sy = 0;
@@ -1408,8 +1400,8 @@ function drawCat(player) {
         break;
       }
     }
-  } 
-  
+  }
+
   if (frameCurrRow === 1 && isAttacking) { //The slash up animation will appear behind the cat
     AttackAnimation();
   }
@@ -1875,7 +1867,7 @@ function IU(life, health, inventory1, inventory2) {
 
   function swapItem() {
     var swapped = false;
-    
+
     for (let i = 0; i < droppedSize; i++) {
 
       if (droppedInventory[i] != null && droppedInventory[i].selected && keyCode === ENTER && click) {
@@ -1897,7 +1889,7 @@ function IU(life, health, inventory1, inventory2) {
       }
     }
 
-    
+
     if (!swapped && keyCode === ENTER && click) {
       for (let i = 0; i < droppedSize; i++) {
         if (droppedInventory[i] != null && droppedInventory[i].selected) {
