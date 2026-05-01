@@ -345,12 +345,16 @@ function setup() {
   potionItem_cheeseCake = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   chestInventory_nacho[0] = ([swordNacho, potionItem_nacho]);
   chestInventory_nacho[1] = ([potionItem_nacho]);
+  chestInventory_nacho[2] = ([potionItem_nacho]);
   chestInventory_blueCheese[0] = ([swordBlueCheese, potionItem_blueCheese]);
   chestInventory_blueCheese[1] = ([potionItem_blueCheese]);
+  chestInventory_blueCheese[2] = ([potionItem_blueCheese]);
   chestInventory_parmesan[0] = ([swordParmesan, potionItem_parmesan]);
   chestInventory_parmesan[1] = ([potionItem_parmesan]);
+  chestInventory_parmesan[2] = ([potionItem_parmesan]);
   chestInventory_cheeseCake[0] = ([swordCheeseCake, potionItem_cheeseCake]);
   chestInventory_cheeseCake[1] = ([potionItem_cheeseCake]);
+  chestInventory_cheeseCake[2] = ([potionItem_cheeseCake]);
 }
 
 
@@ -371,8 +375,7 @@ function button(image1, x, y, w, h) {
       image(skins1, 445, 240, skins1.width / 7 * scale, skins1.height / 6 * scale);
     } else if (image1 === controls2) {
       button(controls1, 430, 330, controls1.width / 11 * scale, controls1.height / 9 * scale);
-    }
-  } else if (image1 === return2) {
+    }else if (image1 === return2) {
     // return button from skins screen
     if (page === 1 || page === 6) {
       image(return1, x, y, return1.width / 7 * scale, return1.height / 6 * scale);
@@ -386,6 +389,7 @@ function button(image1, x, y, w, h) {
   } else if (image1 === skip2) {
     image(skip1, 475, 345, skip1.width / 14, skip1.height / 12);
   }
+}
 
   if (mouseJustPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
     button_beep.play();
@@ -525,12 +529,12 @@ function controlsPage() {
 
   fill(0);
   text("press shift to", 141, 356);
-  text("use selected potion", 141, 376);
+  text("use potion", 141, 376);
   fill(255);
   text("press shift to", 139, 355);
-  text("use selected potion", 139, 375);
+  text("use potion", 139, 375);
   text("press shift to", 140, 355);
-  text("use selected potion", 140, 375);
+  text("use potion", 140, 375);
   if (keyCode === SHIFT) {
     image(shift_selected, 20, 335, shift_selected.width / 9 * scale, shift_selected.height / 9 * scale);
   } else {
@@ -1948,7 +1952,7 @@ function IU(life, health, inventory1, inventory2) {
   function usePotion() {
     for (let i = 0; i < size; i++) {
 
-      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT && !potionJustUsed) {
+      if (inventory2[i] != null && (inventory2[i].image_display() === potion_selected || inventory2[i].image_display() === potion) && keyCode === SHIFT && !potionJustUsed) {
         potionJustUsed = true;
         playerHealth = min(playerHealth + inventory2[i].data.health, PLAYERHEALTHMAX);
         potion_drink.setVolume(0.3);
