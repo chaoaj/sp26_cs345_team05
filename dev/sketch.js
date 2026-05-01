@@ -1948,7 +1948,7 @@ function IU(life, health, inventory1, inventory2) {
   function usePotion() {
     for (let i = 0; i < size; i++) {
 
-      if (inventory2[i] != null && inventory2[i].selected && inventory2[i].image_display() === potion_selected && keyCode === SHIFT && !potionJustUsed) {
+      if (inventory2[i] != null && (inventory2[i].image_display() === potion_selected || inventory2[i].image_display() === potion) && keyCode === SHIFT && !potionJustUsed) {
         potionJustUsed = true;
         playerHealth = min(playerHealth + inventory2[i].data.health, PLAYERHEALTHMAX);
         potion_drink.setVolume(0.3);
