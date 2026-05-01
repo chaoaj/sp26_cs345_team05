@@ -63,7 +63,7 @@ const backstorySlides = [
 
 var planet = 1;
 var g = 0;
-var page = 6;
+var page = 0;
 var scale = 1;
 var lives = 3;
 
@@ -97,7 +97,7 @@ let playerY;
 const SPRITE_W = 16 * mapScale;
 const SPRITE_H = 16 * mapScale;
 
-let playerSpeed = 8;
+let playerSpeed = 15;
 
 let frontR = true;
 let walkToggle = false;
@@ -116,6 +116,11 @@ let fadeTimer = 0;
 const FADE_SPEED = 4;      // alpha change per frame
 const HOLD_FRAMES = 360;    // frames to hold each slide (3s at 60fps)
 let backstoryActive = false;
+
+// map transition stuff:
+let mapTransitionActive = false;
+let mapTransitionStart = 0;
+const MAP_TRANSITION_DURATION = 2000; // 2 seconds
 
 let size = 0;
 var inventory2 = [];
@@ -409,6 +414,11 @@ function button(image1, x, y, w, h) {
 // 4 = victory screen
 // 5 = game screen
 function screen() {
+  if (mapTransitionActive) {
+    mapTransitionPage();
+    return; // stop drawing the game until transition ends
+  }
+
   if (page === 0) {
     homePage();
   } else if (page === 1) {
@@ -741,6 +751,7 @@ function skinScreen() {
   }
 
 }
+
 function stopAllSounds() {
   level_theme.stop();
   homepage_sound.stop();
@@ -841,6 +852,33 @@ function storySlides() {
   button(skip2, 475, 345, skip2.width / 14, skip2.height / 12);
 }
 
+function mapTransitionPage() {
+  let elapsed = millis() - mapTransitionStart;
+
+  // Draw GIF fullscreen
+  image(story1, 0, 0, pageWidth, pageHeight);
+
+  // Fade in (first 500ms)
+  if (elapsed < 500) {
+    let alpha = map(elapsed, 0, 500, 255, 0);
+    fill(0, alpha);
+    rect(0, 0, pageWidth, pageHeight);
+  }
+
+  // Fade out (last 500ms)
+  if (elapsed > MAP_TRANSITION_DURATION - 500) {
+    let alpha = map(elapsed, MAP_TRANSITION_DURATION - 500, MAP_TRANSITION_DURATION, 0, 255);
+    fill(0, alpha);
+    rect(0, 0, pageWidth, pageHeight);
+  }
+
+  // End transition
+  if (elapsed >= MAP_TRANSITION_DURATION) {
+    mapTransitionActive = false;
+  }
+}
+
+
 function startBackstory() {
   currentSlide = 0;
   slideAlpha = 0;
@@ -932,7 +970,7 @@ function initMapObjects(map) {
           roomIndex: -1,
           animFrame: 0,
           animTimer: 0
-       });
+        });
       }
     }
   }
@@ -996,6 +1034,10 @@ function loadRandomPlanet() {
     planet = 1;
   }
 
+  mapTransitionActive = true;
+  mapTransitionStart = millis();
+
+
   currentMapFloor = floorTileset;
   currentMapWall = wallTileset;
 
@@ -1032,19 +1074,19 @@ function updateFightRooms() {
 
     // raise spikes after 1500ms delay
     if (r.activateTimer > 0 && millis() - r.activateTimer > 1000 && !r.active) {
-    let stillInRoom = playerX > r.x && playerX < r.x + r.w &&
-                      playerY > r.y && playerY < r.y + r.h;
-    if (stillInRoom) {
-      r.active = true;
-      for (let spike of spikeWalls) {
-        if (spike.roomIndex === i) {
-          spike.raised = true;
-          spike.animFrame = 0;
-          spike.animTimer = millis();
+      let stillInRoom = playerX > r.x && playerX < r.x + r.w &&
+        playerY > r.y && playerY < r.y + r.h;
+      if (stillInRoom) {
+        r.active = true;
+        for (let spike of spikeWalls) {
+          if (spike.roomIndex === i) {
+            spike.raised = true;
+            spike.animFrame = 0;
+            spike.animTimer = millis();
+          }
         }
       }
     }
-  }
 
     if (r.active) {
       let roomEnemies = enemies.filter(e => e.roomIndex === i);
@@ -1591,7 +1633,7 @@ function getChestFirstgid(map) {
       return ts.firstgid;
     }
   }
-  return 194; 
+  return 194;
 }
 
 function isWallTile(worldX, worldY) {
