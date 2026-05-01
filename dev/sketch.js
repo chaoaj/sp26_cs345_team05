@@ -527,12 +527,12 @@ function controlsPage() {
 
   fill(0);
   text("press shift to", 141, 356);
-  text("use selected potion", 141, 376);
+  text("use potion", 141, 376);
   fill(255);
   text("press shift to", 139, 355);
-  text("use selected potion", 139, 375);
+  text("use potion", 139, 375);
   text("press shift to", 140, 355);
-  text("use selected potion", 140, 375);
+  text("use potion", 140, 375);
   if (keyCode === SHIFT) {
     image(shift_selected, 20, 335, shift_selected.width / 9 * scale, shift_selected.height / 9 * scale);
   } else {
