@@ -231,9 +231,9 @@ function preload() {
   level_parmesan = loadImage("assets/level_parmesan.png");
 
   homepage_sound = loadSound("assets/homepage_sound.mp3");
-  level_theme = loadSound("assets/Game_SoundTrackUpdated.mp3");
+  level_theme = loadSound("assets/Game_SoundtrackUpdated.mp3");
   overmusic = loadSound("assets/GameOver.mp3");
-  slides_track = loadSound("assets/slides1.0.mp3");
+  slides_track = loadSound("assets/Slides1.0.mp3");
   victory_music = loadSound("assets/Victory.mp3");
   openchestSound = loadSound("assets/tp_chest_open.mp3");
   potion_drink = loadSound("assets/potion_drink.mp3");
@@ -375,21 +375,21 @@ function button(image1, x, y, w, h) {
       image(skins1, 445, 240, skins1.width / 7 * scale, skins1.height / 6 * scale);
     } else if (image1 === controls2) {
       button(controls1, 430, 330, controls1.width / 11 * scale, controls1.height / 9 * scale);
-    }else if (image1 === return2) {
-    // return button from skins screen
-    if (page === 1 || page === 6) {
-      image(return1, x, y, return1.width / 7 * scale, return1.height / 6 * scale);
-    }
+    } else if (image1 === return2) {
+      // return button from skins screen
+      if (page === 1 || page === 6) {
+        image(return1, x, y, return1.width / 7 * scale, return1.height / 6 * scale);
+      }
 
-    // return button from game over / victory screen
-    if (page === 3 || page === 4) {
-      image(return1, x, y, return1.width / 4 * scale, return1.height / 4 * scale);
-    }
+      // return button from game over / victory screen
+      if (page === 3 || page === 4) {
+        image(return1, x, y, return1.width / 4 * scale, return1.height / 4 * scale);
+      }
 
-  } else if (image1 === skip2) {
-    image(skip1, 475, 345, skip1.width / 14, skip1.height / 12);
+    } else if (image1 === skip2) {
+      image(skip1, 475, 345, skip1.width / 14, skip1.height / 12);
+    }
   }
-}
 
   if (mouseJustPressed && mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
     button_beep.play();
@@ -837,7 +837,7 @@ function storySlides() {
       fadeState = "out";
     }
     if (audioUnlocked && !slideSound1.isPlaying())
-    slideSound1.play();
+      slideSound1.play();
   } else if (fadeState === "out") {
     slideAlpha = max(slideAlpha - FADE_SPEED, 0);
     if (slideAlpha <= 0) {
