@@ -197,6 +197,8 @@ function preload() {
   story5 = loadImage("dev/assets/story5.gif");
   story6 = loadImage("dev/assets/story6.gif");
 
+  slideSound1 = loadSound("dev/assets/VoiceRecord1.mp3");
+
   return1 = loadImage("dev/assets/return1.png");
   return2 = loadImage("dev/assets/return2.png");
 
@@ -830,6 +832,8 @@ function storySlides() {
     if (fadeTimer >= HOLD_FRAMES) {
       fadeState = "out";
     }
+    if (audioUnlocked && !slideSound1.isPlaying())
+      slideSound1.play();
   } else if (fadeState === "out") {
     slideAlpha = max(slideAlpha - FADE_SPEED, 0);
     if (slideAlpha <= 0) {
