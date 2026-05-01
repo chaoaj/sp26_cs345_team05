@@ -252,6 +252,7 @@ function preload() {
   floorTileset = loadImage("assets/atlas_floor-16x16.png");
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
   chestTileset = loadImage("assets/Chest.png");
+  sewerTileset = loadImage("assets/sewer_1.png");
 
   arrow_up = loadImage("assets/arrow_up.png");
   arrow = loadImage("assets/arrow.png");
@@ -920,9 +921,16 @@ function initMapObjects(map) {
   }
 
   const chestsLayer = map.layers.find(l => l.name === "chests");
+  const isSnowMap = (map === mapData_parmesan);
   if (chestsLayer) {
     for (let i = 0; i < chestsLayer.data.length; i++) {
-      if (chestsLayer.data[i] === 25) { // static spike tile
+      const tileId = chestsLayer.data[i];
+      if (tileId === 0) continue;
+      const tsFirstgid = getTilesetFirstgid(map, tileId);
+      const localID = tileId - tsFirstgid;
+      console.log("chest tileId:", tileId, "tsFirstgid:", tsFirstgid, "localID:", localID);
+
+      if (localID === 24) {
         const col = i % map.width;
         const row = Math.floor(i / map.width);
         spikeWalls.push({
@@ -932,7 +940,7 @@ function initMapObjects(map) {
           roomIndex: -1,
           animFrame: 0,
           animTimer: 0
-        });
+       });
       }
     }
   }
@@ -1032,6 +1040,9 @@ function updateFightRooms() {
 
     // raise spikes after 1500ms delay
     if (r.activateTimer > 0 && millis() - r.activateTimer > 1000 && !r.active) {
+    let stillInRoom = playerX > r.x && playerX < r.x + r.w &&
+                      playerY > r.y && playerY < r.y + r.h;
+    if (stillInRoom) {
       r.active = true;
       for (let spike of spikeWalls) {
         if (spike.roomIndex === i) {
@@ -1041,6 +1052,7 @@ function updateFightRooms() {
         }
       }
     }
+  }
 
     if (r.active) {
       let roomEnemies = enemies.filter(e => e.roomIndex === i);
@@ -1505,23 +1517,40 @@ function drawMap(map, floorTS, wallTS) {
   const tileW = 16;
   const mapCols = map.width;
   const isSnowMap = (map === mapData_parmesan);
+  const isSewerMap = (map === mapData_blueCheese);
+
 
   for (let layer of map.layers) {
     if (layer.type !== "tilelayer") continue;
     for (let i = 0; i < layer.data.length; i++) {
       const tileId = layer.data[i];
       if (tileId === 0) continue;
-      if (layer.name === "chests" && tileId === 25) continue;
+
       const col = i % mapCols;
       const row = Math.floor(i / mapCols);
       const x = col * tileW * mapScale;
       const y = row * tileW * mapScale;
+
+      if (layer.name === "chests") {
+        let tsFirstgid = getTilesetFirstgid(map, tileId);
+        let localID = tileId - tsFirstgid;
+        if (localID === 24) continue; // spike tile, skip
+        const srcX = (localID % 3) * tileW;
+        const srcY = Math.floor(localID / 3) * tileW;
+        image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        continue;
+      }
+
       if (isSnowMap) {
-        // Snow tileset: firstgid 1, 32 columns, 16x16 tiles
         const localID = tileId - 1;
         const srcX = (localID % 32) * tileW;
         const srcY = Math.floor(localID / 32) * tileW;
         image(snowTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+      } else if (isSewerMap) {
+        const localID = tileId - 1;
+        const srcX = (localID % 16) * tileW;
+        const srcY = Math.floor(localID / 16) * tileW;
+        image(sewerTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
       } else {
         if (tileId >= 194) {
           const localID = tileId - 194;
@@ -1554,12 +1583,32 @@ function drawMap(map, floorTS, wallTS) {
   }
 }
 
+function getTilesetFirstgid(map, tileId) {
+  let firstgid = 1;
+  for (let ts of map.tilesets) {
+    if (ts.firstgid <= tileId) firstgid = ts.firstgid;
+    else break;
+  }
+  return firstgid;
+}
+
+function getChestFirstgid(map) {
+  for (let ts of map.tilesets) {
+    let name = ts.source || ts.name || "";
+    if (name.includes("Chest") || name.includes("chest") || name.includes("test3")) {
+      return ts.firstgid;
+    }
+  }
+  return 194; 
+}
+
 function isWallTile(worldX, worldY) {
   const tileW = 16 * mapScale;
   const col = Math.floor(worldX / tileW);
   const row = Math.floor(worldY / tileW);
   if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
   const isSnowMap = (currentMap === mapData_parmesan);
+  const isSewerMap = (currentMap === mapData_blueCheese);
 
   let hasFloor = false;
   for (let layer of currentMap.layers) {
@@ -1569,6 +1618,11 @@ function isWallTile(worldX, worldY) {
       const tileId = layer.data[row * currentMap.width + col];
       if (layer.name === "Walls" && tileId !== 0) return true;
       if (layer.name === "Floors" && tileId !== 0) hasFloor = true;
+    } else if (isSewerMap) {
+      if (layer.name !== "floors" && layer.name !== "walls") continue;
+      const tileId = layer.data[row * currentMap.width + col];
+      if (layer.name === "walls" && tileId !== 0) return true;
+      if (layer.name === "floors" && tileId !== 0) hasFloor = true;
     } else {
       if (layer.name !== "floors" && layer.name !== "walls") continue;
       const tileId = layer.data[row * currentMap.width + col];
