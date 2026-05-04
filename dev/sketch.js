@@ -178,6 +178,7 @@ const BOSS_FRAME_H = 400;
 const BOSS_ROW_Y = [0, 400, 800, 1200];
 
 var startTime = 0;
+var timeTaken = 0;
 var first = 0;
 
 
@@ -1812,10 +1813,14 @@ function gameover() {
     );
 
     scale -= 0.005;
-    textSize(11);
+    textSize(20);
+    fill(255);
     textFont('Courier New');
-    var timeTaken = floor((millis() - startTime) / 1000);
-    text("Time: " + timeTaken + "s", 200, 200);
+    if (first === 1) {
+      timeTaken = floor((millis() - startTime) / 1000);
+      first++;
+    }
+    text("Time Taken: " + timeTaken + "s", 200, 200);
   }
 
 
@@ -1855,10 +1860,15 @@ function victoryPage() {
     );
 
     scale -= 0.005;
-    textSize(11);
+    textSize(20);
+    fill(255);
     textFont('Courier New');
-    var timeTaken = floor((millis() - startTime) / 1000);
-    text("Time: " + timeTaken + "s", 200, 200);
+    
+    if (first === 1) {
+      timeTaken = floor((millis() - startTime) / 1000);
+      first++;
+    }
+    text("Time Taken: " + timeTaken + "s", 200, 200);
   }
 
 
