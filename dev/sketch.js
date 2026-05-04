@@ -97,7 +97,7 @@ let playerY;
 const SPRITE_W = 16 * mapScale;
 const SPRITE_H = 16 * mapScale;
 
-let playerSpeed = 15;
+let playerSpeed = 12;
 
 let frontR = true;
 let walkToggle = false;
@@ -1263,7 +1263,7 @@ function drawEnemy() {
       moveY = e.dirY * e.speed * 0.5;
     } else if (e.state === "attack" && e.attackCooldown <= 0) {
       playerHealth = max(0, playerHealth - ENEMY_ATTACK);
-      e.attackCooldown = 60;
+      e.attackCooldown = 90;
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
@@ -1367,46 +1367,51 @@ function drawCat(player) {
 
   let equipped = getEquippedItem();
 
+  let centerX = SPRITE_W / 2;
+  let centerY = SPRITE_H / 2;
+  let offsetX = 0;
+  let offsetY = 0;
 
   if (equipped != null) {
-    let img = equipped.image_display();
-
-    let centerX = SPRITE_W / 2;
-    let centerY = SPRITE_H / 2;
-
-    let offsetX = 0;
-    let offsetY = 0;
-
-    if (frameCurrRow === 3) { // right
+    if (frameCurrRow === 3) {
       offsetX = centerX + 4;
       offsetY = centerY - 4;
-    } else if (frameCurrRow === 2) { // left
+    } else if (frameCurrRow === 2) {
       offsetX = centerX - 12;
       offsetY = centerY - 4;
-    } else if (frameCurrRow === 0) { // down
+    } else if (frameCurrRow === 0) {
       offsetX = centerX - 4;
       offsetY = centerY + 2;
-    } else if (frameCurrRow === 1) { // up
+    } else if (frameCurrRow === 1) {
       offsetX = centerX + 2;
       offsetY = centerY - 12;
     }
-
-    if (frameCurrRow === 1) {
-      image(img, playerX + offsetX, playerY + offsetY, 12, 12);
-    }
-
-    // draw cat
-    image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
-
-    if (frameCurrRow !== 1) {
-      image(img, playerX + offsetX, playerY + offsetY, 12, 12);
-    }
-
-  } else {
-    // there is no item
-    image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
   }
 
+  // draw attack animation BEHIND cat if facing up
+  if (frameCurrRow === 1 && isAttacking) {
+    AttackAnimation();
+  }
+
+  // draw equipped item BEHIND cat if facing up
+  if (equipped != null && frameCurrRow === 1) {
+    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, 12, 12);
+  }
+
+  // draw cat
+  image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+
+  // draw attack animation IN FRONT of cat for all other directions
+  if (frameCurrRow !== 1 && isAttacking) {
+    AttackAnimation();
+  }
+
+  // draw equipped item IN FRONT of cat for all other directions
+  if (equipped != null && frameCurrRow !== 1) {
+    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, 12, 12);
+  }
+
+  // movement
   let up = keyIsDown(UP_ARROW) || keyIsDown(87);
   let down = keyIsDown(DOWN_ARROW) || keyIsDown(83);
   let left = keyIsDown(LEFT_ARROW) || keyIsDown(65);
@@ -1450,9 +1455,7 @@ function drawCat(player) {
     }
   }
 
-  if (attackCooldown > 0) {
-    attackCooldown--;
-  }
+  if (attackCooldown > 0) attackCooldown--;
 
   if (playerHealth <= 0) {
     playerHealth = 0;
@@ -1463,22 +1466,20 @@ function drawCat(player) {
       playerY = spawn.y;
       playerHealth = PLAYERHEALTHMAX;
     } else {
-      page = 3; // Game over
+      page = 3;
     }
   }
 
+  // attack
   if (keyIsDown(32)) {
     isAttacking = true;
     for (let e of enemies) {
-      AttackAnimation();
       if (!e.alive) continue;
       let d = dist(playerX, playerY, e.x, e.y);
-      if (e.state !== "wander" && d <= e.attackRange && attackCooldown === 0) {
-        let equipped = getEquippedItem();
+      if (e.state !== "wander" && d <= e.attackRange * 4 && attackCooldown === 0) {
         let damage = PLAYER_ATTACK + (equipped ? equipped.data.damage : 0);
         e.health -= damage;
-        attackCooldown = 25;
-
+        attackCooldown = 40;
         if (equipped && equipped.data.damage > 0) {
           sword_hit.setVolume(0.3);
           sword_hit.play();
@@ -1486,16 +1487,10 @@ function drawCat(player) {
           punch_sound.setVolume(0.3);
           punch_sound.play();
         }
-
         break;
       }
     }
   }
-
-  if (frameCurrRow === 1 && isAttacking) { //The slash up animation will appear behind the cat
-    AttackAnimation();
-  }
-  image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
 }
 
 function drawSwap() {
@@ -1886,7 +1881,7 @@ class Enemy {
     this.state = "wander";
     this.speed = type === "boss" ? 1.2 : random(0.5, 0.9);
     this.detectionRange = type === "boss" ? 250 : 150;
-    this.attackRange = type === "boss" ? 35 : 25;
+    this.attackRange = type === "boss" ? 35 : 15;
     this.alive = true;
     this.dirX = 1;
     this.dirY = 0;
