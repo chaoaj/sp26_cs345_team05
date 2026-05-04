@@ -379,15 +379,16 @@ function setup() {
   potionItem_blueCheese3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   potionItem_parmesan3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   potionItem_cheeseCake3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  bowItem = new Item([bow, bow_selected], false, { damage: 15, health: 0 });
 
   chestInventory_nacho[0] = [new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
-  chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), bowItem];
   chestInventory_blueCheese[0] = [new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
-  chestInventory_blueCheese[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_blueCheese[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_parmesan[0] = [new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
-  chestInventory_parmesan[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_parmesan[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_cheeseCake[0] = [new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
-  chestInventory_cheeseCake[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_cheeseCake[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
 }
 
 
@@ -1854,7 +1855,10 @@ function gameover() {
       timeTaken = floor((millis() - startTime) / 1000);
       first++;
     }
-    text("Time Taken: " + timeTaken + "s", 200, 200);
+    var minutes = floor(timeTaken / 60);
+    var seconds = timeTaken % 60;
+    var timeString = nf(minutes, 2) + ":" + nf(seconds, 2);
+    text("Time Taken: " + timeString, 200, 200);
   }
 
 
@@ -1902,7 +1906,10 @@ function victoryPage() {
       timeTaken = floor((millis() - startTime) / 1000);
       first++;
     }
-    text("Time Taken: " + timeTaken + "s", 200, 200);
+    var minutes = floor(timeTaken / 60);
+    var seconds = timeTaken % 60;
+    var timeString = nf(minutes, 2) + ":" + nf(seconds, 2);
+    text("Time Taken: " + timeString, 200, 200);
   }
 
 
@@ -2027,7 +2034,7 @@ function chestItem(index, x, y) {
 
   function swapChest() {
     var swapped = false;
-    if (!swapped && keyCode === ENTER && click) {
+    if (!swapped && keyCode === ENTER && click && size < 3) {
       for (let i = 0; i < chestInventory[planet - 1][index].length; i++) {
         if (chestInventory[planet - 1][index][i] != null && chestInventory[planet - 1][index][i].selected) {
           if (chestInventory[planet - 1][index][i].data.damage > 0) {
