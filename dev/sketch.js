@@ -644,6 +644,10 @@ function resetGame() {
   frameCurrRow = 0;
   frontR = true;
   walkToggle = false;
+
+  first = 0;
+  totalEnemies = 0;
+  star = 0;
 }
 
 function homePage() {
