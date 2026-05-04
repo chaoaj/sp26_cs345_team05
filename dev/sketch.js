@@ -177,6 +177,11 @@ const BOSS_FRAME_W = 400;
 const BOSS_FRAME_H = 400;
 const BOSS_ROW_Y = [0, 400, 800, 1200];
 
+var startTime = 0;
+var timeTaken = 0;
+var first = 0;
+var totalEnemies = 0;
+var star = 0;
 
 
 function preload() {
@@ -276,6 +281,8 @@ function preload() {
   sword_parmesan_selected = loadImage("assets/sword_parmesan_selected.png");
   sword_cheeseCake_selected = loadImage("assets/sword_cheeseCake_selected.png");
   potion_selected = loadImage("assets/Potion_selected.png");
+  bow = loadImage("assets/bow.png");
+  bow_selected = loadImage("assets/bow_selected.png");
 
   floorTileset = loadImage("assets/atlas_floor-16x16.png");
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
@@ -1539,6 +1546,7 @@ function drawSwap() {
 }
 
 function gameStart() {
+  
   slideSound1.stop();
   slideSound2.stop();
   slideSound3.stop();
@@ -1613,6 +1621,27 @@ function gameStart() {
     console.log("fightRooms:", fightRooms.length);
     g++;
   }
+  if (first == 0) {
+    startTime = millis();
+    first++;
+  }
+  if (planet === 1 && star === 0) {
+    totalEnemies = enemies.length;
+    star++;
+  } else if (planet === 2 && star === 1) {
+    totalEnemies = enemies.length;
+    star++;
+  } else if (planet === 3 && star === 2) {
+    totalEnemies = enemies.length;
+    star++;
+  } else if (planet === 4 && star === 3) {
+    totalEnemies = enemies.length;
+    star++;
+  }
+  textSize(12);
+  fill(255);
+  textFont('Courier New');
+  text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 480, 80);
 }
 function keyPressed() {
   if (key === 'p' || key === 'P') {
@@ -1814,6 +1843,14 @@ function gameover() {
     );
 
     scale -= 0.005;
+    textSize(20);
+    fill(255);
+    textFont('Courier New');
+    if (first === 1) {
+      timeTaken = floor((millis() - startTime) / 1000);
+      first++;
+    }
+    text("Time Taken: " + timeTaken + "s", 200, 200);
   }
 
 
@@ -1853,6 +1890,15 @@ function victoryPage() {
     );
 
     scale -= 0.005;
+    textSize(20);
+    fill(255);
+    textFont('Courier New');
+    
+    if (first === 1) {
+      timeTaken = floor((millis() - startTime) / 1000);
+      first++;
+    }
+    text("Time Taken: " + timeTaken + "s", 200, 200);
   }
 
 
