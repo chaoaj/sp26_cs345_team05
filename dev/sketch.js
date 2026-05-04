@@ -1486,7 +1486,7 @@ function drawCat(player) {
     for (let e of enemies) {
       if (!e.alive) continue;
       let d = dist(playerX, playerY, e.x, e.y);
-      if (e.state !== "wander" && d <= e.attackRange * 4 && attackCooldown === 0) {
+      if (e.state !== "wander" && d <= e.attackRange * 3 && attackCooldown === 0) {
         let damage = PLAYER_ATTACK + (equipped ? equipped.data.damage : 0);
         e.health -= damage;
         attackCooldown = 40;
@@ -1907,7 +1907,7 @@ class Enemy {
     this.state = "wander";
     this.speed = type === "boss" ? 1.2 : random(0.5, 0.9);
     this.detectionRange = type === "boss" ? 250 : 150;
-    this.attackRange = type === "boss" ? 35 : 15;
+    this.attackRange = type === "boss" ? 35 : 25;
     this.alive = true;
     this.dirX = 1;
     this.dirY = 0;
