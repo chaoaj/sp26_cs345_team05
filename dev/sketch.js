@@ -246,7 +246,13 @@ function preload() {
   level_parmesan = loadImage("assets/level_parmesan.png");
 
   homepage_sound = loadSound("assets/homepage_sound.mp3");
-  level_theme = loadSound("assets/Game_SoundtrackUpdated.mp3");
+
+  map1_theme = loadSound("assets/map1_theme.mp3");
+  map2_theme = loadSound("assets/map2_theme.mp3");
+  map3_theme = loadSound("assets/map3_theme.mp3");
+  map4_theme = loadSound("assets/map4_theme.mp3");
+
+
   overmusic = loadSound("assets/GameOver.mp3");
   slides_track = loadSound("assets/Slides1.0.mp3");
   victory_music = loadSound("assets/Victory.mp3");
@@ -774,7 +780,10 @@ function skinScreen() {
 }
 
 function stopAllSounds() {
-  level_theme.stop();
+  for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
+    if (t && t.isPlaying()) t.stop();
+  }
+
   homepage_sound.stop();
 }
 
@@ -889,6 +898,7 @@ function storySlides() {
 }
 
 function mapTransitionPage() {
+  stopAllSounds();
   let elapsed = millis() - mapTransitionStart;
 
   // Draw GIF fullscreen
@@ -1517,8 +1527,20 @@ function gameStart() {
   slideSound5.stop();
   slideSound6.stop();
 
-  if (audioUnlocked && !level_theme.isPlaying()) {
-    level_theme.loop();
+  const mapThemes = [map1_theme, map2_theme, map3_theme, map4_theme];
+  const currentTheme = mapThemes[planet - 1];
+
+  // stop all map themes that shouldn't be playing
+  for (let i = 0; i < mapThemes.length; i++) {
+    if (mapThemes[i] && mapThemes[i] !== currentTheme && mapThemes[i].isPlaying()) {
+      mapThemes[i].stop();
+    }
+  }
+
+  // play the correct one
+  if (audioUnlocked && currentTheme && !currentTheme.isPlaying()) {
+    currentTheme.setVolume(0.2);
+    currentTheme.loop();
   }
 
   if (homepage_sound.isPlaying()) {
@@ -1745,9 +1767,12 @@ function gameover() {
     overmusic.setVolume(0.4);
     overmusic.loop();
   }
-  if (level_theme.isPlaying()) {
-    level_theme.stop();
+
+
+  for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
+    if (t && t.isPlaying()) t.stop();
   }
+
   image(
     homepage_background,
     0, 0,
@@ -1783,9 +1808,10 @@ function victoryPage() {
     victory_music.loop();
   }
 
-  if (level_theme.isPlaying()) {
-    level_theme.stop();
+  for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
+    if (t && t.isPlaying()) t.stop();
   }
+
   image(
     homepage_background,
     0, 0,
