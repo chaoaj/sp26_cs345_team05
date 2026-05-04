@@ -166,7 +166,7 @@ let lastAttackFrameTime = 0;
 
 
 const ENEMY_ATTACK = 8;
-const PLAYER_ATTACK = 10;
+const PLAYER_ATTACK = 30;
 
 let currentFrameRat = 0;
 const RAT_FRAME_W = 32;
@@ -372,18 +372,15 @@ function setup() {
   potionItem_blueCheese3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   potionItem_parmesan3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   potionItem_cheeseCake3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  chestInventory_nacho[0] = ([swordNacho, potionItem_nacho]);
-  chestInventory_nacho[1] = ([potionItem_nacho2, potionItem_nacho3]);
-  chestInventory_nacho[2] = ([potionItem_nacho]);
-  chestInventory_blueCheese[0] = ([swordBlueCheese, potionItem_blueCheese]);
-  chestInventory_blueCheese[1] = ([potionItem_blueCheese2, potionItem_blueCheese3]);
-  chestInventory_blueCheese[2] = ([potionItem_blueCheese]);
-  chestInventory_parmesan[0] = ([swordParmesan, potionItem_parmesan]);
-  chestInventory_parmesan[1] = ([potionItem_parmesan2, potionItem_parmesan3]);
-  chestInventory_parmesan[2] = ([potionItem_parmesan]);
-  chestInventory_cheeseCake[0] = ([swordCheeseCake, potionItem_cheeseCake]);
-  chestInventory_cheeseCake[1] = ([potionItem_cheeseCake2, potionItem_cheeseCake3]);
-  chestInventory_cheeseCake[2] = ([potionItem_cheeseCake]);
+
+  chestInventory_nacho[0] = [new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_blueCheese[0] = [new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_blueCheese[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_parmesan[0] = [new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_parmesan[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_cheeseCake[0] = [new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_cheeseCake[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
 }
 
 
@@ -1173,6 +1170,7 @@ function drawChests() {
   for (let chest of chests) {
     if (chest.opened) {
       chestItem(index, chest.x, chest.y);
+      index++;
       continue;
     }
     let d = dist(playerX, playerY, chest.x, chest.y);
@@ -1255,10 +1253,18 @@ function drawEnemy() {
     let dx = playerX - e.x;
     let dy = playerY - e.y;
     let d = dist(playerX, playerY, e.x, e.y);
+    // only activate if player is in the same room
+    let r = fightRooms[e.roomIndex];
+    let playerInRoom = r && playerX > r.x && playerX < r.x + r.w &&
+                      playerY > r.y && playerY < r.y + r.h;
 
-    if (d <= e.attackRange) e.state = "attack";
-    else if (d <= e.detectionRange) e.state = "chase";
-    else e.state = "wander";
+    if (!playerInRoom) {
+      e.state = "wander";
+    } else {
+      if (d <= e.attackRange) e.state = "attack";
+      else if (d <= e.detectionRange) e.state = "chase";
+      else e.state = "wander";
+    }
 
     let dirRow;
     if (Math.abs(dx) > Math.abs(dy)) dirRow = dx > 0 ? 1 : 3;
@@ -1291,6 +1297,11 @@ function drawEnemy() {
     let nextY = e.y + moveY;
     let w = e.type === "boss" ? BOSS_FRAME_W * 0.15 : RAT_FRAME_W;
     let h = e.type === "boss" ? BOSS_FRAME_H * 0.15 : RAT_FRAME_H[dirRow];
+
+    if (r) {
+      nextX = constrain(nextX, r.x, r.x + r.w - w);
+      nextY = constrain(nextY, r.y, r.y + r.h - h);
+    }
     if (!isWallTile(nextX + RAT_HITBOX_LEFT, e.y + RAT_HITBOX_TOP) &&
       !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
       !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
