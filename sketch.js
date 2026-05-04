@@ -97,7 +97,7 @@ let playerY;
 const SPRITE_W = 16 * mapScale;
 const SPRITE_H = 16 * mapScale;
 
-let playerSpeed = 15;
+let playerSpeed = 12;
 
 let frontR = true;
 let walkToggle = false;
@@ -116,6 +116,7 @@ let fadeTimer = 0;
 const FADE_SPEED = 4;      // alpha change per frame
 const HOLD_FRAMES = 360;    // frames to hold each slide (3s at 60fps)
 let backstoryActive = false;
+let slideSounds = [];
 
 // map transition stuff:
 let mapTransitionActive = false;
@@ -198,6 +199,20 @@ function preload() {
   story6 = loadImage("dev/assets/story6.gif");
 
   slideSound1 = loadSound("dev/assets/VoiceRecord1.mp3");
+  slideSound2 = loadSound("dev/assets/VoiceRecord2.mp3");
+  slideSound3 = loadSound("dev/assets/VoiceRecord3.mp3");
+  slideSound4 = loadSound("dev/assets/VoiceRecord4.mp3");
+  slideSound5 = loadSound("dev/assets/VoiceRecord5.mp3");
+  slideSound6 = loadSound("dev/assets/VoiceRecord6.mp3");
+
+  slideSounds = [
+    slideSound1,
+    slideSound2,
+    slideSound3,
+    slideSound4,
+    slideSound5,
+    slideSound6
+  ];
 
   return1 = loadImage("dev/assets/return1.png");
   return2 = loadImage("dev/assets/return2.png");
@@ -231,7 +246,13 @@ function preload() {
   level_parmesan = loadImage("dev/assets/level_parmesan.png");
 
   homepage_sound = loadSound("dev/assets/homepage_sound.mp3");
-  level_theme = loadSound("dev/assets/Game_SoundtrackUpdated.mp3");
+
+  map1_theme = loadSound("dev/assets/map1_theme.mp3");
+  map2_theme = loadSound("dev/assets/map2_theme.mp3");
+  map3_theme = loadSound("dev/assets/map3_theme.mp3");
+  map4_theme = loadSound("dev/assets/map4_theme.mp3");
+
+
   overmusic = loadSound("dev/assets/GameOver.mp3");
   slides_track = loadSound("dev/assets/Slides1.0.mp3");
   victory_music = loadSound("dev/assets/Victory.mp3");
@@ -759,8 +780,24 @@ function skinScreen() {
 }
 
 function stopAllSounds() {
-  level_theme.stop();
+  for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
+    if (t && t.isPlaying()) t.stop();
+  }
+
   homepage_sound.stop();
+}
+
+function playSlideSound(index) {
+  // stop all slide sounds first
+  for (let s of slideSounds) {
+    if (s.isPlaying()) s.stop();
+  }
+
+  // play the correct one if it exists
+  if (slideSounds[index]) {
+    slideSounds[index].setVolume(0.9);
+    slideSounds[index].play();
+  }
 }
 
 function storySlides() {
@@ -829,15 +866,15 @@ function storySlides() {
     slideAlpha = min(slideAlpha + FADE_SPEED, 255);
     if (slideAlpha >= 255) {
       fadeState = "hold";
-      fadeTimer = 20;
+      fadeTimer = 0;
+
+      playSlideSound(currentSlide);
     }
   } else if (fadeState === "hold") {
     fadeTimer++;
     if (fadeTimer >= HOLD_FRAMES) {
       fadeState = "out";
     }
-    if (audioUnlocked && !slideSound1.isPlaying())
-      slideSound1.play();
   } else if (fadeState === "out") {
     slideAlpha = max(slideAlpha - FADE_SPEED, 0);
     if (slideAlpha <= 0) {
@@ -861,6 +898,7 @@ function storySlides() {
 }
 
 function mapTransitionPage() {
+  stopAllSounds();
   let elapsed = millis() - mapTransitionStart;
 
   // Draw GIF fullscreen
@@ -1235,7 +1273,7 @@ function drawEnemy() {
       moveY = e.dirY * e.speed * 0.5;
     } else if (e.state === "attack" && e.attackCooldown <= 0) {
       playerHealth = max(0, playerHealth - ENEMY_ATTACK);
-      e.attackCooldown = 60;
+      e.attackCooldown = 90;
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
@@ -1339,46 +1377,51 @@ function drawCat(player) {
 
   let equipped = getEquippedItem();
 
+  let centerX = SPRITE_W / 2;
+  let centerY = SPRITE_H / 2;
+  let offsetX = 0;
+  let offsetY = 0;
 
   if (equipped != null) {
-    let img = equipped.image_display();
-
-    let centerX = SPRITE_W / 2;
-    let centerY = SPRITE_H / 2;
-
-    let offsetX = 0;
-    let offsetY = 0;
-
-    if (frameCurrRow === 3) { // right
+    if (frameCurrRow === 3) {
       offsetX = centerX + 4;
       offsetY = centerY - 4;
-    } else if (frameCurrRow === 2) { // left
+    } else if (frameCurrRow === 2) {
       offsetX = centerX - 12;
       offsetY = centerY - 4;
-    } else if (frameCurrRow === 0) { // down
+    } else if (frameCurrRow === 0) {
       offsetX = centerX - 4;
       offsetY = centerY + 2;
-    } else if (frameCurrRow === 1) { // up
+    } else if (frameCurrRow === 1) {
       offsetX = centerX + 2;
       offsetY = centerY - 12;
     }
-
-    if (frameCurrRow === 1) {
-      image(img, playerX + offsetX, playerY + offsetY, 12, 12);
-    }
-
-    // draw cat
-    image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
-
-    if (frameCurrRow !== 1) {
-      image(img, playerX + offsetX, playerY + offsetY, 12, 12);
-    }
-
-  } else {
-    // there is no item
-    image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
   }
 
+  // draw attack animation BEHIND cat if facing up
+  if (frameCurrRow === 1 && isAttacking) {
+    AttackAnimation();
+  }
+
+  // draw equipped item BEHIND cat if facing up
+  if (equipped != null && frameCurrRow === 1) {
+    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, 12, 12);
+  }
+
+  // draw cat
+  image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+
+  // draw attack animation IN FRONT of cat for all other directions
+  if (frameCurrRow !== 1 && isAttacking) {
+    AttackAnimation();
+  }
+
+  // draw equipped item IN FRONT of cat for all other directions
+  if (equipped != null && frameCurrRow !== 1) {
+    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, 12, 12);
+  }
+
+  // movement
   let up = keyIsDown(UP_ARROW) || keyIsDown(87);
   let down = keyIsDown(DOWN_ARROW) || keyIsDown(83);
   let left = keyIsDown(LEFT_ARROW) || keyIsDown(65);
@@ -1422,9 +1465,7 @@ function drawCat(player) {
     }
   }
 
-  if (attackCooldown > 0) {
-    attackCooldown--;
-  }
+  if (attackCooldown > 0) attackCooldown--;
 
   if (playerHealth <= 0) {
     playerHealth = 0;
@@ -1435,22 +1476,20 @@ function drawCat(player) {
       playerY = spawn.y;
       playerHealth = PLAYERHEALTHMAX;
     } else {
-      page = 3; // Game over
+      page = 3;
     }
   }
 
+  // attack
   if (keyIsDown(32)) {
     isAttacking = true;
     for (let e of enemies) {
-      AttackAnimation();
       if (!e.alive) continue;
       let d = dist(playerX, playerY, e.x, e.y);
-      if (e.state !== "wander" && d <= e.attackRange && attackCooldown === 0) {
-        let equipped = getEquippedItem();
+      if (e.state !== "wander" && d <= e.attackRange * 4 && attackCooldown === 0) {
         let damage = PLAYER_ATTACK + (equipped ? equipped.data.damage : 0);
         e.health -= damage;
-        attackCooldown = 25;
-
+        attackCooldown = 40;
         if (equipped && equipped.data.damage > 0) {
           sword_hit.setVolume(0.3);
           sword_hit.play();
@@ -1458,16 +1497,10 @@ function drawCat(player) {
           punch_sound.setVolume(0.3);
           punch_sound.play();
         }
-
         break;
       }
     }
   }
-
-  if (frameCurrRow === 1 && isAttacking) { //The slash up animation will appear behind the cat
-    AttackAnimation();
-  }
-  image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
 }
 
 function drawSwap() {
@@ -1487,9 +1520,27 @@ function drawSwap() {
 }
 
 function gameStart() {
-  if (audioUnlocked && !level_theme.isPlaying()) {
-    level_theme.setVolume(0.2);
-    level_theme.loop();
+  slideSound1.stop();
+  slideSound2.stop();
+  slideSound3.stop();
+  slideSound4.stop();
+  slideSound5.stop();
+  slideSound6.stop();
+
+  const mapThemes = [map1_theme, map2_theme, map3_theme, map4_theme];
+  const currentTheme = mapThemes[planet - 1];
+
+  // stop all map themes that shouldn't be playing
+  for (let i = 0; i < mapThemes.length; i++) {
+    if (mapThemes[i] && mapThemes[i] !== currentTheme && mapThemes[i].isPlaying()) {
+      mapThemes[i].stop();
+    }
+  }
+
+  // play the correct one
+  if (audioUnlocked && currentTheme && !currentTheme.isPlaying()) {
+    currentTheme.setVolume(0.2);
+    currentTheme.loop();
   }
 
   if (homepage_sound.isPlaying()) {
@@ -1716,9 +1767,12 @@ function gameover() {
     overmusic.setVolume(0.4);
     overmusic.loop();
   }
-  if (level_theme.isPlaying()) {
-    level_theme.stop();
+
+
+  for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
+    if (t && t.isPlaying()) t.stop();
   }
+
   image(
     homepage_background,
     0, 0,
@@ -1754,9 +1808,10 @@ function victoryPage() {
     victory_music.loop();
   }
 
-  if (level_theme.isPlaying()) {
-    level_theme.stop();
+  for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
+    if (t && t.isPlaying()) t.stop();
   }
+
   image(
     homepage_background,
     0, 0,
@@ -1852,7 +1907,7 @@ class Enemy {
     this.state = "wander";
     this.speed = type === "boss" ? 1.2 : random(0.5, 0.9);
     this.detectionRange = type === "boss" ? 250 : 150;
-    this.attackRange = type === "boss" ? 35 : 25;
+    this.attackRange = type === "boss" ? 35 : 15;
     this.alive = true;
     this.dirX = 1;
     this.dirY = 0;
