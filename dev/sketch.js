@@ -116,6 +116,7 @@ let fadeTimer = 0;
 const FADE_SPEED = 4;      // alpha change per frame
 const HOLD_FRAMES = 360;    // frames to hold each slide (3s at 60fps)
 let backstoryActive = false;
+let slideSounds = [];
 
 // map transition stuff:
 let mapTransitionActive = false;
@@ -198,6 +199,20 @@ function preload() {
   story6 = loadImage("assets/story6.gif");
 
   slideSound1 = loadSound("assets/VoiceRecord1.mp3");
+  slideSound2 = loadSound("assets/VoiceRecord2.mp3");
+  slideSound3 = loadSound("assets/VoiceRecord3.mp3");
+  slideSound4 = loadSound("assets/VoiceRecord4.mp3");
+  slideSound5 = loadSound("assets/VoiceRecord5.mp3");
+  slideSound6 = loadSound("assets/VoiceRecord6.mp3");
+
+  slideSounds = [
+    slideSound1,
+    slideSound2,
+    slideSound3,
+    slideSound4,
+    slideSound5,
+    slideSound6
+  ];
 
   return1 = loadImage("assets/return1.png");
   return2 = loadImage("assets/return2.png");
@@ -763,6 +778,19 @@ function stopAllSounds() {
   homepage_sound.stop();
 }
 
+function playSlideSound(index) {
+  // stop all slide sounds first
+  for (let s of slideSounds) {
+    if (s.isPlaying()) s.stop();
+  }
+
+  // play the correct one if it exists
+  if (slideSounds[index]) {
+    slideSounds[index].setVolume(0.9);
+    slideSounds[index].play();
+  }
+}
+
 function storySlides() {
   if (!backstoryActive) {
     startBackstory();
@@ -829,15 +857,15 @@ function storySlides() {
     slideAlpha = min(slideAlpha + FADE_SPEED, 255);
     if (slideAlpha >= 255) {
       fadeState = "hold";
-      fadeTimer = 20;
+      fadeTimer = 0;
+
+      playSlideSound(currentSlide);
     }
   } else if (fadeState === "hold") {
     fadeTimer++;
     if (fadeTimer >= HOLD_FRAMES) {
       fadeState = "out";
     }
-    if (audioUnlocked && !slideSound1.isPlaying())
-      slideSound1.play();
   } else if (fadeState === "out") {
     slideAlpha = max(slideAlpha - FADE_SPEED, 0);
     if (slideAlpha <= 0) {
@@ -1487,8 +1515,14 @@ function drawSwap() {
 }
 
 function gameStart() {
+  slideSound1.stop();
+  slideSound2.stop();
+  slideSound3.stop();
+  slideSound4.stop();
+  slideSound5.stop();
+  slideSound6.stop();
+
   if (audioUnlocked && !level_theme.isPlaying()) {
-    level_theme.setVolume(0.2);
     level_theme.loop();
   }
 
