@@ -177,6 +177,8 @@ const BOSS_FRAME_W = 400;
 const BOSS_FRAME_H = 400;
 const BOSS_ROW_Y = [0, 400, 800, 1200];
 
+var startTime = 0;
+var first = 0;
 
 
 function preload() {
@@ -276,6 +278,8 @@ function preload() {
   sword_parmesan_selected = loadImage("assets/sword_parmesan_selected.png");
   sword_cheeseCake_selected = loadImage("assets/sword_cheeseCake_selected.png");
   potion_selected = loadImage("assets/Potion_selected.png");
+  bow = loadImage("assets/bow.png");
+  bow_selected = loadImage("assets/bow_selected.png");
 
   floorTileset = loadImage("assets/atlas_floor-16x16.png");
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
@@ -372,11 +376,12 @@ function setup() {
   potionItem_blueCheese3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   potionItem_parmesan3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   potionItem_cheeseCake3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  bowItem = new Item([bow, bow_selected], false, { damage: 12, health: 0 });
   chestInventory_nacho[0] = ([swordNacho, potionItem_nacho]);
   chestInventory_nacho[1] = ([potionItem_nacho2, potionItem_nacho3]);
   chestInventory_nacho[2] = ([potionItem_nacho]);
   chestInventory_blueCheese[0] = ([swordBlueCheese, potionItem_blueCheese]);
-  chestInventory_blueCheese[1] = ([potionItem_blueCheese2, potionItem_blueCheese3]);
+  chestInventory_blueCheese[1] = ([potionItem_blueCheese2, bowItem]);
   chestInventory_blueCheese[2] = ([potionItem_blueCheese]);
   chestInventory_parmesan[0] = ([swordParmesan, potionItem_parmesan]);
   chestInventory_parmesan[1] = ([potionItem_parmesan2, potionItem_parmesan3]);
@@ -1528,6 +1533,10 @@ function drawSwap() {
 }
 
 function gameStart() {
+  if (first == 0) {
+    startTime = millis();
+    first++;
+  }
   slideSound1.stop();
   slideSound2.stop();
   slideSound3.stop();
@@ -1803,6 +1812,10 @@ function gameover() {
     );
 
     scale -= 0.005;
+    textSize(11);
+    textFont('Courier New');
+    var timeTaken = floor((millis() - startTime) / 1000);
+    text("Time: " + timeTaken + "s", 200, 200);
   }
 
 
@@ -1842,6 +1855,10 @@ function victoryPage() {
     );
 
     scale -= 0.005;
+    textSize(11);
+    textFont('Courier New');
+    var timeTaken = floor((millis() - startTime) / 1000);
+    text("Time: " + timeTaken + "s", 200, 200);
   }
 
 
