@@ -166,7 +166,7 @@ let lastAttackFrameTime = 0;
 
 
 const ENEMY_ATTACK = 8;
-const PLAYER_ATTACK = 10;
+const PLAYER_ATTACK = 30;
 
 let currentFrameRat = 0;
 const RAT_FRAME_W = 32;
@@ -177,6 +177,11 @@ const BOSS_FRAME_W = 400;
 const BOSS_FRAME_H = 400;
 const BOSS_ROW_Y = [0, 400, 800, 1200];
 
+var startTime = 0;
+var timeTaken = 0;
+var first = 0;
+var totalEnemies = 0;
+var star = 0;
 
 
 function preload() {
@@ -276,6 +281,8 @@ function preload() {
   sword_parmesan_selected = loadImage("assets/sword_parmesan_selected.png");
   sword_cheeseCake_selected = loadImage("assets/sword_cheeseCake_selected.png");
   potion_selected = loadImage("assets/Potion_selected.png");
+  bow = loadImage("assets/bow.png");
+  bow_selected = loadImage("assets/bow_selected.png");
 
   floorTileset = loadImage("assets/atlas_floor-16x16.png");
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
@@ -364,18 +371,23 @@ function setup() {
   potionItem_blueCheese = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   potionItem_parmesan = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
   potionItem_cheeseCake = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  chestInventory_nacho[0] = ([swordNacho, potionItem_nacho]);
-  chestInventory_nacho[1] = ([potionItem_nacho]);
-  chestInventory_nacho[2] = ([potionItem_nacho]);
-  chestInventory_blueCheese[0] = ([swordBlueCheese, potionItem_blueCheese]);
-  chestInventory_blueCheese[1] = ([potionItem_blueCheese]);
-  chestInventory_blueCheese[2] = ([potionItem_blueCheese]);
-  chestInventory_parmesan[0] = ([swordParmesan, potionItem_parmesan]);
-  chestInventory_parmesan[1] = ([potionItem_parmesan]);
-  chestInventory_parmesan[2] = ([potionItem_parmesan]);
-  chestInventory_cheeseCake[0] = ([swordCheeseCake, potionItem_cheeseCake]);
-  chestInventory_cheeseCake[1] = ([potionItem_cheeseCake]);
-  chestInventory_cheeseCake[2] = ([potionItem_cheeseCake]);
+  potionItem_nacho2 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_blueCheese2 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_parmesan2 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_cheeseCake2 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_nacho3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_blueCheese3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_parmesan3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  potionItem_cheeseCake3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+
+  chestInventory_nacho[0] = [new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_blueCheese[0] = [new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_blueCheese[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_parmesan[0] = [new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_parmesan[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_cheeseCake[0] = [new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_cheeseCake[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
 }
 
 
@@ -628,6 +640,10 @@ function resetGame() {
   frameCurrRow = 0;
   frontR = true;
   walkToggle = false;
+
+  first = 0;
+  totalEnemies = 0;
+  star = 0;
 }
 
 function homePage() {
@@ -1165,6 +1181,7 @@ function drawChests() {
   for (let chest of chests) {
     if (chest.opened) {
       chestItem(index, chest.x, chest.y);
+      index++;
       continue;
     }
     let d = dist(playerX, playerY, chest.x, chest.y);
@@ -1247,10 +1264,18 @@ function drawEnemy() {
     let dx = playerX - e.x;
     let dy = playerY - e.y;
     let d = dist(playerX, playerY, e.x, e.y);
+    // only activate if player is in the same room
+    let r = fightRooms[e.roomIndex];
+    let playerInRoom = r && playerX > r.x && playerX < r.x + r.w &&
+                      playerY > r.y && playerY < r.y + r.h;
 
-    if (d <= e.attackRange) e.state = "attack";
-    else if (d <= e.detectionRange) e.state = "chase";
-    else e.state = "wander";
+    if (!playerInRoom) {
+      e.state = "wander";
+    } else {
+      if (d <= e.attackRange) e.state = "attack";
+      else if (d <= e.detectionRange) e.state = "chase";
+      else e.state = "wander";
+    }
 
     let dirRow;
     if (Math.abs(dx) > Math.abs(dy)) dirRow = dx > 0 ? 1 : 3;
@@ -1283,6 +1308,11 @@ function drawEnemy() {
     let nextY = e.y + moveY;
     let w = e.type === "boss" ? BOSS_FRAME_W * 0.15 : RAT_FRAME_W;
     let h = e.type === "boss" ? BOSS_FRAME_H * 0.15 : RAT_FRAME_H[dirRow];
+
+    if (r) {
+      nextX = constrain(nextX, r.x, r.x + r.w - w);
+      nextY = constrain(nextY, r.y, r.y + r.h - h);
+    }
     if (!isWallTile(nextX + RAT_HITBOX_LEFT, e.y + RAT_HITBOX_TOP) &&
       !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
       !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
@@ -1520,6 +1550,7 @@ function drawSwap() {
 }
 
 function gameStart() {
+  
   slideSound1.stop();
   slideSound2.stop();
   slideSound3.stop();
@@ -1594,6 +1625,27 @@ function gameStart() {
     console.log("fightRooms:", fightRooms.length);
     g++;
   }
+  if (first == 0) {
+    startTime = millis();
+    first++;
+  }
+  if (planet === 1 && star === 0) {
+    totalEnemies = enemies.length;
+    star++;
+  } else if (planet === 2 && star === 1) {
+    totalEnemies = enemies.length;
+    star++;
+  } else if (planet === 3 && star === 2) {
+    totalEnemies = enemies.length;
+    star++;
+  } else if (planet === 4 && star === 3) {
+    totalEnemies = enemies.length;
+    star++;
+  }
+  textSize(12);
+  fill(255);
+  textFont('Courier New');
+  text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 480, 80);
 }
 function keyPressed() {
   if (key === 'p' || key === 'P') {
@@ -1795,6 +1847,14 @@ function gameover() {
     );
 
     scale -= 0.005;
+    textSize(20);
+    fill(255);
+    textFont('Courier New');
+    if (first === 1) {
+      timeTaken = floor((millis() - startTime) / 1000);
+      first++;
+    }
+    text("Time Taken: " + timeTaken + "s", 200, 200);
   }
 
 
@@ -1834,6 +1894,15 @@ function victoryPage() {
     );
 
     scale -= 0.005;
+    textSize(20);
+    fill(255);
+    textFont('Courier New');
+    
+    if (first === 1) {
+      timeTaken = floor((millis() - startTime) / 1000);
+      first++;
+    }
+    text("Time Taken: " + timeTaken + "s", 200, 200);
   }
 
 
