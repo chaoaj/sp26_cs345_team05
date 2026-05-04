@@ -180,6 +180,8 @@ const BOSS_ROW_Y = [0, 400, 800, 1200];
 var startTime = 0;
 var timeTaken = 0;
 var first = 0;
+var totalEnemies = 0;
+var star = 0;
 
 
 function preload() {
@@ -1534,10 +1536,7 @@ function drawSwap() {
 }
 
 function gameStart() {
-  if (first == 0) {
-    startTime = millis();
-    first++;
-  }
+  
   slideSound1.stop();
   slideSound2.stop();
   slideSound3.stop();
@@ -1612,6 +1611,27 @@ function gameStart() {
     console.log("fightRooms:", fightRooms.length);
     g++;
   }
+  if (first == 0) {
+    startTime = millis();
+    first++;
+  }
+  if (planet === 1 && star === 0) {
+    totalEnemies = enemies.length;
+    star++;
+  } else if (planet === 2 && star === 1) {
+    totalEnemies = enemies.length;
+    star++;
+  } else if (planet === 3 && star === 2) {
+    totalEnemies = enemies.length;
+    star++;
+  } else if (planet === 4 && star === 3) {
+    totalEnemies = enemies.length;
+    star++;
+  }
+  textSize(12);
+  fill(255);
+  textFont('Courier New');
+  text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 480, 80);
 }
 function keyPressed() {
   if (key === 'p' || key === 'P') {
