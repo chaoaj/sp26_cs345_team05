@@ -182,6 +182,7 @@ var timeTaken = 0;
 var first = 0;
 var totalEnemies = 0;
 var star = 0;
+var attackPopups = [];
 
 
 function preload() {
@@ -1300,6 +1301,13 @@ function drawEnemy() {
     } else if (e.state === "attack" && e.attackCooldown <= 0) {
       playerHealth = max(0, playerHealth - ENEMY_ATTACK);
       e.attackCooldown = 90;
+      //attack popup
+      let popup = {
+        x: e.x,
+        y: e.y,
+        damage: ENEMY_ATTACK
+      };
+      attackPopups.push(popup);
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
@@ -1611,9 +1619,17 @@ function gameStart() {
   drawEnemy();
   pop();
 
+  for (let i = attackPopups.length - 1; i >= 0; i--) {
+    let p = attackPopups[i];
+    textSize(12);
+    textFont('Courier New');
+    fill(255, 0, 0, map(p.damage, 0, PLAYERHEALTHMAX, 255, 0));
+    text("-" + p.damage, p.x - cam.x, p.y - cam.y);
+    p.y -= 0.5;
+  }
 
   IU(lives, playerHealth, inventory1, inventory2);
-  if (playerHealth <= 0 && lives <= 0) {
+  if (playerHealth <= 0 && lives <= 1) {
     page = 3; // game over
   } else if (playerHealth <= 0) {
     lives--;
@@ -1626,6 +1642,9 @@ function gameStart() {
     console.log("fightRooms:", fightRooms.length);
     g++;
   }
+
+  
+
   if (first == 0) {
     startTime = millis();
     first++;
