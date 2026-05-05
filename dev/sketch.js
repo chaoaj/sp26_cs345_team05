@@ -1086,10 +1086,10 @@ function loadRandomPlanet() {
 
   if (next === 1 && typeof mapData_nacho !== 'undefined') {
     currentMap = mapData_nacho;
-  } else if (next === 2 && typeof mapData_parmesan !== 'undefined') {
-    currentMap = mapData_parmesan;
-  } else if (next === 3 && typeof mapData_blueCheese !== 'undefined') {
+  } else if (next === 2 && typeof mapData_blueCheese !== 'undefined') {
     currentMap = mapData_blueCheese;
+  } else if (next === 3 && typeof mapData_parmesan !== 'undefined') {
+    currentMap = mapData_parmesan;
   } else if (next === 4 && typeof mapData_cheeseCake !== 'undefined') {
     currentMap = mapData_cheeseCake;
   } else {
