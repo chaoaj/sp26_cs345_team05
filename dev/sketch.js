@@ -289,6 +289,8 @@ function preload() {
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
   chestTileset = loadImage("assets/Chest.png");
   sewerTileset = loadImage("assets/sewer_1.png");
+  royalTileset = loadImage("assets/royal.png");
+  royalTileset2 = loadImage("assets/royal_2.png");
 
   arrow_up = loadImage("assets/arrow_up.png");
   arrow = loadImage("assets/arrow.png");
@@ -1302,12 +1304,7 @@ function drawEnemy() {
       playerHealth = max(0, playerHealth - ENEMY_ATTACK);
       e.attackCooldown = 90;
       //attack popup
-      let popup = {
-        x: e.x,
-        y: e.y,
-        damage: ENEMY_ATTACK
-      };
-      attackPopups.push(popup);
+      attackPopups.push({ x: e.x, y: e.y, damage: ENEMY_ATTACK, timer: millis() });
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
@@ -1619,14 +1616,14 @@ function gameStart() {
   drawEnemy();
   pop();
 
-  for (let i = attackPopups.length - 1; i >= 0; i--) {
-    let p = attackPopups[i];
+  attackPopups = attackPopups.filter(p => millis() - p.timer < 1000);
+  for (let p of attackPopups) {
     textSize(12);
     textFont('Courier New');
-    fill(255, 0, 0, map(p.damage, 0, PLAYERHEALTHMAX, 255, 0));
+    fill(255, 0, 0);
     text("-" + p.damage, p.x - cam.x, p.y - cam.y);
     p.y -= 0.5;
-  }
+}
 
   IU(lives, playerHealth, inventory1, inventory2);
   if (playerHealth <= 0 && lives <= 1) {
@@ -1683,6 +1680,7 @@ function drawMap(map, floorTS, wallTS) {
   const mapCols = map.width;
   const isSnowMap = (map === mapData_parmesan);
   const isSewerMap = (map === mapData_blueCheese);
+  const isRoyalMap = (map === mapData_cheeseCake);
 
 
   for (let layer of map.layers) {
@@ -1716,7 +1714,25 @@ function drawMap(map, floorTS, wallTS) {
         const srcX = (localID % 16) * tileW;
         const srcY = Math.floor(localID / 16) * tileW;
         image(sewerTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+      } else if (isRoyalMap) {
+      if (tileId >= 2049) {
+        // test3 chest tileset
+        const localID = tileId - 2049;
+        const srcX = (localID % 3) * tileW;
+        const srcY = Math.floor(localID / 3) * tileW;
+        image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+      } else if (tileId >= 1025) {
+        const localID = tileId - 1025;
+        const srcX = (localID % 32) * tileW;
+        const srcY = Math.floor(localID / 32) * tileW;
+        image(royalTileset2, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
       } else {
+        const localID = tileId - 1;
+        const srcX = (localID % 32) * tileW;
+        const srcY = Math.floor(localID / 32) * tileW;
+        image(royalTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+      }
+    } else {
         if (tileId >= 194) {
           const localID = tileId - 194;
           const srcX = (localID % 3) * tileW;
@@ -1774,6 +1790,7 @@ function isWallTile(worldX, worldY) {
   if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
   const isSnowMap = (currentMap === mapData_parmesan);
   const isSewerMap = (currentMap === mapData_blueCheese);
+  const isRoyalMap = (currentMap === mapData_cheeseCake);
 
   let hasFloor = false;
   for (let layer of currentMap.layers) {
@@ -1784,6 +1801,12 @@ function isWallTile(worldX, worldY) {
       if (layer.name === "Walls" && tileId !== 0) return true;
       if (layer.name === "Floors" && tileId !== 0) hasFloor = true;
     } else if (isSewerMap) {
+      if (layer.name !== "floors" && layer.name !== "walls") continue;
+      const tileId = layer.data[row * currentMap.width + col];
+      if (layer.name === "walls" && tileId !== 0) return true;
+      if (layer.name === "floors" && tileId !== 0) hasFloor = true;
+
+    } else if (isRoyalMap) {
       if (layer.name !== "floors" && layer.name !== "walls") continue;
       const tileId = layer.data[row * currentMap.width + col];
       if (layer.name === "walls" && tileId !== 0) return true;
