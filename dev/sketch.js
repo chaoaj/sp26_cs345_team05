@@ -1272,7 +1272,7 @@ function drawEnemy() {
     let dy = playerY - e.y;
     let d = dist(playerX, playerY, e.x, e.y);
 
-    if (collidesWithPlayer(e)) {
+    if (collidesWithPlayer()) {
       if (d > 0) {
         e.x -= (dx / d) * 2;
         e.y -= (dy / d) * 2;
