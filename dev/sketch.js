@@ -185,6 +185,8 @@ var totalEnemies = 0;
 var star = 0;
 var attackPopups = [];
 
+let playerAttackRange = 50;
+
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
@@ -367,28 +369,13 @@ function setup() {
   // enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
   // enemyY = spawn.y + random(-100, 100);
 
-  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 });
-  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 });
-  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 });
-  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 });
-  potionItem_nacho = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_blueCheese = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_parmesan = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_cheeseCake = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_nacho2 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_blueCheese2 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_parmesan2 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_cheeseCake2 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_nacho3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_blueCheese3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_parmesan3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_cheeseCake3 = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
+  
   bowItem = new Item([bow, bow_selected], false, { damage: 15, health: 0 });
 
   chestInventory_nacho[0] = [new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
-  chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), bowItem];
+  chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_blueCheese[0] = [new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
-  chestInventory_blueCheese[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_blueCheese[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), bowItem];
   chestInventory_parmesan[0] = [new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_parmesan[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_cheeseCake[0] = [new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
@@ -1267,8 +1254,16 @@ function drawSpikeWalls() {
 //dirY: random([-1, 1])
 //});
 //}
+function collidesWithPlayer() { 
+  for (let e of enemies) {
+    if (!e.alive) continue;
+    d = dist(playerX, playerY, e.x, e.y);
+    return d < 20; // collision threshold, adjust as needed
+  }
+}
 
 function drawEnemy() {
+
   for (let i = enemies.length - 1; i >= 0; i--) {
     let e = enemies[i];
     if (!e.alive) continue;
@@ -1276,10 +1271,18 @@ function drawEnemy() {
     let dx = playerX - e.x;
     let dy = playerY - e.y;
     let d = dist(playerX, playerY, e.x, e.y);
+
+    if (collidesWithPlayer(e)) {
+      if (d > 0) {
+        e.x -= (dx / d) * 2;
+        e.y -= (dy / d) * 2;
+      }
+    }
+
     // only activate if player is in the same room
     let r = fightRooms[e.roomIndex];
     let playerInRoom = r && playerX > r.x && playerX < r.x + r.w &&
-                      playerY > r.y && playerY < r.y + r.h;
+      playerY > r.y && playerY < r.y + r.h;
 
     if (!playerInRoom) {
       e.state = "wander";
@@ -1525,15 +1528,19 @@ function drawCat(player) {
   }
 
   // attack
-  if (keyIsDown(32)) {
+  if (keyIsDown(32)) { // space
     isAttacking = true;
+    playerAttackRange = 30 + (equipped ? equipped.data.range : 0);
     for (let e of enemies) {
       if (!e.alive) continue;
       let d = dist(playerX, playerY, e.x, e.y);
-      if (e.state !== "wander" && d <= e.attackRange * 3 && attackCooldown === 0) {
+      if (e.state !== "wander" && d <= playerAttackRange && attackCooldown === 0) {
+
         let damage = PLAYER_ATTACK + (equipped ? equipped.data.damage : 0);
+        e.range = playerAttackRange / 2;
         e.health -= damage;
         attackCooldown = 40;
+
         if (equipped && equipped.data.damage > 0) {
           sword_hit.setVolume(0.3);
           sword_hit.play();
@@ -1564,7 +1571,6 @@ function drawSwap() {
 }
 
 function gameStart() {
-  
   slideSound1.stop();
   slideSound2.stop();
   slideSound3.stop();
@@ -1631,7 +1637,7 @@ function gameStart() {
     fill(255, 0, 0);
     text("-" + p.damage, p.x - cam.x, p.y - cam.y);
     p.y -= 0.5;
-}
+  }
 
   IU(lives, playerHealth, inventory1, inventory2);
   if (playerHealth <= 0 && lives <= 1) {
@@ -1648,7 +1654,7 @@ function gameStart() {
     g++;
   }
 
-  
+
 
   if (first == 0) {
     startTime = millis();
@@ -1723,24 +1729,24 @@ function drawMap(map, floorTS, wallTS) {
         const srcY = Math.floor(localID / 16) * tileW;
         image(sewerTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
       } else if (isRoyalMap) {
-      if (tileId >= 2049) {
-        // test3 chest tileset
-        const localID = tileId - 2049;
-        const srcX = (localID % 3) * tileW;
-        const srcY = Math.floor(localID / 3) * tileW;
-        image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-      } else if (tileId >= 1025) {
-        const localID = tileId - 1025;
-        const srcX = (localID % 32) * tileW;
-        const srcY = Math.floor(localID / 32) * tileW;
-        image(royalTileset2, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        if (tileId >= 2049) {
+          // test3 chest tileset
+          const localID = tileId - 2049;
+          const srcX = (localID % 3) * tileW;
+          const srcY = Math.floor(localID / 3) * tileW;
+          image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        } else if (tileId >= 1025) {
+          const localID = tileId - 1025;
+          const srcX = (localID % 32) * tileW;
+          const srcY = Math.floor(localID / 32) * tileW;
+          image(royalTileset2, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        } else {
+          const localID = tileId - 1;
+          const srcX = (localID % 32) * tileW;
+          const srcY = Math.floor(localID / 32) * tileW;
+          image(royalTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        }
       } else {
-        const localID = tileId - 1;
-        const srcX = (localID % 32) * tileW;
-        const srcY = Math.floor(localID / 32) * tileW;
-        image(royalTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-      }
-    } else {
         if (tileId >= 194) {
           const localID = tileId - 194;
           const srcX = (localID % 3) * tileW;
@@ -1951,7 +1957,7 @@ function victoryPage() {
     textSize(20);
     fill(255);
     textFont('Courier New');
-    
+
     if (first === 1) {
       timeTaken = floor((millis() - startTime) / 1000);
       first++;
