@@ -1666,12 +1666,18 @@ function gameStart() {
   } else if (planet === 2 && star === 1) {
     totalEnemies = enemies.length;
     star++;
+    droppedInventory = [];
+    droppedSize = 0;
   } else if (planet === 3 && star === 2) {
     totalEnemies = enemies.length;
     star++;
+    droppedInventory = [];
+    droppedSize = 0;
   } else if (planet === 4 && star === 3) {
     totalEnemies = enemies.length;
     star++;
+    droppedInventory = [];
+    droppedSize = 0;
   }
   textSize(12);
   fill(255);
