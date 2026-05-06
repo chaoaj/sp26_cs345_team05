@@ -184,6 +184,8 @@ var totalEnemies = 0;
 var star = 0;
 var attackPopups = [];
 
+let playerAttackRange = 50;
+
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
@@ -1244,8 +1246,15 @@ function drawSpikeWalls() {
 //dirY: random([-1, 1])
 //});
 //}
+function collidesWithPlayer() { 
+  for (let e of enemies) {
+    if (!e.alive) continue;}
+    d = dist(playerX, playerY, e.x, e.y);
+    return d < 20; // collision threshold, adjust as needed
+}
 
 function drawEnemy() {
+
   for (let i = enemies.length - 1; i >= 0; i--) {
     let e = enemies[i];
     if (!e.alive) continue;
@@ -1253,10 +1262,18 @@ function drawEnemy() {
     let dx = playerX - e.x;
     let dy = playerY - e.y;
     let d = dist(playerX, playerY, e.x, e.y);
+
+    if (collidesWithPlayer(e)) {
+      if (d > 0) {
+        e.x -= (dx / d) * 2;
+        e.y -= (dy / d) * 2;
+      }
+    }
+
     // only activate if player is in the same room
     let r = fightRooms[e.roomIndex];
     let playerInRoom = r && playerX > r.x && playerX < r.x + r.w &&
-                      playerY > r.y && playerY < r.y + r.h;
+      playerY > r.y && playerY < r.y + r.h;
 
     if (!playerInRoom) {
       e.state = "wander";
@@ -1502,15 +1519,19 @@ function drawCat(player) {
   }
 
   // attack
-  if (keyIsDown(32)) {
+  if (keyIsDown(32)) { // space
     isAttacking = true;
+    playerAttackRange = 30 + (equipped ? equipped.data.range : 0);
     for (let e of enemies) {
       if (!e.alive) continue;
       let d = dist(playerX, playerY, e.x, e.y);
-      if (e.state !== "wander" && d <= e.attackRange * 3 && attackCooldown === 0) {
+      if (e.state !== "wander" && d <= playerAttackRange && attackCooldown === 0) {
+
         let damage = PLAYER_ATTACK + (equipped ? equipped.data.damage : 0);
+        e.range = playerAttackRange / 2;
         e.health -= damage;
         attackCooldown = 40;
+
         if (equipped && equipped.data.damage > 0) {
           sword_hit.setVolume(0.3);
           sword_hit.play();
@@ -1541,7 +1562,6 @@ function drawSwap() {
 }
 
 function gameStart() {
-  
   slideSound1.stop();
   slideSound2.stop();
   slideSound3.stop();
@@ -1608,7 +1628,7 @@ function gameStart() {
     fill(255, 0, 0);
     text("-" + p.damage, p.x - cam.x, p.y - cam.y);
     p.y -= 0.5;
-}
+  }
 
   IU(lives, playerHealth, inventory1, inventory2);
   if (playerHealth <= 0 && lives <= 1) {
@@ -1625,7 +1645,7 @@ function gameStart() {
     g++;
   }
 
-  
+
 
   if (first == 0) {
     startTime = millis();
@@ -1700,24 +1720,24 @@ function drawMap(map, floorTS, wallTS) {
         const srcY = Math.floor(localID / 16) * tileW;
         image(sewerTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
       } else if (isRoyalMap) {
-      if (tileId >= 2049) {
-        // test3 chest tileset
-        const localID = tileId - 2049;
-        const srcX = (localID % 3) * tileW;
-        const srcY = Math.floor(localID / 3) * tileW;
-        image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-      } else if (tileId >= 1025) {
-        const localID = tileId - 1025;
-        const srcX = (localID % 32) * tileW;
-        const srcY = Math.floor(localID / 32) * tileW;
-        image(royalTileset2, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        if (tileId >= 2049) {
+          // test3 chest tileset
+          const localID = tileId - 2049;
+          const srcX = (localID % 3) * tileW;
+          const srcY = Math.floor(localID / 3) * tileW;
+          image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        } else if (tileId >= 1025) {
+          const localID = tileId - 1025;
+          const srcX = (localID % 32) * tileW;
+          const srcY = Math.floor(localID / 32) * tileW;
+          image(royalTileset2, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        } else {
+          const localID = tileId - 1;
+          const srcX = (localID % 32) * tileW;
+          const srcY = Math.floor(localID / 32) * tileW;
+          image(royalTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        }
       } else {
-        const localID = tileId - 1;
-        const srcX = (localID % 32) * tileW;
-        const srcY = Math.floor(localID / 32) * tileW;
-        image(royalTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
-      }
-    } else {
         if (tileId >= 194) {
           const localID = tileId - 194;
           const srcX = (localID % 3) * tileW;
@@ -1928,7 +1948,7 @@ function victoryPage() {
     textSize(20);
     fill(255);
     textFont('Courier New');
-    
+
     if (first === 1) {
       timeTaken = floor((millis() - startTime) / 1000);
       first++;
