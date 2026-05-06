@@ -145,6 +145,7 @@ let fightRooms = [];
 let chests = [];
 let spikeWalls = [];
 let chestTileset;
+let planetClearing = false;
 
 let enemies = [];
 
@@ -622,6 +623,7 @@ function resetGame() {
   chests = [];
   spikeWalls = [];
   enemies = [];
+  planetClearing = false;
 
   // inventory
   size = 0;
@@ -1099,6 +1101,7 @@ function loadRandomPlanet() {
     currentMap = mapData_nacho;
     planet = 1;
   }
+  planetClearing = false;
 
   mapTransitionActive = true;
   mapTransitionStart = millis();
@@ -1173,6 +1176,11 @@ function updateFightRooms() {
             spike.animFrame = 0;
             spike.animTimer = millis();
           }
+        }
+        let allRoomsCleared = fightRooms.length > 0 && fightRooms.every(r => r.cleared);
+        if (allRoomsCleared && !planetClearing) {
+          planetClearing = true;
+          loadRandomPlanet();
         }
       }
     }
