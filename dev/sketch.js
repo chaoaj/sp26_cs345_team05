@@ -1248,9 +1248,10 @@ function drawSpikeWalls() {
 //}
 function collidesWithPlayer() { 
   for (let e of enemies) {
-    if (!e.alive) continue;}
+    if (!e.alive) continue;
     d = dist(playerX, playerY, e.x, e.y);
     return d < 20; // collision threshold, adjust as needed
+  }
 }
 
 function drawEnemy() {
