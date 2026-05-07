@@ -146,6 +146,13 @@ let chests = [];
 let spikeWalls = [];
 let chestTileset;
 let planetClearing = false;
+let mapClearedActive = false;
+let mapClearedTimer = 0;
+let mapCleared_img; // the asset
+let mapClearedAlpha = 0;
+let mapClearedParticles = [];
+
+
 
 let enemies = [];
 
@@ -231,6 +238,7 @@ function preload() {
 
   victory1 = loadImage("assets/victory1.png");
   victory2 = loadImage("assets/victory2.png");
+  mapCleared_img = loadImage("assets/map_cleared.png");
 
   skip1 = loadImage("assets/skip1.png");
   skip2 = loadImage("assets/skip2.png");
@@ -445,6 +453,11 @@ function button(image1, x, y, w, h) {
 // 4 = victory screen
 // 5 = game screen
 function screen() {
+  if (mapClearedActive) {
+    gameStart();
+    mapClearedPage();
+    return;
+  }
   if (mapTransitionActive) {
     mapTransitionPage();
     return; // stop drawing the game until transition ends
@@ -978,7 +991,8 @@ function initMapObjects(map) {
             h: obj.height * mapScale,
             cleared: false,
             active: false,
-            activateTimer: -1
+            activateTimer: -1,
+            isBossRoom: false
           });
         }
       }
@@ -1047,13 +1061,42 @@ function initMapObjects(map) {
     spike.roomIndex = closest;
   }
   for (let enemy of enemies) {
+    if (enemy.type === "boss") {
+      for (let i = 0; i < fightRooms.length; i++) {
+        let r = fightRooms[i];
+        if (enemy.x >= r.x && enemy.x <= r.x + r.w &&
+          enemy.y >= r.y && enemy.y <= r.y + r.h) {
+          enemy.roomIndex = i;
+          if (enemy.type === "boss") fightRooms[i].isBossRoom = true;
+          break;
+        }
+      }
+    }
+  }
+
+  for (let enemy of enemies) {
+    if (enemy.roomIndex != -1) continue;
+    let closest = -1;
+    let closestDist = Infinity;
     for (let i = 0; i < fightRooms.length; i++) {
       let r = fightRooms[i];
-      if (enemy.x >= r.x && enemy.x <= r.x + r.w &&
-        enemy.y >= r.y && enemy.y <= r.y + r.h) {
-        enemy.roomIndex = i;
-        break;
+      let cx = r.x + r.w / 2;
+      let cy = r.y + r.h / 2;
+      let d = dist(enemy.x, enemy.y, cx, cy);
+      if (d < closestDist) {
+        closestDist = d;
+        closest = i;
       }
+    }
+    enemy.roomIndex = closest;
+  }
+
+  for (let spike of spikeWalls) {
+    let r = fightRooms[spike.roomIndex];
+    if (r && r.isBossRoom) {
+      spike.raised = true;
+      spike.animFrame = 3;
+      spike.animTimer = millis();
     }
   }
 }
@@ -1125,7 +1168,14 @@ function updateFightRooms() {
       playerY > r.y && playerY < r.y + r.h;
 
     if (inRoom && !r.active && r.activateTimer === -1) {
-      r.activateTimer = millis(); // start the timer when player enters
+      if (r.isBossRoom) {
+        let nonBossRoomsCleared = fightRooms.every((room, idx) => idx === i || room.cleared || room.isBossRoom);
+        if (nonBossRoomsCleared) {
+          r.activateTimer = millis();
+        }
+      } else {
+        r.activateTimer = millis();
+      }
     }
 
     // raise spikes after 1500ms delay
@@ -1135,7 +1185,7 @@ function updateFightRooms() {
       if (stillInRoom) {
         r.active = true;
         for (let spike of spikeWalls) {
-          if (spike.roomIndex === i) {
+          if (spike.roomIndex === i && !spike.raised) {
             spike.raised = true;
             spike.animFrame = 0;
             spike.animTimer = millis();
@@ -1164,10 +1214,26 @@ function updateFightRooms() {
             spike.animTimer = millis();
           }
         }
+        if (!r.isBossRoom) {
+          let nonBossRoomsCleared = fightRooms.every((room, idx) => room.cleared || room.isBossRoom);
+          if (nonBossRoomsCleared) {
+            for (let spike of spikeWalls) {
+              let bossRoom = fightRooms[spike.roomIndex];
+              if (bossRoom && bossRoom.isBossRoom) {
+                spike.raised = false;
+                spike.animFrame = 0;
+                spike.animTimer = millis();
+              }
+            }
+          }
+        }
         let allRoomsCleared = fightRooms.length > 0 && fightRooms.every(r => r.cleared);
         if (allRoomsCleared && !planetClearing) {
           planetClearing = true;
-          loadRandomPlanet();
+          mapClearedActive = true;
+          mapClearedTimer = millis();
+          mapClearedAlpha = 0;
+          mapClearedParticles = [];
         }
       }
     }
@@ -1530,7 +1596,7 @@ function drawCat(player) {
   // attack
   if (keyIsDown(32)) { // space
     isAttacking = true;
-    playerAttackRange = 30 + (equipped ? equipped.data.range : 0);
+    playerAttackRange = 30 + (equipped ? equipped.data.damage : 0);
     for (let e of enemies) {
       if (!e.alive) continue;
       let d = dist(playerX, playerY, e.x, e.y);
@@ -2009,6 +2075,63 @@ function addItem(item) {
   if (size < 3) {
     inventory2[size] = item;
     size++;
+  }
+}
+
+function mapClearedPage() {
+  // darken background
+  fill(0, 0, 0, 150);
+  noStroke();
+  rect(0, 0, pageWidth, pageHeight);
+
+  // fade in the image
+  mapClearedAlpha = min(mapClearedAlpha + 5, 255);
+  
+  // freeze cat facing forward
+  frameCurrRow = 0;
+  currentFrame = 3;
+
+  // particles
+  if (frameCount % 3 === 0) {
+    mapClearedParticles.push({
+      x: random(pageWidth),
+      y: random(pageHeight),
+      size: random(3, 8),
+      alpha: 255,
+      col: random([color(255, 220, 80), color(255, 255, 255), color(200, 100, 100)])
+    });
+  }
+  for (let i = mapClearedParticles.length - 1; i >= 0; i--) {
+    let p = mapClearedParticles[i];
+    p.alpha -= 6;
+    p.y -= 0.5;
+    if (p.alpha <= 0) {
+      mapClearedParticles.splice(i, 1);
+      continue;
+    }
+    noStroke();
+    fill(red(p.col), green(p.col), blue(p.col), p.alpha);
+    rect(p.x, p.y, p.size, p.size);
+  }
+
+  // draw map cleared image centered
+  tint(255, mapClearedAlpha);
+  image(
+    mapCleared_img,
+    pageWidth / 2 - (mapCleared_img.width / 4) / 2,
+    pageHeight / 2 - (mapCleared_img.height / 4) / 2,
+    mapCleared_img.width / 4,
+    mapCleared_img.height / 4
+  );
+  noTint();
+
+  // after 2.5 seconds, trigger transition
+  if (millis() - mapClearedTimer > 2500) {
+    mapClearedActive = false;
+    mapClearedAlpha = 0;
+    mapClearedParticles = [];
+    planetClearing = true;
+    loadRandomPlanet();
   }
 }
 
