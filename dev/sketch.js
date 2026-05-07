@@ -284,6 +284,9 @@ function preload() {
   button_beep = loadSound("assets/button_beep.mp3");
   meow = loadSound("assets/meow.mp3");
 
+  gate_up = loadSound("assets/gate_up.mp3");
+  gate_down = loadSound("assets/gate_down.mp3");
+
   sword_nacho = loadImage("assets/sword_nacho.png");
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
   sword_parmesan = loadImage("assets/sword_parmesan.png");
@@ -378,7 +381,7 @@ function setup() {
   // enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
   // enemyY = spawn.y + random(-100, 100);
 
-  
+
   bowItem = new Item([bow, bow_selected], false, { damage: 15, health: 0 });
 
   chestInventory_nacho[0] = [new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
@@ -657,6 +660,7 @@ function homePage() {
   scale = 1;
   backgroundMoveSpeed = 0.5;
   overmusic.stop();
+  victory_music.stop();
 
   if (audioUnlocked && !homepage_sound.isPlaying()) {
     homepage_sound.loop();
@@ -1037,6 +1041,7 @@ function initMapObjects(map) {
           x: col * 16 * mapScale,
           y: row * 16 * mapScale,
           raised: false,
+          wasRaised: false,
           roomIndex: -1,
           animFrame: 0,
           animTimer: 0
@@ -1096,6 +1101,7 @@ function initMapObjects(map) {
     let r = fightRooms[spike.roomIndex];
     if (r && r.isBossRoom) {
       spike.raised = true;
+      spike.wasRaised = true;
       spike.animFrame = 3;
       spike.animTimer = millis();
     }
@@ -1288,6 +1294,17 @@ function drawSpikeWalls() {
   const now = millis();
 
   for (let spike of spikeWalls) {
+    // detect state change and play sound
+    if (spike.raised && !spike.wasRaised) {
+      gate_up.setVolume(0.4);
+      gate_up.play();
+      spike.wasRaised = true;
+    } else if (!spike.raised && spike.wasRaised) {
+      gate_down.setVolume(0.4);
+      gate_down.play();
+      spike.wasRaised = false;
+    }
+
     let frames = spike.raised ? SPIKE_FRAMES_RAISE : SPIKE_FRAMES_RETRACT;
 
     if (now - spike.animTimer > frames[spike.animFrame][1]) {
@@ -1321,7 +1338,7 @@ function drawSpikeWalls() {
 //dirY: random([-1, 1])
 //});
 //}
-function collidesWithPlayer() { 
+function collidesWithPlayer() {
   for (let e of enemies) {
     if (!e.alive) continue;
     d = dist(playerX, playerY, e.x, e.y);
@@ -1620,7 +1637,7 @@ function drawCat(player) {
 
         let knockbackDist = 8;
         if (equipped && equipped.data.damage > 0) knockbackDist = 18;
-        
+
         if (d > 0) {
           let dx = e.x - playerX;
           let dy = e.y - playerY;
@@ -2108,7 +2125,7 @@ function mapClearedPage() {
 
   // fade in the image
   mapClearedAlpha = min(mapClearedAlpha + 5, 255);
-  
+
   // freeze cat facing forward
   frameCurrRow = 0;
   currentFrame = 3;
