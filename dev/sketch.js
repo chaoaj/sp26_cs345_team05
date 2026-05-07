@@ -63,7 +63,7 @@ const backstorySlides = [
 
 var planet = 1;
 var g = 0;
-var page = 3;
+var page = 5;
 var scale = 1;
 var lives = 3;
 
@@ -123,6 +123,11 @@ let mapTransitionActive = false;
 let mapTransitionStart = 0;
 const MAP_TRANSITION_DURATION = 2000; // 2 seconds
 
+let rocketX = -200;
+let rocketY = pageHeight / 2;
+let rocketSpeed = 6;
+
+
 let size = 0;
 var inventory2 = [];
 var droppedInventory = [];
@@ -146,7 +151,7 @@ let chests = [];
 let spikeWalls = [];
 let chestTileset;
 let planetClearing = false;
-let mapClearedActive = true;
+let mapClearedActive = false;
 let mapClearedTimer = 0;
 let mapCleared_img; // the asset
 let mapClearedAlpha = 0;
@@ -170,8 +175,6 @@ let attackLastSwitch = 0;
 let attackFrame = 0;
 let lastAttackFrameTime = 0;
 let attackJustSwung = false;
-
-
 
 
 const ENEMY_ATTACK = 8;
@@ -231,6 +234,9 @@ function preload() {
     slideSound6
   ];
 
+  transition_background = loadImage("assets/transition_background.png");
+  transition_sound = loadSound("assets/transition_sound.mp3");
+
   return1 = loadImage("assets/return1.png");
   return2 = loadImage("assets/return2.png");
 
@@ -253,10 +259,15 @@ function preload() {
   skin_selection = loadImage("assets/skin_select_button.png");
 
   rat1 = loadImage("assets/rat.png");
-  rat_boss = loadImage("assets/rat_boss.png");
   rat_blue = loadImage("assets/rat_blue.png");
   rat_parmesan = loadImage("assets/rat_parmesan.png");
   rat_cake = loadImage("assets/rat_cake.png");
+
+  rat_boss = loadImage("assets/rat_boss.png");
+  rat_boss_blue = loadImage("assets/rat_boss_blue.png");
+  rat_boss_parmesan = loadImage("assets/rat_boss_parmesan.png");
+  rat_boss_cake = loadImage("assets/rat_boss_cake.png");
+
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -275,6 +286,7 @@ function preload() {
 
   loose_heart = loadSound("assets/loose_heart.mp3");
 
+  rocket = loadImage("assets/rocket.png");
 
   overmusic = loadSound("assets/GameOver.mp3");
   slides_track = loadSound("assets/Slides1.0.mp3");
@@ -291,6 +303,13 @@ function preload() {
 
   gate_up = loadSound("assets/gate_up.mp3");
   gate_down = loadSound("assets/gate_down.mp3");
+
+  rat_squeak1 = loadSound("assets/rat_squeak1.mp3");
+  rat_squeak2 = loadSound("assets/rat_squeak2.mp3");
+
+  roar1 = loadSound("assets/roar1.mp3");
+  roar2 = loadSound("assets/roar2.mp3");
+
 
   sword_nacho = loadImage("assets/sword_nacho.png");
   sword_blueCheese = loadImage("assets/sword_blueCheese.png");
@@ -933,29 +952,39 @@ function mapTransitionPage() {
   stopAllSounds();
   let elapsed = millis() - mapTransitionStart;
 
-  // Draw GIF fullscreen
-  image(story1, 0, 0, pageWidth, pageHeight);
+  // --- BACKGROUND ---
+  image(transition_background, 0, 0, pageWidth, pageHeight);
 
-  // Fade in (first 500ms)
+  // --- ROCKET ANIMATION ---
+  push();
+  imageMode(CENTER);
+
+  rocketX += 6;   // move right
+  rocketY -= 4;   // move up
+
+  image(rocket, rocketX, rocketY, 120, 120);
+
+  pop();
+
+  // --- FADE IN ---
   if (elapsed < 500) {
     let alpha = map(elapsed, 0, 500, 255, 0);
     fill(0, alpha);
     rect(0, 0, pageWidth, pageHeight);
   }
 
-  // Fade out (last 500ms)
+  // --- FADE OUT ---
   if (elapsed > MAP_TRANSITION_DURATION - 500) {
     let alpha = map(elapsed, MAP_TRANSITION_DURATION - 500, MAP_TRANSITION_DURATION, 0, 255);
     fill(0, alpha);
     rect(0, 0, pageWidth, pageHeight);
   }
 
-  // End transition
+  // --- END TRANSITION ---
   if (elapsed >= MAP_TRANSITION_DURATION) {
     mapTransitionActive = false;
   }
 }
-
 
 function startBackstory() {
   currentSlide = 0;
@@ -1148,6 +1177,15 @@ function loadRandomPlanet() {
   mapTransitionActive = true;
   mapTransitionStart = millis();
 
+  if (transition_sound && !transition_sound.isPlaying()) {
+    transition_sound.setVolume(0.8);
+    transition_sound.play();
+  }
+
+  rocketX = -150;
+  rocketY = pageHeight + 150;
+
+
 
   currentMapFloor = floorTileset;
   currentMapWall = wallTileset;
@@ -1333,6 +1371,17 @@ function drawSpikeWalls() {
   }
 }
 
+function playRandomRatSqueak() {
+  if (random() < 0.5) rat_squeak1.play();
+  else rat_squeak2.play();
+}
+
+function playRandomBossRoar() {
+  if (random() < 0.5) roar1.play();
+  else roar2.play();
+}
+
+
 //function createEnemy(x, y, enemyType, damage, health) {
 //enemies.push({ 
 //x: x, 
@@ -1402,6 +1451,13 @@ function drawEnemy() {
       moveY = e.dirY * e.speed * 0.5;
     } else if (e.state === "attack" && e.attackCooldown <= 0) {
       playerHealth = max(0, playerHealth - ENEMY_ATTACK);
+
+      if (e.type === "boss") {
+        playRandomBossRoar();
+      } else {
+        playRandomRatSqueak();
+      }
+
       e.attackCooldown = 90;
       //attack popup
       attackPopups.push({ x: e.x, y: e.y, damage: ENEMY_ATTACK, timer: millis() });
@@ -1444,7 +1500,11 @@ function drawEnemy() {
     // draw
     let img, fw, fh, ry;
     if (e.type === "boss") {
-      img = rat_boss;
+      if (planet === 1) img = rat_boss;
+      else if (planet === 2) img = rat_boss_blue;
+      else if (planet === 3) img = rat_boss_parmesan;
+      else if (planet === 4) img = rat_boss_cake;
+
       fw = BOSS_FRAME_W;
       fh = BOSS_FRAME_H;
       ry = BOSS_ROW_Y[dirRow];
@@ -1747,9 +1807,12 @@ function gameStart() {
   attackPopups = attackPopups.filter(p => millis() - p.timer < 1000);
   for (let p of attackPopups) {
     textSize(12);
-    textFont('Courier New');
-    fill(255, 0, 0);
+    // textFont('Courier New');
+    fill(0);
+    text("-" + p.damage, p.x - cam.x + 0.5, p.y - cam.y + 0.2);
+    fill(255);
     text("-" + p.damage, p.x - cam.x, p.y - cam.y);
+    text("-" + p.damage, p.x - cam.x + 0.3, p.y - cam.y);
     p.y -= 0.5;
   }
 
@@ -1797,9 +1860,13 @@ function gameStart() {
     droppedSize = 0;
   }
   textSize(12);
-  fill(255);
   textFont('Courier New');
+  fill(0);
+  text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 482, 81);
+  fill(255);
   text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 480, 80);
+  text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 481, 80);
+
 }
 function keyPressed() {
   if (key === 'p' || key === 'P') {
