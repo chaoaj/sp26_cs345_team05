@@ -63,7 +63,7 @@ const backstorySlides = [
 
 var planet = 1;
 var g = 0;
-var page = 0;
+var page = 3;
 var scale = 1;
 var lives = 3;
 
@@ -146,7 +146,7 @@ let chests = [];
 let spikeWalls = [];
 let chestTileset;
 let planetClearing = false;
-let mapClearedActive = false;
+let mapClearedActive = true;
 let mapClearedTimer = 0;
 let mapCleared_img; // the asset
 let mapClearedAlpha = 0;
@@ -254,6 +254,9 @@ function preload() {
 
   rat1 = loadImage("assets/rat.png");
   rat_boss = loadImage("assets/rat_boss.png");
+  rat_blue = loadImage("assets/rat_blue.png");
+  rat_parmesan = loadImage("assets/rat_parmesan.png");
+  rat_cake = loadImage("assets/rat_cake.png");
 
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
@@ -269,6 +272,8 @@ function preload() {
   map2_theme = loadSound("assets/map2_theme.mp3");
   map3_theme = loadSound("assets/map3_theme.mp3");
   map4_theme = loadSound("assets/map4_theme.mp3");
+
+  loose_heart = loadSound("assets/loose_heart.mp3");
 
 
   overmusic = loadSound("assets/GameOver.mp3");
@@ -1444,7 +1449,11 @@ function drawEnemy() {
       fh = BOSS_FRAME_H;
       ry = BOSS_ROW_Y[dirRow];
     } else {
-      img = rat1;
+      if (planet === 1) img = rat1;
+      else if (planet === 2) img = rat_blue;
+      else if (planet === 3) img = rat_parmesan;
+      else if (planet === 4) img = rat_cake;
+
       fw = RAT_FRAME_W;
       fh = RAT_FRAME_H[dirRow];
       ry = RAT_ROW_Y[dirRow];
@@ -1749,6 +1758,9 @@ function gameStart() {
     page = 3; // game over
   } else if (playerHealth <= 0) {
     lives--;
+
+    if (loose_heart) loose_heart.play();
+
     playerHealth = PLAYERHEALTHMAX;
 
   }
@@ -2025,7 +2037,11 @@ function gameover() {
     var minutes = floor(timeTaken / 60);
     var seconds = timeTaken % 60;
     var timeString = nf(minutes, 2) + ":" + nf(seconds, 2);
+    fill(0);
+    text("Time Taken: " + timeString, 202, 201);
+    fill(255);
     text("Time Taken: " + timeString, 200, 200);
+    text("Time Taken: " + timeString, 201, 200);
   }
 
 
@@ -2076,7 +2092,12 @@ function victoryPage() {
     var minutes = floor(timeTaken / 60);
     var seconds = timeTaken % 60;
     var timeString = nf(minutes, 2) + ":" + nf(seconds, 2);
+    fill(0);
+    text("Time Taken: " + timeString, 202, 201);
+    fill(255);
     text("Time Taken: " + timeString, 200, 200);
+    text("Time Taken: " + timeString, 201, 200);
+
   }
 
 
