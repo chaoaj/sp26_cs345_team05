@@ -169,6 +169,7 @@ let isAttacking = false;
 let attackLastSwitch = 0;
 let attackFrame = 0;
 let lastAttackFrameTime = 0;
+let attackJustSwung = false;
 
 
 
@@ -1392,6 +1393,15 @@ function drawEnemy() {
     let w = e.type === "boss" ? BOSS_FRAME_W * 0.15 : RAT_FRAME_W;
     let h = e.type === "boss" ? BOSS_FRAME_H * 0.15 : RAT_FRAME_H[dirRow];
 
+    if (e.knockbackX !== 0 || e.knockbackY !== 0) {
+      nextX += e.knockbackX;
+      nextY += e.knockbackY;
+      e.knockbackX *= 0.8;
+      e.knockbackY *= 0.8;
+      if (abs(e.knockbackX) < 0.1) e.knockbackX = 0;
+      if (abs(e.knockbackY) < 0.1) e.knockbackY = 0;
+    }
+
     if (r) {
       nextX = constrain(nextX, r.x, r.x + r.w - w);
       nextY = constrain(nextY, r.y, r.y + r.h - h);
@@ -1455,7 +1465,6 @@ function AttackAnimation() {
   if (!isAttacking) return;
 
   let attackImg;
-
   if (frameCurrRow == 1) {
     attackImg = attack_up;
   } else if (frameCurrRow == 3) {
@@ -1466,12 +1475,9 @@ function AttackAnimation() {
     attackImg = attack_left;
   }
 
-  sx = attackFrame * ATTACK_FRAME_W;
-  sy = 0;
-  sw = ATTACK_FRAME_W;
-  sh = ATTACK_FRAME_H;
+  let sx = attackFrame * ATTACK_FRAME_W;
+  image(attackImg, playerX, playerY, ATTACK_FRAME_W, ATTACK_FRAME_H, sx, 0, ATTACK_FRAME_W, ATTACK_FRAME_H);
 
-  image(attackImg, playerX, playerY, sw, sh, sx, sy, sw, sh);
 
   if (millis() - lastAttackFrameTime > ATTACK_INTERVAL) {
     attackLastSwitch = millis();
@@ -1595,7 +1601,12 @@ function drawCat(player) {
 
   // attack
   if (keyIsDown(32)) { // space
-    isAttacking = true;
+    if (attackCooldown == 0) {
+      isAttacking = true;
+      attackFrame = 0;
+      attackLastSwitch = millis();
+      lastAttackFrameTime = millis();
+    }
     playerAttackRange = 30 + (equipped ? equipped.data.damage : 0);
     for (let e of enemies) {
       if (!e.alive) continue;
@@ -1606,6 +1617,17 @@ function drawCat(player) {
         e.range = playerAttackRange / 2;
         e.health -= damage;
         attackCooldown = 40;
+
+        let knockbackDist = 8;
+        if (equipped && equipped.data.damage > 0) knockbackDist = 18;
+        
+        if (d > 0) {
+          let dx = e.x - playerX;
+          let dy = e.y - playerY;
+          let len = sqrt(dx * dx + dy * dy);
+          e.knockbackX = (dx / len) * knockbackDist;
+          e.knockbackY = (dy / len) * knockbackDist;
+        }
 
         if (equipped && equipped.data.damage > 0) {
           sword_hit.setVolume(0.3);
@@ -2176,6 +2198,8 @@ class Enemy {
     this.animFrame = 0;
     this.attackCooldown = 0;
     this.roomIndex = -1;
+    this.knockbackX = 0;
+    this.knockbackY = 0;
   }
 }
 
