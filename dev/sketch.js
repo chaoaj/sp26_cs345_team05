@@ -1450,7 +1450,25 @@ function drawEnemy() {
       moveX = e.dirX * e.speed * 0.5;
       moveY = e.dirY * e.speed * 0.5;
     } else if (e.state === "attack" && e.attackCooldown <= 0) {
-      playerHealth = max(0, playerHealth - ENEMY_ATTACK);
+      let roll = random(100);
+      let dmg;
+      let popupColor;
+
+      if (roll < 20) {
+        dmg = 0;
+        popupColor = color(200, 200, 200);
+      } else if (roll < 50) {
+        dmg = 4;
+        popupColor = color(255, 150, 0);
+      } else if (roll < 85) {
+        dmg = 8;
+        popupColor = color(255, 50, 50);
+      } else {
+        dmg = 16;
+        popupColor = color(255, 0, 250);
+      }
+
+      playerHealth = max(0, playerHealth - dmg);
 
       if (e.type === "boss") {
         playRandomBossRoar();
@@ -1459,8 +1477,9 @@ function drawEnemy() {
       }
 
       e.attackCooldown = 90;
-      //attack popup
-      attackPopups.push({ x: e.x, y: e.y, damage: ENEMY_ATTACK, timer: millis() });
+      attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis() });
+      
+
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
@@ -1806,13 +1825,16 @@ function gameStart() {
 
   attackPopups = attackPopups.filter(p => millis() - p.timer < 1000);
   for (let p of attackPopups) {
-    textSize(12);
-    // textFont('Courier New');
-    fill(0);
-    text("-" + p.damage, p.x - cam.x + 0.5, p.y - cam.y + 0.2);
-    fill(255);
-    text("-" + p.damage, p.x - cam.x, p.y - cam.y);
-    text("-" + p.damage, p.x - cam.x + 0.3, p.y - cam.y);
+    textSize(p.crit ? 16 : 12);
+    textFont('Courier New');
+    fill(p.col || color(255, 0, 0));
+    if (p.miss) {
+      text("MISS", p.x - cam.x, p.y - cam.y);
+    } else if (p.crit) {
+      text("CRIT! -" + p.damage, p.x - cam.x, p.y - cam.y);
+    } else{
+      text("-" + p.damage, p.x - cam.x, p.y - cam.y);
+    }
     p.y -= 0.5;
   }
 
@@ -1840,24 +1862,11 @@ function gameStart() {
     startTime = millis();
     first++;
   }
-  if (planet === 1 && star === 0) {
+  if (enemies.filter(e => e.alive).length === enemies.length) {
     totalEnemies = enemies.length;
-    star++;
-  } else if (planet === 2 && star === 1) {
-    totalEnemies = enemies.length;
-    star++;
     droppedInventory = [];
     droppedSize = 0;
-  } else if (planet === 3 && star === 2) {
-    totalEnemies = enemies.length;
-    star++;
-    droppedInventory = [];
-    droppedSize = 0;
-  } else if (planet === 4 && star === 3) {
-    totalEnemies = enemies.length;
-    star++;
-    droppedInventory = [];
-    droppedSize = 0;
+
   }
   textSize(12);
   textFont('Courier New');
