@@ -932,7 +932,7 @@ function storySlides() {
 function mapTransitionPage() {
   stopAllSounds();
   let elapsed = millis() - mapTransitionStart;
-
+  
   // Draw GIF fullscreen
   image(story1, 0, 0, pageWidth, pageHeight);
 
@@ -1777,24 +1777,11 @@ function gameStart() {
     startTime = millis();
     first++;
   }
-  if (planet === 1 && star === 0) {
+  if (enemies.filter(e => e.alive).length === enemies.length) {
     totalEnemies = enemies.length;
-    star++;
-  } else if (planet === 2 && star === 1) {
-    totalEnemies = enemies.length;
-    star++;
     droppedInventory = [];
     droppedSize = 0;
-  } else if (planet === 3 && star === 2) {
-    totalEnemies = enemies.length;
-    star++;
-    droppedInventory = [];
-    droppedSize = 0;
-  } else if (planet === 4 && star === 3) {
-    totalEnemies = enemies.length;
-    star++;
-    droppedInventory = [];
-    droppedSize = 0;
+
   }
   textSize(12);
   fill(255);
