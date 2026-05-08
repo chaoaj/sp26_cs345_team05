@@ -146,6 +146,11 @@ let strengthPotionActive = false;
 let strengthPotionTimer = 0;
 let playerAttackBoost = 0;
 
+let shakeAmount = 0;
+let shakeDuration = 0;
+
+let playerHitFlash = 0;
+
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
@@ -1422,6 +1427,7 @@ function shootArrow() {
   }
 }
 
+
 function bowAttack() {
   let equipped = getEquippedItem();
   if (!equipped && equipped.data.type !== "bow") {
@@ -1487,21 +1493,28 @@ function drawEnemy() {
       let dmg;
       let popupColor;
 
+      let diffMult = 1 + (planet - 1) * 0.3;
+
       if (roll < 20) {
         dmg = 0;
         popupColor = color(200, 200, 200);
       } else if (roll < 50) {
-        dmg = 4;
+        dmg = floor(4 * diffMult);
         popupColor = color(255, 150, 0);
       } else if (roll < 85) {
-        dmg = 8;
+        dmg = floor(8 * diffMult);
         popupColor = color(255, 50, 50);
       } else {
-        dmg = 16;
+        dmg = floor(16 * diffMult);
         popupColor = color(255, 0, 250);
       }
 
       playerHealth = max(0, playerHealth - dmg);
+      if (dmg > 0) {
+        triggerShake(4, 10);
+        playerHitFlash = 12;
+      }
+      if (dmg >= 16) triggerShake(8, 18);
 
       if (e.type === "boss") {
         playRandomBossRoar();
@@ -1587,6 +1600,13 @@ function drawEnemy() {
     }
 
     image(img, e.x, e.y + e.jumpOffset, drawW, drawH, sx, ry, fw, fh);
+
+    if (e.hitFlash > 0) {
+      tint(255, 0, 0, e.hitFlash * 20);
+      image(img, e.x, e.y + e.jumpOffset, drawW, drawH, sx, ry, fw, fh);
+      noTint();
+      e.hitFlash--;
+    }
 
     healthBarEnemy(e.x, e.y - 5, e.health, e.maxHealth);
 
@@ -1684,6 +1704,14 @@ function drawCat(player) {
   // draw cat
   image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
 
+  // red flash overlay when hit
+  if (playerHitFlash > 0) {
+    tint(255, 0, 0, playerHitFlash * 20);
+    image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+    noTint();
+    playerHitFlash--;
+  }
+
   // draw attack animation IN FRONT of cat for all other directions
   if (frameCurrRow !== 1 && isAttacking) {
     AttackAnimation();
@@ -1748,6 +1776,7 @@ function drawCat(player) {
       playerX = spawn.x;
       playerY = spawn.y;
       playerHealth = PLAYERHEALTHMAX;
+      triggerShake(10, 30);
     } else {
       page = 3;
     }
@@ -1771,6 +1800,7 @@ function drawCat(player) {
 
         e.range = playerAttackRange / 2;
         e.health -= damage;
+        e.hitFlash = 10;
         attackCooldown = 40;
 
         let knockbackDist = 8;
@@ -2263,6 +2293,7 @@ function victoryPage() {
 
 
 function healthBarEnemy(x, y, health, maxHealth) {
+  let barW = min(maxHealth * 0.3, 60);
   fill(209, 197, 197);
   rect(x + 10, y, maxHealth * 0.3 + 2, 8);
   fill(163, 77, 77);
@@ -2284,6 +2315,11 @@ function playerAttack() {
     }
   }
   return PLAYER_ATTACK + attack;
+}
+
+function triggerShake(amount, duration) {
+  shakeAmount = amount;
+  shakeDuration = duration;
 }
 
 //adds image item to inventory
@@ -2379,11 +2415,15 @@ class Enemy {
     this.x = x;
     this.y = y;
     this.type = type;
-    this.health = type === "boss" ? 300 : 100;
+
+
+    let diffMult = 1 + (planet - 1) * 0.3;
+
+    this.health = type === "boss" ? floor(300 * diffMult) : floor(100 * diffMult);
     this.maxHealth = this.health;
     this.state = "wander";
-    this.speed = type === "boss" ? 1.2 : random(0.5, 0.9);
-    this.detectionRange = type === "boss" ? 250 : 150;
+    this.speed = type === "boss" ? 1.2 * diffMult : random(0.5, 0.9) * diffMult;
+    this.detectionRange = type === "boss" ? 250 : floor(150 * diffMult);
     this.attackRange = type === "boss" ? 35 : 25;
     this.alive = true;
     this.dirX = 1;
@@ -2394,6 +2434,7 @@ class Enemy {
     this.roomIndex = -1;
     this.knockbackX = 0;
     this.knockbackY = 0;
+    this.hitFlash = 0;
     this.jumpOffset = 0;
     this.jumpVelocity = 0;
   }
@@ -2645,6 +2686,14 @@ function IU(life, health, inventory1, inventory2) {
 function draw() {
   if (planet === 2) background(100, 150, 200); // blue tint for snow map
   else background(220);
+
+  push();
+  if (shakeDuration > 0) {
+    translate(random(-shakeAmount, shakeAmount), random(-shakeAmount, shakeAmount));
+    shakeDuration--;
+    shakeAmount *= 0.9;
+  }
   screen(page);
+  pop();
   mouseJustPressed = false;
 }
