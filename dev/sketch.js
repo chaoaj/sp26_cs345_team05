@@ -1604,7 +1604,7 @@ function drawEnemy() {
       let dmg;
       let popupColor;
 
-      let diffMult = 1 + (planet - 1) * 0.3;
+      let diffMult = 1 + completedPlanets.length * 0.3;
 
       if (roll < 20) {
         dmg = 0;
@@ -2535,7 +2535,7 @@ class Enemy {
 
 
 
-    let diffMult = 1 + (planet - 1) * 0.3;
+    let diffMult = 1 + completedPlanets.length * 0.3;
 
     this.health = type === "boss" ? floor(300 * diffMult) : floor(100 * diffMult);
     this.maxHealth = this.health;
