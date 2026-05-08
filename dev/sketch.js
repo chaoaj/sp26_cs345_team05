@@ -1572,6 +1572,23 @@ function drawEnemy() {
     if (e.state === "chase" && d > 0) {
       moveX = (dx / d) * e.speed;
       moveY = (dy / d) * e.speed;
+
+      if (e.type === "boss") {
+        e.chargeCooldown--;
+        if (e.chargeCooldown <= 0) {
+          e.charging = true;
+          e.chargeTimer = 20;
+          e.chargeCooldown = 180;
+        }
+        if (e.charging) {
+          moveX = (dx / d) *e.speed * 4;
+          moveY = (dy / d) * e.speed * 4
+          e.chargeTimer--;
+          if (e.chargeTimer <= 0) e.charging = false;
+          triggerShake(6, 15);
+        }
+      }
+
     } else if (e.state === "wander") {
       e.moveTimer--;
       if (e.moveTimer <= 0) {
@@ -1656,6 +1673,14 @@ function drawEnemy() {
     }
 
     // draw
+    if (e.type === "boss" && !e.phase2 && e.health <= e.maxHealth / 2) {
+      e.phase2 = true;
+      e.speed *= 1.8;
+      e.attackRange += 10;
+      e.attackCooldown = 0;
+      triggerShake(12, 25);
+      e.hitFlash = 30;
+    }
     let img, fw, fh, ry;
     if (e.type === "boss") {
       if (planet === 1) img = rat_boss;
@@ -1688,6 +1713,14 @@ function drawEnemy() {
         e.jumpOffset = 0;
         e.jumpVelocity = 0;
       }
+    }
+
+    if (e.type === "boss" && e.chargeCooldown < 40 && !e.charging) {
+      noFill();
+      stroke(255, 0, 0, map(e.chargeCooldown, 40, 0, 0, 200));
+      strokeWeight(3);
+      ellipse(e.x + 30, e.y + 30, 80, 80);
+      noStroke();
     }
 
     image(img, e.x, e.y + e.jumpOffset, drawW, drawH, sx, ry, fw, fh);
@@ -2041,7 +2074,7 @@ function gameStart() {
     g++;
   }
 
-  if (strengthPotionActive && millis() - strengthPotionTimer > 8000) { // 8seconds duration
+  if (strengthPotionActive && millis() - strengthPotionTimer > 15000) { // 15 second duration
     strengthPotionActive = false;
     playerAttackBoost = 0;
   }
@@ -2495,6 +2528,11 @@ class Enemy {
     this.x = x;
     this.y = y;
     this.type = type;
+    this.phase2 = false;
+    this.charging = false;
+    this.chargeTimer = 0;
+    this.chargeCooldown = 120;
+
 
 
     let diffMult = 1 + (planet - 1) * 0.3;
@@ -2628,7 +2666,7 @@ function IU(life, health, inventory1, inventory2) {
         strengthPotionActive = true;
         setTimeout(() => {
           playerAttackBoost = 0;
-        }, 8000);
+        }, 15000);
         potion_drink.setVolume(0.3);
         potion_drink.play();
         for (let j = i; j < size - 1; j++) {
