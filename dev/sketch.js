@@ -1204,12 +1204,21 @@ function loadRandomPlanet() {
   } else if (next === 4 && typeof mapData_cheeseCake !== 'undefined') {
     currentMap = mapData_cheeseCake;
   } else {
-    // fallback to nacho if map not ready yet
     currentMap = mapData_nacho;
     planet = 1;
   }
   planetClearing = false;
 
+  if (next === bossPlanet && completedPlanets.includes(bossPlanet)) {
+    stopAllSounds();
+    endingActive = true;
+    endingAlpha = 0;
+    endingFadeState = "in";
+    endingFadeTimer = 0;
+    return; // exit immediately — no rocket, no map transition
+  }
+
+  // everything below only runs for normal planet transitions
   mapTransitionActive = true;
   mapTransitionStart = millis();
 
@@ -1221,31 +1230,20 @@ function loadRandomPlanet() {
   rocketX = -150;
   rocketY = pageHeight + 150;
 
-
-
   currentMapFloor = floorTileset;
   currentMapWall = wallTileset;
 
-  // Reset map objects for new planet
   g = 0;
   fightRooms = [];
   chests = [];
   spikeWalls = [];
   enemies = [];
 
-  // Respawn player at new map spawn point
   const spawn = getSpawnPoint(currentMap);
   playerX = spawn.x;
   playerY = spawn.y;
   cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
   cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
-
-  if (next === bossPlanet && completedPlanets.includes(bossPlanet)) {
-    endingActive = true;
-    endingAlpha = 0;
-    endingFadeState = "in";
-    endingFadeTimer = 0;
-  }
 }
 
 function updateFightRooms() {
@@ -1581,7 +1579,7 @@ function drawEnemy() {
           e.chargeCooldown = 180;
         }
         if (e.charging) {
-          moveX = (dx / d) *e.speed * 4;
+          moveX = (dx / d) * e.speed * 4;
           moveY = (dy / d) * e.speed * 4
           e.chargeTimer--;
           if (e.chargeTimer <= 0) e.charging = false;
@@ -1717,7 +1715,7 @@ function drawEnemy() {
 
     if (e.type === "boss" && e.chargeCooldown < 40 && !e.charging) {
       noFill();
-      stroke(255, 0, 0, map(e.chargeCooldown, 40, 0, 0, 200));
+      stroke(255, 255, 255, map(e.chargeCooldown, 40, 0, 0, 200));
       strokeWeight(3);
       ellipse(e.x + 30, e.y + 30, 80, 80);
       noStroke();
@@ -1952,9 +1950,11 @@ function drawCat(player) {
   }
 
   if (strengthPotionActive) {
-    fill(255, 0, 255, 100);
+    noFill();
+    stroke(255, 255, 255, 150);
+    strokeWeight(2);
     ellipse(playerX + 16, playerY + 16, 40, 40);
-    text("STRENGTH BOOST!", playerX + 16, playerY - 10);
+    noStroke();
   }
 }
 
