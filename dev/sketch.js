@@ -225,6 +225,8 @@ function preload() {
   slideSound5 = loadSound("assets/VoiceRecord5.mp3");
   slideSound6 = loadSound("assets/VoiceRecord6.mp3");
 
+  message_noti = loadSound("assets/message_noti.mp3");
+
   slideSounds = [
     slideSound1,
     slideSound2,
@@ -879,6 +881,11 @@ function storySlides() {
 
   // --- FADE LOGIC ---
   if (fadeState === "in") {
+    if (message_noti && !message_noti.isPlaying()) {
+      message_noti.setVolume(0.9);
+      message_noti.play();
+    }
+
     slideAlpha = min(slideAlpha + FADE_SPEED, 255);
     if (slideAlpha >= 255) {
       fadeState = "hold";
