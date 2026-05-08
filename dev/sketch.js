@@ -146,6 +146,7 @@ let lastBowShot = 0;
 let hitEnemy = false;
 
 let digitImages = [];
+let digitImagesRed = [];
 
 let strengthPotionActive = false;
 let strengthPotionTimer = 0;
@@ -324,6 +325,9 @@ function preload() {
 
   for (let i = 0; i <= 9; i++) {
     digitImages[i] = loadImage("assets/" + i + ".png");
+  }
+  for (let i = 0; i <= 9; i++) {
+    digitImagesRed[i] = loadImage("assets/" + i + "_red.png");
   }
 
   //Attack Animations
@@ -813,6 +817,20 @@ function skinScreen() {
     }
   }
 
+}
+
+function drawSpriteNumber(numStr, x, y, digitW, digitH, useRed = false) {
+  let digits = useRed ? digitImagesRed : digitImages;
+  let spacing = digitW + 2;
+  let totalWidth = numStr.length * spacing;
+  let startX = x - totalWidth / 2;
+
+  for (let i = 0; i < numStr.length; i++) {
+    let ch = numStr[i];
+    if (ch >= '0' && ch <= '9') {
+      image(digits[int(ch)], startX + i * spacing, y, digitW, digitH);
+    }
+  }
 }
 
 function stopAllSounds() {
@@ -1455,6 +1473,7 @@ function drawArrows() {
       let d = dist(a.x, a.y, eCenterX, eCenterY);
       if (d < (e.type === "boss" ? 30 : 16)) {  // bigger hitbox for boss
         e.health -= 10;
+        attackPopups.push({ x: e.x, y: e.y, damage: 10, miss: false, crit: false, col: color(255), timer: millis(), isPlayerDamage: true });
         e.knockbackX = a.dx * 5;
         e.knockbackY = a.dy * 5;
         if (e.health <= 0) {
@@ -1598,11 +1617,8 @@ function drawEnemy() {
       }
 
       e.attackCooldown = 90;
-      attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis() });
-
+      attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis(), isPlayerDamage: false });
       e.jumpVelocity = -6;
-
-      attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis() });
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
@@ -1876,6 +1892,7 @@ function drawCat(player) {
         e.range = playerAttackRange / 2;
         e.health -= damage;
         e.hitFlash = 10;
+        attackPopups.push({ x: e.x, y: e.y, damage: damage, miss: false, crit: false, col: color(255), timer: millis(), isPlayerDamage: true });
         attackCooldown = 40;
 
         let knockbackDist = 8;
@@ -1998,9 +2015,9 @@ function gameStart() {
       fill(200, 200, 200);
       textAlign(CENTER);
       text("MISS", sx, sy);
-      textAlign(LEFT); // reset
+      textAlign(LEFT);
     } else {
-      drawSpriteNumber(str(p.damage), sx, sy, digitW, digitH);
+      drawSpriteNumber(str(p.damage), sx, sy, digitW, digitH, !p.isPlayerDamage);
     }
 
     p.y -= 0.5;
@@ -2047,19 +2064,6 @@ function gameStart() {
   fill(255);
   text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 480, 80);
   text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 481, 80);
-}
-
-function drawSpriteNumber(numStr, x, y, digitW, digitH) {
-  let spacing = digitW + 2;
-  let totalWidth = numStr.length * spacing;
-  let startX = x - totalWidth / 2;
-
-  for (let i = 0; i < numStr.length; i++) {
-    let ch = numStr[i];
-    if (ch >= '0' && ch <= '9') {
-      image(digitImages[int(ch)], startX + i * spacing, y, digitW, digitH);
-    }
-  }
 }
 
 function keyPressed() {
