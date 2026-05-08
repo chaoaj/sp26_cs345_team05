@@ -198,6 +198,11 @@ var attackPopups = [];
 
 let playerAttackRange = 50;
 
+let arrows = [];
+let bowCoolDown = 300;
+let lastBowShot = 0;
+
+
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
@@ -385,6 +390,8 @@ function mousePressed() {
     userStartAudio();
     audioUnlocked = true;
   }
+
+  shootArrow();
 }
 
 function setup() {
@@ -1400,6 +1407,80 @@ function collidesWithPlayer() {
   }
 }
 
+function drawArrows() {
+  for (let i = arrows.length - 1; i >= 0; i--) {
+    let a = arrows[i];
+    a.x += a.dx * 8;
+    a.y += a.dy * 8;
+
+    fill(255, 0, 0);
+    rect(a.x, a.y, 16, 4);
+  }
+}
+
+function shootArrow() {
+  if (millis() - lastBowShot < bowCoolDown) return; // 500ms cooldown
+  lastBowShot = millis();
+
+  let worldMouseX = cam.x + mouseX;
+  let worldMouseY = cam.y + mouseY;
+
+  let dx = worldMouseX - playerX;
+  let dy = worldMouseY - playerY;
+
+  let d = dist(playerX, playerY, worldMouseX, worldMouseY);
+
+  if (d > 0) {
+    dx /= d;
+    dy /= d;
+  }
+
+  arrows.push({
+    x: playerX,
+    y: playerY,
+    dx: dx,
+    dy: dy,
+    angle: atan2(dy, dx)
+  });
+}
+
+function drawBow() {
+  let offsetX = 0;
+  let offsetY = 0;
+  let sx = currentFrame * frameWidth;
+  let sy = frameHeight * frameCurrRow;
+
+  let equipped = getEquippedItem();
+  let bowequipped = equipped && equipped.type === "bow";
+
+  let centerX = bow.width / 2;
+  let centerY = bow.height / 2;
+
+  if (bowequipped != null) {
+    if (frameCurrRow === 3) {
+      offsetX = centerX + 4;
+      offsetY = centerY - 4;
+    } else if (frameCurrRow === 2) {
+      offsetX = centerX - 12;
+      offsetY = centerY - 4;
+    } else if (frameCurrRow === 0) {
+      offsetX = centerX - 4;
+      offsetY = centerY + 2;
+    } else if (frameCurrRow === 1) {
+      offsetX = centerX + 2;
+      offsetY = centerY - 12;
+    }
+  }
+
+  image(bow, playerX + offsetX, playerY + offsetY, sx, sy);
+
+  if (bowequipped && mousePressed) {
+    shootArrow();
+  }
+
+}
+
+
 function drawEnemy() {
 
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -1478,7 +1559,7 @@ function drawEnemy() {
 
       e.attackCooldown = 90;
       attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis() });
-      
+
 
     }
 
@@ -1821,6 +1902,8 @@ function gameStart() {
   push();
   translate(-cam.x, -cam.y);
   drawEnemy();
+  drawArrows();
+  drawBow();
   pop();
 
   attackPopups = attackPopups.filter(p => millis() - p.timer < 1000);
@@ -1832,7 +1915,7 @@ function gameStart() {
       text("MISS", p.x - cam.x, p.y - cam.y);
     } else if (p.crit) {
       text("CRIT! -" + p.damage, p.x - cam.x, p.y - cam.y);
-    } else{
+    } else {
       text("-" + p.damage, p.x - cam.x, p.y - cam.y);
     }
     p.y -= 0.5;
