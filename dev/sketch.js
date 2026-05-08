@@ -197,6 +197,7 @@ function preload() {
 
   transition_background = loadImage("assets/transition_background.png");
   transition_sound = loadSound("assets/transition_sound.mp3");
+  boss_music = loadSound("assets/boss_music.mp3");
 
   ending_slide = loadImage("assets/ending_slide.png");
 
@@ -837,7 +838,7 @@ function stopAllSounds() {
   for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
     if (t && t.isPlaying()) t.stop();
   }
-
+  if (boss_music && boss_music.isPlaying()) boss_music.stop();
   homepage_sound.stop();
 }
 
@@ -1259,6 +1260,14 @@ function updateFightRooms() {
         let nonBossRoomsCleared = fightRooms.every((room, idx) => idx === i || room.cleared || room.isBossRoom);
         if (nonBossRoomsCleared) {
           r.activateTimer = millis();
+
+          if (audioUnlocked && !boss_music.isPlaying()) {
+            for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
+              if (t && t.isPlaying()) t.stop();
+            }
+            boss_music.setVolume(0.3);
+            boss_music.loop();
+          }
         }
       } else {
         r.activateTimer = millis();
@@ -1321,6 +1330,8 @@ function updateFightRooms() {
           mapClearedTimer = millis();
           mapClearedAlpha = 0;
           mapClearedParticles = [];
+
+          if(boss_music && boss_music.isPlaying()) boss_music.stop();
         }
       }
     }
@@ -1992,11 +2003,12 @@ function gameStart() {
     }
   }
 
-  // play the correct one
-  if (audioUnlocked && currentTheme && !currentTheme.isPlaying()) {
-    currentTheme.setVolume(0.2);
-    currentTheme.loop();
-  }
+  if (!boss_music.isPlaying()) {
+    if (audioUnlocked && currentTheme && !currentTheme.isPlaying()) {
+      currentTheme.setVolume(0.2);
+      currentTheme.loop();
+    }
+  } 
 
   if (homepage_sound.isPlaying()) {
     homepage_sound.stop();
@@ -2302,6 +2314,7 @@ function gameover() {
   for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
     if (t && t.isPlaying()) t.stop();
   }
+  if (boss_music && boss_music.isPlaying()) boss_music.stop();
 
   image(
     homepage_background,
@@ -2357,6 +2370,7 @@ function victoryPage() {
   for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
     if (t && t.isPlaying()) t.stop();
   }
+  if (boss_music && boss_music.isPlaying()) boss_music.stop();
 
   image(
     homepage_background,
