@@ -338,8 +338,8 @@ function preload() {
   attack_right = loadImage("dev/assets/AttackAnimation/slash_right.png");
 
   arrow_weapon = loadImage("dev/assets/arrow_weapon.png");
-  potion_strength = loadImage("dev/assets/potion_boost.png");
-  potion_strength_selected = loadImage("dev/assets/potion_boost_selected.png");
+  potion_strength = loadImage("dev/assets/Potion_boost.png");
+  potion_strength_selected = loadImage("dev/assets/Potion_boost_selected.png");
 }
 
 function getSpawnPoint(map) {

@@ -338,8 +338,8 @@ function preload() {
   attack_right = loadImage("assets/AttackAnimation/slash_right.png");
 
   arrow_weapon = loadImage("assets/arrow_weapon.png");
-  potion_strength = loadImage("assets/potion_boost.png");
-  potion_strength_selected = loadImage("assets/potion_boost_selected.png");
+  potion_strength = loadImage("assets/Potion_boost.png");
+  potion_strength_selected = loadImage("assets/Potion_boost_selected.png");
 }
 
 function getSpawnPoint(map) {
@@ -1331,7 +1331,7 @@ function updateFightRooms() {
           mapClearedAlpha = 0;
           mapClearedParticles = [];
 
-          if(boss_music && boss_music.isPlaying()) boss_music.stop();
+          if (boss_music && boss_music.isPlaying()) boss_music.stop();
         }
       }
     }
@@ -2008,7 +2008,7 @@ function gameStart() {
       currentTheme.setVolume(0.2);
       currentTheme.loop();
     }
-  } 
+  }
 
   if (homepage_sound.isPlaying()) {
     homepage_sound.stop();
