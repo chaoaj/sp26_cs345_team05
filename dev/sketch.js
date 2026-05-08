@@ -640,7 +640,12 @@ function resetGame() {
   droppedSize = 0;
 
   // camera and player position
-  currentMap = mapData_nacho;
+  const startPlanets = [1, 2, 3];
+  planet = startPlanets[floor(random(startPlanets.length))];
+
+  if (planet === 1) currentMap = mapData_nacho;
+  else if (planet === 2) currentMap = mapData_blueCheese;
+  else if (planet === 3) currentMap = mapData_parmesan;
   currentMapFloor = floorTileset;
   currentMapWall = wallTileset;
   const spawn = getSpawnPoint(currentMap);
@@ -987,7 +992,12 @@ function startBackstory() {
 
 function onBackstoryComplete() {
   backstoryActive = false;
-  currentMap = mapData_nacho;
+  const startPlanets = [1, 2, 3];
+  planet = startPlanets[floor(random(startPlanets.length))];
+
+  if (planet === 1) currentMap = mapData_nacho;
+  else if (planet === 2) currentMap = mapData_blueCheese;
+  else if (planet === 3) currentMap = mapData_parmesan;
   currentMapFloor = floorTileset;
   currentMapWall = wallTileset;
 
@@ -1131,6 +1141,12 @@ function initMapObjects(map) {
       }
     }
     enemy.roomIndex = closest;
+
+    if (closest !== -1) {
+      let r = fightRooms[closest];
+      enemy.x = constrain(enemy.x, r.x + 10, r.x + r.w - 10);
+      enemy.y = constrain(enemy.y, r.y + 10, r.y + r.h - 10);
+    }
   }
 
   for (let spike of spikeWalls) {
@@ -2355,9 +2371,9 @@ function victoryPage() {
 function healthBarEnemy(x, y, health, maxHealth) {
   let barW = min(maxHealth * 0.3, 60);
   fill(209, 197, 197);
-  rect(x + 10, y, maxHealth * 0.3 + 2, 8);
+  rect(x + 10, y, barW + 2, 8);
   fill(163, 77, 77);
-  rect(x + 10.5, y + 1.5, health * 0.3, 5);
+  rect(x + 10.5, y + 1.5, (health / maxHealth) * barW, 5);
   fill(209, 197, 197);
   square(x, y, 8);
   fill(0);
