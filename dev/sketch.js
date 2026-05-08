@@ -1359,8 +1359,13 @@ function drawArrows() {
     let hit = false;
     for (let e of enemies) {
       if (!e.alive) continue;
-      let d = dist(a.x, a.y, e.x, e.y);
-      if (d < 20) {
+
+      // use enemy center instead of top-left corner
+      let eCenterX = e.x + (e.type === "boss" ? BOSS_FRAME_W * 0.15 : RAT_FRAME_W) / 2;
+      let eCenterY = e.y + (e.type === "boss" ? BOSS_FRAME_H * 0.15 : RAT_FRAME_H[0]) / 2;
+
+      let d = dist(a.x, a.y, eCenterX, eCenterY);
+      if (d < (e.type === "boss" ? 30 : 16)) {  // bigger hitbox for boss
         e.health -= 10;
         e.knockbackX = a.dx * 5;
         e.knockbackY = a.dy * 5;
