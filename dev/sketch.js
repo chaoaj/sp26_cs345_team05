@@ -1453,9 +1453,9 @@ function drawEnemy() {
       }
 
       e.attackCooldown = 90;
+      e.jumpVelocity = -6;
+
       attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis() });
-
-
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
@@ -1518,7 +1518,16 @@ function drawEnemy() {
     let drawW = e.type === "boss" ? fw * 0.15 : fw;
     let drawH = e.type === "boss" ? fh * 0.15 : fh;
 
-    image(img, e.x, e.y, drawW, drawH, sx, ry, fw, fh);
+    if (e.jumpVelocity !== 0 || e.jumpOffset !== 0) {
+      e.jumpOffset += e.jumpVelocity;
+      e.jumpVelocity += 1.2; // gravity pulls back down
+      if (e.jumpOffset >= 0) {
+        e.jumpOffset = 0;
+        e.jumpVelocity = 0;
+      }
+    }
+
+    image(img, e.x, e.y + e.jumpOffset, drawW, drawH, sx, ry, fw, fh);
 
     healthBarEnemy(e.x, e.y - 5, e.health, e.maxHealth);
 
@@ -2290,6 +2299,8 @@ class Enemy {
     this.roomIndex = -1;
     this.knockbackX = 0;
     this.knockbackY = 0;
+    this.jumpOffset = 0;
+    this.jumpVelocity = 0;
   }
 }
 
