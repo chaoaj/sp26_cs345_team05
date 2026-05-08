@@ -63,7 +63,7 @@ const backstorySlides = [
 
 var planet = 1;
 var g = 0;
-var page = 5;
+var page = 0;
 var scale = 1;
 var lives = 3;
 
@@ -113,7 +113,7 @@ let slideAlpha = 0;          // 0–255 fade value
 let fadeState = "in";        // "in" | "hold" | "out"
 let fadeTimer = 0;
 
-const FADE_SPEED = 4;      // alpha change per frame
+const FADE_SPEED = 3;      // alpha change per frame
 const HOLD_FRAMES = 360;    // frames to hold each slide (3s at 60fps)
 let backstoryActive = false;
 let slideSounds = [];
@@ -216,12 +216,12 @@ function preload() {
   skins1 = loadImage("assets/skins1.png");
   skins2 = loadImage("assets/skins2.png");
 
-  story1 = loadImage("assets/story1.gif");
-  story2 = loadImage("assets/story2.gif");
-  story3 = loadImage("assets/story3.gif");
-  story4 = loadImage("assets/story4.gif");
-  story5 = loadImage("assets/story5.gif");
-  story6 = loadImage("assets/story6.gif");
+  story1 = loadImage("assets/story1.png");
+  story2 = loadImage("assets/story2.png");
+  story3 = loadImage("assets/story3.png");
+  story4 = loadImage("assets/story4.png");
+  story5 = loadImage("assets/story5.png");
+  story6 = loadImage("assets/story6.png");
 
   slideSound1 = loadSound("assets/VoiceRecord1.mp3");
   slideSound2 = loadSound("assets/VoiceRecord2.mp3");
@@ -229,6 +229,8 @@ function preload() {
   slideSound4 = loadSound("assets/VoiceRecord4.mp3");
   slideSound5 = loadSound("assets/VoiceRecord5.mp3");
   slideSound6 = loadSound("assets/VoiceRecord6.mp3");
+
+  message_noti = loadSound("assets/message_noti.mp3");
 
   slideSounds = [
     slideSound1,
@@ -455,7 +457,7 @@ function button(image1, x, y, w, h) {
       }
 
     } else if (image1 === skip2) {
-      image(skip1, 475, 345, skip1.width / 14, skip1.height / 12);
+      image(skip1, 475, 354, skip1.width / 14, skip1.height / 12);
     }
   }
 
@@ -883,44 +885,14 @@ function storySlides() {
   noStroke();
   rect(0, 0, pageWidth, pageHeight);
 
-  // --- TEXT CONTENT ---
-  let slide = backstorySlides[currentSlide];
-
-  if (slide) {
-    push();
-
-    textAlign(CENTER);
-
-    fill(0);
-    textSize(26);
-    text(slide.title, pageWidth / 2 + 2, 62);
-
-
-    fill(255);
-    text(slide.title, pageWidth / 2, 60);
-
-
-    textSize(14);
-    for (let i = 0; i < slide.text.length; i++) {
-      // shadow
-      fill(0);
-      text(slide.text[i], pageWidth / 2 + 1, 122 + i * 20);
-
-      // main text
-      fill(255);
-      text(slide.text[i], pageWidth / 2, 120 + i * 20);
-    }
-
-    // Emoji
-    textSize(30);
-    fill(255);
-    text(slide.emoji, pageWidth / 2, 310);
-
-    pop();
-  }
 
   // --- FADE LOGIC ---
   if (fadeState === "in") {
+    if (message_noti && !message_noti.isPlaying()) {
+      message_noti.setVolume(0.9);
+      message_noti.play();
+    }
+
     slideAlpha = min(slideAlpha + FADE_SPEED, 255);
     if (slideAlpha >= 255) {
       fadeState = "hold";
@@ -952,7 +924,7 @@ function storySlides() {
   }
 
   // --- SKIP BUTTON ---
-  button(skip2, 475, 345, skip2.width / 14, skip2.height / 12);
+  button(skip2, 475, 354, skip2.width / 14, skip2.height / 12);
 }
 
 function mapTransitionPage() {
@@ -1016,6 +988,17 @@ function onBackstoryComplete() {
   cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
   page = 5;
+
+  mapTransitionActive = true;
+  mapTransitionStart = millis();
+
+  rocketX = -150;
+  rocketY = pageHeight + 150;
+
+  if (transition_sound && !transition_sound.isPlaying()) {
+    transition_sound.setVolume(0.8);
+    transition_sound.play();
+  }
 }
 
 function initMapObjects(map) {
@@ -1560,7 +1543,9 @@ function drawEnemy() {
       e.attackCooldown = 90;
       attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis() });
 
+      e.jumpVelocity = -6;
 
+      attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis() });
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
@@ -1623,7 +1608,16 @@ function drawEnemy() {
     let drawW = e.type === "boss" ? fw * 0.15 : fw;
     let drawH = e.type === "boss" ? fh * 0.15 : fh;
 
-    image(img, e.x, e.y, drawW, drawH, sx, ry, fw, fh);
+    if (e.jumpVelocity !== 0 || e.jumpOffset !== 0) {
+      e.jumpOffset += e.jumpVelocity;
+      e.jumpVelocity += 1.2; // gravity pulls back down
+      if (e.jumpOffset >= 0) {
+        e.jumpOffset = 0;
+        e.jumpVelocity = 0;
+      }
+    }
+
+    image(img, e.x, e.y + e.jumpOffset, drawW, drawH, sx, ry, fw, fh);
 
     healthBarEnemy(e.x, e.y - 5, e.health, e.maxHealth);
 
@@ -2397,6 +2391,8 @@ class Enemy {
     this.roomIndex = -1;
     this.knockbackX = 0;
     this.knockbackY = 0;
+    this.jumpOffset = 0;
+    this.jumpVelocity = 0;
   }
 }
 
