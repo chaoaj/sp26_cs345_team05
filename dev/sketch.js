@@ -415,11 +415,7 @@ function setup() {
 
   bowItem = new Item([bow, bow_selected], false, { type: "bow", damage: 15, health: 0 });
 
-  chestInventory_nacho[0] = [
-    //new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), 
-    //new Item([potion, potion_selected], false, { damage: 0, health: 50 }),
-    bowItem
-  ];
+  chestInventory_nacho[0] = [new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_blueCheese[0] = [new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_blueCheese[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), bowItem];
