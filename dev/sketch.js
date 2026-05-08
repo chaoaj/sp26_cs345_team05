@@ -138,6 +138,7 @@ let playerAttackRange = 50;
 let arrows = [];
 let bowCoolDown = 300;
 let lastBowShot = 0;
+let hitEnemy = false;
 
 
 
@@ -849,7 +850,7 @@ function storySlides() {
 
       // stop when either gifs OR text runs out
       if (
-        currentSlide >= storyGifs.length 
+        currentSlide >= storyGifs.length
       ) {
         onBackstoryComplete();
         return;
@@ -1332,71 +1333,75 @@ function drawArrows() {
     a.x += a.dx * 8;
     a.y += a.dy * 8;
 
-    fill(255, 0, 0);
+    // white projectiles
+    fill(255);
     rect(a.x, a.y, 16, 4);
+
+    //when arrow hits enemy
+    for (let e of enemies) {
+      if (!e.alive) continue;
+      let d = dist(a.x, a.y, e.x, e.y);
+      if (d < 20) {
+        e.health -= 10;
+        e.knockbackX = a.dx * 5;
+        e.knockbackY = a.dy * 5;
+        if (e.health <= 0) {
+          e.alive = false;
+          if (e.type === "boss") {
+            playRandomBossRoar();
+          } else {
+            playRandomRatSqueak();
+          }
+        }
+        arrows.splice(i, 1);
+        hitEnemy = true;
+        break;
+      }
+    }
+    if (hitEnemy) continue;
   }
 }
+
 
 function shootArrow() {
-  if (millis() - lastBowShot < bowCoolDown) return; // 500ms cooldown
-  lastBowShot = millis();
+  let equipped = getEquippedItem();
 
-  let worldMouseX = cam.x + mouseX;
-  let worldMouseY = cam.y + mouseY;
+  if (equipped && equipped.data.type === "bow") {
+    if (millis() - lastBowShot < bowCoolDown) return; // 500ms cooldown
+    lastBowShot = millis();
 
-  let dx = worldMouseX - playerX;
-  let dy = worldMouseY - playerY;
+    let worldMouseX = cam.x + mouseX;
+    let worldMouseY = cam.y + mouseY;
 
-  let d = dist(playerX, playerY, worldMouseX, worldMouseY);
+    let dx = worldMouseX - playerX;
+    let dy = worldMouseY - playerY;
 
-  if (d > 0) {
-    dx /= d;
-    dy /= d;
+    let d = dist(playerX, playerY, worldMouseX, worldMouseY);
+
+    if (d > 0) {
+      dx /= d;
+      dy /= d;
+    }
+
+    arrows.push({
+      x: playerX,
+      y: playerY,
+      dx: dx,
+      dy: dy,
+      angle: atan2(dy, dx)
+    });
+
   }
-
-  arrows.push({
-    x: playerX,
-    y: playerY,
-    dx: dx,
-    dy: dy,
-    angle: atan2(dy, dx)
-  });
 }
 
-function drawBow() {
-  let offsetX = 0;
-  let offsetY = 0;
-  let sx = currentFrame * frameWidth;
-  let sy = frameHeight * frameCurrRow;
-
+function bowAttack() {
   let equipped = getEquippedItem();
-  let bowequipped = equipped && equipped.data.type === "bow";
+  if (!equipped && equipped.data.type !== "bow") {
+    return
+  } else {
 
-  let centerX = bow.width / 2;
-  let centerY = bow.height / 2;
-
-  if (bowequipped != null) {
-    if (frameCurrRow === 3) {
-      offsetX = centerX + 4;
-      offsetY = centerY - 4;
-    } else if (frameCurrRow === 2) {
-      offsetX = centerX - 12;
-      offsetY = centerY - 4;
-    } else if (frameCurrRow === 0) {
-      offsetX = centerX - 4;
-      offsetY = centerY + 2;
-    } else if (frameCurrRow === 1) {
-      offsetX = centerX + 2;
-      offsetY = centerY - 12;
-    }
-  }
-
-  image(bow, playerX + offsetX, playerY + offsetY, sx, sy);
-
-  if (bowequipped && mousePressed) {
     shootArrow();
   }
-
 }
 
 
@@ -1607,6 +1612,7 @@ function AttackAnimation() {
 }
 
 function drawCat(player) {
+  let itemSize = 16;
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
@@ -1618,6 +1624,10 @@ function drawCat(player) {
   let offsetY = 0;
 
   if (equipped != null) {
+    if (equipped.data.type === "bow") {
+      //make bow bigger on hand
+      itemSize = 20;
+    }
     if (frameCurrRow === 3) {
       offsetX = centerX + 4;
       offsetY = centerY - 4;
@@ -1640,7 +1650,7 @@ function drawCat(player) {
 
   // draw equipped item BEHIND cat if facing up
   if (equipped != null && frameCurrRow === 1) {
-    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, 12, 12);
+    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, itemSize, itemSize);
   }
 
   // draw cat
@@ -1653,7 +1663,7 @@ function drawCat(player) {
 
   // draw equipped item IN FRONT of cat for all other directions
   if (equipped != null && frameCurrRow !== 1) {
-    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, 12, 12);
+    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, itemSize, itemSize);
   }
 
   // movement
@@ -1833,7 +1843,6 @@ function gameStart() {
   translate(-cam.x, -cam.y);
   drawEnemy();
   drawArrows();
-  drawBow();
   pop();
 
   attackPopups = attackPopups.filter(p => millis() - p.timer < 1000);
