@@ -140,6 +140,7 @@ let bowCoolDown = 300;
 let lastBowShot = 0;
 let hitEnemy = false;
 
+let digitImages = [];
 
 
 function preload() {
@@ -302,6 +303,10 @@ function preload() {
   spacebar = loadImage("assets/spacebar.png");
   spacebar_selected = loadImage("assets/spacebar_selected.png");
   snowTileset = loadImage("assets/FE8 - Snowy Bern.png");
+
+  for (let i = 0; i <= 9; i++) {
+    digitImages[i] = loadImage("assets/" + i + ".png");
+  }
 
   //Attack Animations
   attack_down = loadImage("assets/AttackAnimation/slash_down.png");
@@ -1849,16 +1854,22 @@ function gameStart() {
 
   attackPopups = attackPopups.filter(p => millis() - p.timer < 1000);
   for (let p of attackPopups) {
-    textSize(p.crit ? 16 : 12);
-    textFont('Courier New');
-    fill(p.col || color(255, 0, 0));
+    let sx = p.x - cam.x;
+    let sy = p.y - cam.y;
+    let digitW = p.crit ? 14 : 10;
+    let digitH = p.crit ? 14 : 10;
+
     if (p.miss) {
-      text("MISS", p.x - cam.x, p.y - cam.y);
-    } else if (p.crit) {
-      text("CRIT! -" + p.damage, p.x - cam.x, p.y - cam.y);
+      textSize(10);
+      textFont('Courier New');
+      fill(200, 200, 200);
+      textAlign(CENTER);
+      text("MISS", sx, sy);
+      textAlign(LEFT); // reset
     } else {
-      text("-" + p.damage, p.x - cam.x, p.y - cam.y);
+      drawSpriteNumber(str(p.damage), sx, sy, digitW, digitH);
     }
+
     p.y -= 0.5;
   }
 
@@ -1899,8 +1910,21 @@ function gameStart() {
   fill(255);
   text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 480, 80);
   text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 481, 80);
-
 }
+
+function drawSpriteNumber(numStr, x, y, digitW, digitH) {
+  let spacing = digitW + 2;
+  let totalWidth = numStr.length * spacing;
+  let startX = x - totalWidth / 2;
+
+  for (let i = 0; i < numStr.length; i++) {
+    let ch = numStr[i];
+    if (ch >= '0' && ch <= '9') {
+      image(digitImages[int(ch)], startX + i * spacing, y, digitW, digitH);
+    }
+  }
+}
+
 function keyPressed() {
   if (key === 'p' || key === 'P') {
     loadRandomPlanet();
