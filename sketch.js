@@ -1,66 +1,3 @@
-const backstorySlides = [
-  {
-    title: "A Long Time Ago…",
-    text: [
-      "In a galaxy not that far away,",
-      "on the cheese-rich planet of Parmesean,",
-      "lived a very normal cat family.",
-      "(Well, as normal as space cats go.)"
-    ],
-    emoji: "🐱🧀🚀"
-  },
-  {
-    title: "Mom & Dad",
-    text: [
-      "Mama Whiskers made the best asteroid stew.",
-      "Papa Paws could fix any broken rocket",
-      "with nothing but duct tape and confidence.",
-      "Life was purrfect."
-    ],
-    emoji: "👩‍🚀👨‍🚀🍲"
-  },
-  {
-    title: "The Incident",
-    text: [
-      "Then one Tuesday — always a Tuesday —",
-      "the Rat King showed up uninvited.",
-      "He kidnapped Mom and Dad,",
-      "and didn't even leave a note. Rude."
-    ],
-    emoji: "🐀👑😤"
-  },
-  {
-    title: "Enter: YOU",
-    text: [
-      "You are their kid.",
-      "You eat danger for breakfast.",
-      "(And also tuna.)",
-      "It's time to suiting up and blast off."
-    ],
-    emoji: "😼⚔️🌌"
-  },
-  {
-    title: "The Mission",
-    text: [
-      "Navigate 4 treacherous planets.",
-      "Defeat the rat hordes standing in your way.",
-      "Find the Rat King.",
-      "Bring Mom and Dad home for dinner."
-    ],
-    emoji: "🗺️💥🐀"
-  },
-  {
-    title: "Good Luck, Space Cat.",
-    text: [
-      "The universe is counting on you.",
-      "Or at least your parents are.",
-      "No pressure.",
-      "…Okay, a little pressure."
-    ],
-    emoji: "🌠🐾✨"
-  }
-];
-
 var planet = 1;
 var g = 0;
 var page = 0;
@@ -113,7 +50,7 @@ let slideAlpha = 0;          // 0–255 fade value
 let fadeState = "in";        // "in" | "hold" | "out"
 let fadeTimer = 0;
 
-const FADE_SPEED = 4;      // alpha change per frame
+const FADE_SPEED = 3;      // alpha change per frame
 const HOLD_FRAMES = 360;    // frames to hold each slide (3s at 60fps)
 let backstoryActive = false;
 let slideSounds = [];
@@ -122,6 +59,16 @@ let slideSounds = [];
 let mapTransitionActive = false;
 let mapTransitionStart = 0;
 const MAP_TRANSITION_DURATION = 2000; // 2 seconds
+
+let rocketX = -200;
+let rocketY = pageHeight / 2;
+let rocketSpeed = 6;
+
+let endingActive = false;
+let endingSlide = 0;
+let endingAlpha = 0;
+let endingFadeState = "in";
+let endingFadeTimer = 0;
 
 let size = 0;
 var inventory2 = [];
@@ -145,6 +92,14 @@ let fightRooms = [];
 let chests = [];
 let spikeWalls = [];
 let chestTileset;
+let planetClearing = false;
+let mapClearedActive = false;
+let mapClearedTimer = 0;
+let mapCleared_img; // the asset
+let mapClearedAlpha = 0;
+let mapClearedParticles = [];
+
+
 
 let enemies = [];
 
@@ -161,12 +116,11 @@ let isAttacking = false;
 let attackLastSwitch = 0;
 let attackFrame = 0;
 let lastAttackFrameTime = 0;
-
-
+let attackJustSwung = false;
 
 
 const ENEMY_ATTACK = 8;
-const PLAYER_ATTACK = 10;
+const PLAYER_ATTACK = 30;
 
 let currentFrameRat = 0;
 const RAT_FRAME_W = 32;
@@ -177,6 +131,31 @@ const BOSS_FRAME_W = 400;
 const BOSS_FRAME_H = 400;
 const BOSS_ROW_Y = [0, 400, 800, 1200];
 
+var startTime = 0;
+var timeTaken = 0;
+var first = 0;
+var totalEnemies = 0;
+var star = 0;
+var attackPopups = [];
+
+let playerAttackRange = 50;
+
+let arrows = [];
+let bowCoolDown = 300;
+let lastBowShot = 0;
+let hitEnemy = false;
+
+let digitImages = [];
+let digitImagesRed = [];
+
+let strengthPotionActive = false;
+let strengthPotionTimer = 0;
+let playerAttackBoost = 0;
+
+let shakeAmount = 0;
+let shakeDuration = 0;
+
+let playerHitFlash = 0;
 
 
 function preload() {
@@ -191,12 +170,12 @@ function preload() {
   skins1 = loadImage("dev/assets/skins1.png");
   skins2 = loadImage("dev/assets/skins2.png");
 
-  story1 = loadImage("dev/assets/story1.gif");
-  story2 = loadImage("dev/assets/story2.gif");
-  story3 = loadImage("dev/assets/story3.gif");
-  story4 = loadImage("dev/assets/story4.gif");
-  story5 = loadImage("dev/assets/story5.gif");
-  story6 = loadImage("dev/assets/story6.gif");
+  story1 = loadImage("dev/assets/story1.png");
+  story2 = loadImage("dev/assets/story2.png");
+  story3 = loadImage("dev/assets/story3.png");
+  story4 = loadImage("dev/assets/story4.png");
+  story5 = loadImage("dev/assets/story5.png");
+  story6 = loadImage("dev/assets/story6.png");
 
   slideSound1 = loadSound("dev/assets/VoiceRecord1.mp3");
   slideSound2 = loadSound("dev/assets/VoiceRecord2.mp3");
@@ -204,6 +183,8 @@ function preload() {
   slideSound4 = loadSound("dev/assets/VoiceRecord4.mp3");
   slideSound5 = loadSound("dev/assets/VoiceRecord5.mp3");
   slideSound6 = loadSound("dev/assets/VoiceRecord6.mp3");
+
+  message_noti = loadSound("dev/assets/message_noti.mp3");
 
   slideSounds = [
     slideSound1,
@@ -214,6 +195,12 @@ function preload() {
     slideSound6
   ];
 
+  transition_background = loadImage("dev/assets/transition_background.png");
+  transition_sound = loadSound("dev/assets/transition_sound.mp3");
+  boss_music = loadSound("dev/assets/boss_music.mp3");
+
+  ending_slide = loadImage("dev/assets/ending_slide.png");
+
   return1 = loadImage("dev/assets/return1.png");
   return2 = loadImage("dev/assets/return2.png");
 
@@ -222,20 +209,28 @@ function preload() {
 
   victory1 = loadImage("dev/assets/victory1.png");
   victory2 = loadImage("dev/assets/victory2.png");
+  mapCleared_img = loadImage("dev/assets/map_cleared.png");
 
   skip1 = loadImage("dev/assets/skip1.png");
   skip2 = loadImage("dev/assets/skip2.png");
 
-  cat_orange = loadImage("dev/assets/sprite_sheet_orange.png");
+  cat_orange = loadImage("dev/assets/sprite_sheet_orange_dad.png");
   cat_white = loadImage("dev/assets/sprite_sheet_white.png");
-  cat_tan = loadImage("dev/assets/sprite_sheet_tan.png");
-  cat_charzard = loadImage("dev/assets/sprite_sheet_charzard.png");
+  cat_tan = loadImage("dev/assets/sprite_sheet_orange.png");
+  cat_charzard = loadImage("dev/assets/sprite_sheet_orange_mom.png");
 
   skinChoice = cat_tan;
   skin_selection = loadImage("dev/assets/skin_select_button.png");
 
   rat1 = loadImage("dev/assets/rat.png");
+  rat_blue = loadImage("dev/assets/rat_blue.png");
+  rat_parmesan = loadImage("dev/assets/rat_parmesan.png");
+  rat_cake = loadImage("dev/assets/rat_cake.png");
+
   rat_boss = loadImage("dev/assets/rat_boss.png");
+  rat_boss_blue = loadImage("dev/assets/rat_boss_blue.png");
+  rat_boss_parmesan = loadImage("dev/assets/rat_boss_parmesan.png");
+  rat_boss_cake = loadImage("dev/assets/rat_boss_cake.png");
 
   icu = loadImage("dev/assets/interface.png");
   heart = loadImage("dev/assets/heart.png");
@@ -252,6 +247,11 @@ function preload() {
   map3_theme = loadSound("dev/assets/map3_theme.mp3");
   map4_theme = loadSound("dev/assets/map4_theme.mp3");
 
+  meowl = loadSound("dev/assets/meowl.mp3");
+
+  loose_heart = loadSound("dev/assets/loose_heart.mp3");
+
+  rocket = loadImage("dev/assets/rocket.png");
 
   overmusic = loadSound("dev/assets/GameOver.mp3");
   slides_track = loadSound("dev/assets/Slides1.0.mp3");
@@ -266,6 +266,16 @@ function preload() {
   button_beep = loadSound("dev/assets/button_beep.mp3");
   meow = loadSound("dev/assets/meow.mp3");
 
+  gate_up = loadSound("dev/assets/gate_up.mp3");
+  gate_down = loadSound("dev/assets/gate_down.mp3");
+
+  rat_squeak1 = loadSound("dev/assets/rat_squeak1.mp3");
+  rat_squeak2 = loadSound("dev/assets/rat_squeak2.mp3");
+
+  roar1 = loadSound("dev/assets/roar1.mp3");
+  roar2 = loadSound("dev/assets/roar2.mp3");
+
+
   sword_nacho = loadImage("dev/assets/sword_nacho.png");
   sword_blueCheese = loadImage("dev/assets/sword_blueCheese.png");
   sword_parmesan = loadImage("dev/assets/sword_parmesan.png");
@@ -276,11 +286,16 @@ function preload() {
   sword_parmesan_selected = loadImage("dev/assets/sword_parmesan_selected.png");
   sword_cheeseCake_selected = loadImage("dev/assets/sword_cheeseCake_selected.png");
   potion_selected = loadImage("dev/assets/Potion_selected.png");
+  bow = loadImage("dev/assets/bow.png");
+  bow_selected = loadImage("dev/assets/bow_selected.png");
+  arrow_weapon = loadImage("dev/assets/arrow_weapon.png");
 
   floorTileset = loadImage("dev/assets/atlas_floor-16x16.png");
   wallTileset = loadImage("dev/assets/atlas_walls_high-16x32.png");
   chestTileset = loadImage("dev/assets/Chest.png");
   sewerTileset = loadImage("dev/assets/sewer_1.png");
+  royalTileset = loadImage("dev/assets/royal.png");
+  royalTileset2 = loadImage("dev/assets/royal_2.png");
 
   arrow_up = loadImage("dev/assets/arrow_up.png");
   arrow = loadImage("dev/assets/arrow.png");
@@ -309,11 +324,22 @@ function preload() {
   spacebar_selected = loadImage("dev/assets/spacebar_selected.png");
   snowTileset = loadImage("dev/assets/FE8 - Snowy Bern.png");
 
+  for (let i = 0; i <= 9; i++) {
+    digitImages[i] = loadImage("dev/assets/" + i + ".png");
+  }
+  for (let i = 0; i <= 9; i++) {
+    digitImagesRed[i] = loadImage("dev/assets/" + i + "_red.png");
+  }
+
   //Attack Animations
   attack_down = loadImage("dev/assets/AttackAnimation/slash_down.png");
   attack_up = loadImage("dev/assets/AttackAnimation/slash_up.png");
   attack_left = loadImage("dev/assets/AttackAnimation/slash_left.png");
   attack_right = loadImage("dev/assets/AttackAnimation/slash_right.png");
+
+  arrow_weapon = loadImage("dev/assets/arrow_weapon.png");
+  potion_strength = loadImage("dev/assets/potion_boost.png");
+  potion_strength_selected = loadImage("dev/assets/potion_boost_selected.png");
 }
 
 function getSpawnPoint(map) {
@@ -336,6 +362,8 @@ function mousePressed() {
     userStartAudio();
     audioUnlocked = true;
   }
+
+  shootArrow();
 }
 
 function setup() {
@@ -356,26 +384,18 @@ function setup() {
   // enemyX = spawn.x + random(-150, 150); // spawn enemy a bit away from player
   // enemyY = spawn.y + random(-100, 100);
 
-  swordNacho = new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 });
-  swordBlueCheese = new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 });
-  swordParmesan = new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 });
-  swordCheeseCake = new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 });
-  potionItem_nacho = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_blueCheese = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_parmesan = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  potionItem_cheeseCake = new Item([potion, potion_selected], false, { damage: 0, health: 50 });
-  chestInventory_nacho[0] = ([swordNacho, potionItem_nacho]);
-  chestInventory_nacho[1] = ([potionItem_nacho]);
-  chestInventory_nacho[2] = ([potionItem_nacho]);
-  chestInventory_blueCheese[0] = ([swordBlueCheese, potionItem_blueCheese]);
-  chestInventory_blueCheese[1] = ([potionItem_blueCheese]);
-  chestInventory_blueCheese[2] = ([potionItem_blueCheese]);
-  chestInventory_parmesan[0] = ([swordParmesan, potionItem_parmesan]);
-  chestInventory_parmesan[1] = ([potionItem_parmesan]);
-  chestInventory_parmesan[2] = ([potionItem_parmesan]);
-  chestInventory_cheeseCake[0] = ([swordCheeseCake, potionItem_cheeseCake]);
-  chestInventory_cheeseCake[1] = ([potionItem_cheeseCake]);
-  chestInventory_cheeseCake[2] = ([potionItem_cheeseCake]);
+
+  bowItem = new Item([bow, bow_selected], false, { type: "bow", damage: 15, health: 0 });
+  potion_strength_item = new Item([potion_strength, potion_strength_selected], false, { type: "strengthPotion", damage: 20, health: 0 });
+
+  chestInventory_nacho[0] = [new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), potion_strength_item];
+  chestInventory_blueCheese[0] = [new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_blueCheese[1] = [potion_strength_item, bowItem];
+  chestInventory_parmesan[0] = [new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_parmesan[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), bowItem];
+  chestInventory_cheeseCake[0] = [new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_cheeseCake[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), potion_strength_item];
 }
 
 
@@ -408,7 +428,7 @@ function button(image1, x, y, w, h) {
       }
 
     } else if (image1 === skip2) {
-      image(skip1, 475, 345, skip1.width / 14, skip1.height / 12);
+      image(skip1, 475, 354, skip1.width / 14, skip1.height / 12);
     }
   }
 
@@ -441,6 +461,16 @@ function button(image1, x, y, w, h) {
 // 4 = victory screen
 // 5 = game screen
 function screen() {
+  if (endingActive) {
+    endingSlideshow();
+    return;
+  }
+
+  if (mapClearedActive) {
+    gameStart();
+    mapClearedPage();
+    return;
+  }
   if (mapTransitionActive) {
     mapTransitionPage();
     return; // stop drawing the game until transition ends
@@ -606,6 +636,7 @@ function resetGame() {
   chests = [];
   spikeWalls = [];
   enemies = [];
+  planetClearing = false;
 
   // inventory
   size = 0;
@@ -614,7 +645,12 @@ function resetGame() {
   droppedSize = 0;
 
   // camera and player position
-  currentMap = mapData_nacho;
+  const startPlanets = [1, 2, 3];
+  planet = startPlanets[floor(random(startPlanets.length))];
+
+  if (planet === 1) currentMap = mapData_nacho;
+  else if (planet === 2) currentMap = mapData_blueCheese;
+  else if (planet === 3) currentMap = mapData_parmesan;
   currentMapFloor = floorTileset;
   currentMapWall = wallTileset;
   const spawn = getSpawnPoint(currentMap);
@@ -628,12 +664,17 @@ function resetGame() {
   frameCurrRow = 0;
   frontR = true;
   walkToggle = false;
+
+  first = 0;
+  totalEnemies = 0;
+  star = 0;
 }
 
 function homePage() {
   scale = 1;
   backgroundMoveSpeed = 0.5;
   overmusic.stop();
+  victory_music.stop();
 
   if (audioUnlocked && !homepage_sound.isPlaying()) {
     homepage_sound.loop();
@@ -779,11 +820,25 @@ function skinScreen() {
 
 }
 
+function drawSpriteNumber(numStr, x, y, digitW, digitH, useRed = false) {
+  let digits = useRed ? digitImagesRed : digitImages;
+  let spacing = digitW + 2;
+  let totalWidth = numStr.length * spacing;
+  let startX = x - totalWidth / 2;
+
+  for (let i = 0; i < numStr.length; i++) {
+    let ch = numStr[i];
+    if (ch >= '0' && ch <= '9') {
+      image(digits[int(ch)], startX + i * spacing, y, digitW, digitH);
+    }
+  }
+}
+
 function stopAllSounds() {
   for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
     if (t && t.isPlaying()) t.stop();
   }
-
+  if (boss_music && boss_music.isPlaying()) boss_music.stop();
   homepage_sound.stop();
 }
 
@@ -825,44 +880,14 @@ function storySlides() {
   noStroke();
   rect(0, 0, pageWidth, pageHeight);
 
-  // --- TEXT CONTENT ---
-  let slide = backstorySlides[currentSlide];
-
-  if (slide) {
-    push();
-
-    textAlign(CENTER);
-
-    fill(0);
-    textSize(26);
-    text(slide.title, pageWidth / 2 + 2, 62);
-
-
-    fill(255);
-    text(slide.title, pageWidth / 2, 60);
-
-
-    textSize(14);
-    for (let i = 0; i < slide.text.length; i++) {
-      // shadow
-      fill(0);
-      text(slide.text[i], pageWidth / 2 + 1, 122 + i * 20);
-
-      // main text
-      fill(255);
-      text(slide.text[i], pageWidth / 2, 120 + i * 20);
-    }
-
-    // Emoji
-    textSize(30);
-    fill(255);
-    text(slide.emoji, pageWidth / 2, 310);
-
-    pop();
-  }
 
   // --- FADE LOGIC ---
   if (fadeState === "in") {
+    if (message_noti && !message_noti.isPlaying()) {
+      message_noti.setVolume(0.9);
+      message_noti.play();
+    }
+
     slideAlpha = min(slideAlpha + FADE_SPEED, 255);
     if (slideAlpha >= 255) {
       fadeState = "hold";
@@ -882,8 +907,7 @@ function storySlides() {
 
       // stop when either gifs OR text runs out
       if (
-        currentSlide >= storyGifs.length ||
-        currentSlide >= backstorySlides.length
+        currentSlide >= storyGifs.length
       ) {
         onBackstoryComplete();
         return;
@@ -894,36 +918,88 @@ function storySlides() {
   }
 
   // --- SKIP BUTTON ---
-  button(skip2, 475, 345, skip2.width / 14, skip2.height / 12);
+  button(skip2, 475, 354, skip2.width / 14, skip2.height / 12);
+}
+
+function endingSlideshow() {
+  stopAllSounds();
+  // background
+  image(ending_slide, 0, 0, pageWidth, pageHeight);
+
+  // fade overlay
+  fill(0, 0, 0, 255 - endingAlpha);
+  noStroke();
+  rect(0, 0, pageWidth, pageHeight);
+
+  // fade logic
+  if (endingFadeState === "in") {
+    if (message_noti && !message_noti.isPlaying()) {
+      message_noti.setVolume(0.9);
+      message_noti.play();
+    }
+
+    if (meowl && !meowl.isPlaying()) {
+      meowl.setVolume(0.9);
+      meowl.play();
+    }
+
+    endingAlpha = min(endingAlpha + FADE_SPEED, 255);
+    if (endingAlpha >= 255) {
+      endingFadeState = "hold";
+      endingFadeTimer = 0;
+    }
+  } else if (endingFadeState === "hold") {
+    endingFadeTimer++;
+    if (endingFadeTimer >= HOLD_FRAMES) {
+      endingFadeState = "out";
+    }
+  } else if (endingFadeState === "out") {
+    endingAlpha = max(endingAlpha - FADE_SPEED, 0);
+    if (endingAlpha <= 0) {
+      // ending done, go to victory screen
+      endingActive = false;
+      page = 4;
+    }
+  }
 }
 
 function mapTransitionPage() {
   stopAllSounds();
   let elapsed = millis() - mapTransitionStart;
 
-  // Draw GIF fullscreen
-  image(story1, 0, 0, pageWidth, pageHeight);
+  // --- BACKGROUND ---
+  image(transition_background, 0, 0, pageWidth, pageHeight);
 
-  // Fade in (first 500ms)
+  // --- ROCKET ANIMATION ---
+  push();
+  imageMode(CENTER);
+
+  rocketX += 6;   // move right
+  rocketY -= 4;   // move up
+
+  image(rocket, rocketX, rocketY, 120, 120);
+
+  pop();
+
+  // --- FADE IN ---
   if (elapsed < 500) {
     let alpha = map(elapsed, 0, 500, 255, 0);
     fill(0, alpha);
     rect(0, 0, pageWidth, pageHeight);
   }
 
-  // Fade out (last 500ms)
+  // --- FADE OUT ---
   if (elapsed > MAP_TRANSITION_DURATION - 500) {
     let alpha = map(elapsed, MAP_TRANSITION_DURATION - 500, MAP_TRANSITION_DURATION, 0, 255);
     fill(0, alpha);
     rect(0, 0, pageWidth, pageHeight);
   }
 
-  // End transition
+  // --- END TRANSITION ---
   if (elapsed >= MAP_TRANSITION_DURATION) {
     mapTransitionActive = false;
   }
 }
-
 
 function startBackstory() {
   currentSlide = 0;
@@ -935,7 +1011,12 @@ function startBackstory() {
 
 function onBackstoryComplete() {
   backstoryActive = false;
-  currentMap = mapData_nacho;
+  const startPlanets = [1, 2, 3];
+  planet = startPlanets[floor(random(startPlanets.length))];
+
+  if (planet === 1) currentMap = mapData_nacho;
+  else if (planet === 2) currentMap = mapData_blueCheese;
+  else if (planet === 3) currentMap = mapData_parmesan;
   currentMapFloor = floorTileset;
   currentMapWall = wallTileset;
 
@@ -948,6 +1029,17 @@ function onBackstoryComplete() {
   cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
   page = 5;
+
+  mapTransitionActive = true;
+  mapTransitionStart = millis();
+
+  rocketX = -150;
+  rocketY = pageHeight + 150;
+
+  if (transition_sound && !transition_sound.isPlaying()) {
+    transition_sound.setVolume(0.8);
+    transition_sound.play();
+  }
 }
 
 function initMapObjects(map) {
@@ -969,7 +1061,8 @@ function initMapObjects(map) {
             h: obj.height * mapScale,
             cleared: false,
             active: false,
-            activateTimer: -1
+            activateTimer: -1,
+            isBossRoom: false
           });
         }
       }
@@ -1013,6 +1106,7 @@ function initMapObjects(map) {
           x: col * 16 * mapScale,
           y: row * 16 * mapScale,
           raised: false,
+          wasRaised: false,
           roomIndex: -1,
           animFrame: 0,
           animTimer: 0
@@ -1038,13 +1132,49 @@ function initMapObjects(map) {
     spike.roomIndex = closest;
   }
   for (let enemy of enemies) {
+    if (enemy.type === "boss") {
+      for (let i = 0; i < fightRooms.length; i++) {
+        let r = fightRooms[i];
+        if (enemy.x >= r.x && enemy.x <= r.x + r.w &&
+          enemy.y >= r.y && enemy.y <= r.y + r.h) {
+          enemy.roomIndex = i;
+          if (enemy.type === "boss") fightRooms[i].isBossRoom = true;
+          break;
+        }
+      }
+    }
+  }
+
+  for (let enemy of enemies) {
+    if (enemy.roomIndex != -1) continue;
+    let closest = -1;
+    let closestDist = Infinity;
     for (let i = 0; i < fightRooms.length; i++) {
       let r = fightRooms[i];
-      if (enemy.x >= r.x && enemy.x <= r.x + r.w &&
-        enemy.y >= r.y && enemy.y <= r.y + r.h) {
-        enemy.roomIndex = i;
-        break;
+      let cx = r.x + r.w / 2;
+      let cy = r.y + r.h / 2;
+      let d = dist(enemy.x, enemy.y, cx, cy);
+      if (d < closestDist) {
+        closestDist = d;
+        closest = i;
       }
+    }
+    enemy.roomIndex = closest;
+
+    if (closest !== -1) {
+      let r = fightRooms[closest];
+      enemy.x = constrain(enemy.x, r.x + 10, r.x + r.w - 10);
+      enemy.y = constrain(enemy.y, r.y + 10, r.y + r.h - 10);
+    }
+  }
+
+  for (let spike of spikeWalls) {
+    let r = fightRooms[spike.roomIndex];
+    if (r && r.isBossRoom) {
+      spike.raised = true;
+      spike.wasRaised = true;
+      spike.animFrame = 3;
+      spike.animTimer = millis();
     }
   }
 }
@@ -1068,42 +1198,53 @@ function loadRandomPlanet() {
 
   if (next === 1 && typeof mapData_nacho !== 'undefined') {
     currentMap = mapData_nacho;
-  } else if (next === 2 && typeof mapData_parmesan !== 'undefined') {
-    currentMap = mapData_parmesan;
-  } else if (next === 3 && typeof mapData_blueCheese !== 'undefined') {
+  } else if (next === 2 && typeof mapData_blueCheese !== 'undefined') {
     currentMap = mapData_blueCheese;
+  } else if (next === 3 && typeof mapData_parmesan !== 'undefined') {
+    currentMap = mapData_parmesan;
   } else if (next === 4 && typeof mapData_cheeseCake !== 'undefined') {
     currentMap = mapData_cheeseCake;
   } else {
-    // fallback to nacho if map not ready yet
     currentMap = mapData_nacho;
     planet = 1;
   }
+  planetClearing = false;
 
+  if (next === bossPlanet && completedPlanets.includes(bossPlanet)) {
+    stopAllSounds();
+    endingActive = true;
+    endingAlpha = 0;
+    endingFadeState = "in";
+    endingFadeTimer = 0;
+    return; // exit immediately — no rocket, no map transition
+  }
+
+  // everything below only runs for normal planet transitions
   mapTransitionActive = true;
   mapTransitionStart = millis();
 
+  if (transition_sound && !transition_sound.isPlaying()) {
+    transition_sound.setVolume(0.8);
+    transition_sound.play();
+  }
+
+  rocketX = -150;
+  rocketY = pageHeight + 150;
 
   currentMapFloor = floorTileset;
   currentMapWall = wallTileset;
 
-  // Reset map objects for new planet
   g = 0;
   fightRooms = [];
   chests = [];
   spikeWalls = [];
   enemies = [];
 
-  // Respawn player at new map spawn point
   const spawn = getSpawnPoint(currentMap);
   playerX = spawn.x;
   playerY = spawn.y;
   cam.x = constrain(playerX - pageWidth / 2, 0, currentMap.width * 16 * mapScale - pageWidth);
   cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
-
-  if (next === bossPlanet && completedPlanets.includes(bossPlanet)) {
-    page = 4; // victory
-  }
 }
 
 function updateFightRooms() {
@@ -1115,7 +1256,22 @@ function updateFightRooms() {
       playerY > r.y && playerY < r.y + r.h;
 
     if (inRoom && !r.active && r.activateTimer === -1) {
-      r.activateTimer = millis(); // start the timer when player enters
+      if (r.isBossRoom) {
+        let nonBossRoomsCleared = fightRooms.every((room, idx) => idx === i || room.cleared || room.isBossRoom);
+        if (nonBossRoomsCleared) {
+          r.activateTimer = millis();
+
+          if (audioUnlocked && !boss_music.isPlaying()) {
+            for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
+              if (t && t.isPlaying()) t.stop();
+            }
+            boss_music.setVolume(0.3);
+            boss_music.loop();
+          }
+        }
+      } else {
+        r.activateTimer = millis();
+      }
     }
 
     // raise spikes after 1500ms delay
@@ -1125,7 +1281,7 @@ function updateFightRooms() {
       if (stillInRoom) {
         r.active = true;
         for (let spike of spikeWalls) {
-          if (spike.roomIndex === i) {
+          if (spike.roomIndex === i && !spike.raised) {
             spike.raised = true;
             spike.animFrame = 0;
             spike.animTimer = millis();
@@ -1154,6 +1310,29 @@ function updateFightRooms() {
             spike.animTimer = millis();
           }
         }
+        if (!r.isBossRoom) {
+          let nonBossRoomsCleared = fightRooms.every((room, idx) => room.cleared || room.isBossRoom);
+          if (nonBossRoomsCleared) {
+            for (let spike of spikeWalls) {
+              let bossRoom = fightRooms[spike.roomIndex];
+              if (bossRoom && bossRoom.isBossRoom) {
+                spike.raised = false;
+                spike.animFrame = 0;
+                spike.animTimer = millis();
+              }
+            }
+          }
+        }
+        let allRoomsCleared = fightRooms.length > 0 && fightRooms.every(r => r.cleared);
+        if (allRoomsCleared && !planetClearing) {
+          planetClearing = true;
+          mapClearedActive = true;
+          mapClearedTimer = millis();
+          mapClearedAlpha = 0;
+          mapClearedParticles = [];
+
+          if (boss_music && boss_music.isPlaying()) boss_music.stop();
+        }
       }
     }
   }
@@ -1165,6 +1344,7 @@ function drawChests() {
   for (let chest of chests) {
     if (chest.opened) {
       chestItem(index, chest.x, chest.y);
+      index++;
       continue;
     }
     let d = dist(playerX, playerY, chest.x, chest.y);
@@ -1205,6 +1385,17 @@ function drawSpikeWalls() {
   const now = millis();
 
   for (let spike of spikeWalls) {
+    // detect state change and play sound
+    if (spike.raised && !spike.wasRaised) {
+      gate_up.setVolume(0.4);
+      gate_up.play();
+      spike.wasRaised = true;
+    } else if (!spike.raised && spike.wasRaised) {
+      gate_down.setVolume(0.4);
+      gate_down.play();
+      spike.wasRaised = false;
+    }
+
     let frames = spike.raised ? SPIKE_FRAMES_RAISE : SPIKE_FRAMES_RETRACT;
 
     if (now - spike.animTimer > frames[spike.animFrame][1]) {
@@ -1228,6 +1419,17 @@ function drawSpikeWalls() {
   }
 }
 
+function playRandomRatSqueak() {
+  if (random() < 0.5) rat_squeak1.play();
+  else rat_squeak2.play();
+}
+
+function playRandomBossRoar() {
+  if (random() < 0.5) roar1.play();
+  else roar2.play();
+}
+
+
 //function createEnemy(x, y, enemyType, damage, health) {
 //enemies.push({ 
 //x: x, 
@@ -1238,8 +1440,110 @@ function drawSpikeWalls() {
 //dirY: random([-1, 1])
 //});
 //}
+function collidesWithPlayer() {
+  for (let e of enemies) {
+    if (!e.alive) continue;
+    d = dist(playerX, playerY, e.x, e.y);
+    return d < 20; // collision threshold, adjust as needed
+  }
+}
+
+function drawArrows() {
+  for (let i = arrows.length - 1; i >= 0; i--) {
+    hitEnemy = false;
+    let a = arrows[i];
+    a.x += a.dx * 8;
+    a.y += a.dy * 8;
+
+    // draw rotated arrow sprite
+    push();
+    translate(a.x, a.y);
+    rotate(a.angle + PI / 4);
+    imageMode(CENTER);
+    image(arrow_weapon, 0, 0, 16, 16);
+    imageMode(CORNER);
+    pop();
+
+    // check arrow out of bounds
+    if (a.x < cam.x - 50 || a.x > cam.x + pageWidth + 50 ||
+      a.y < cam.y - 50 || a.y > cam.y + pageHeight + 50) {
+      arrows.splice(i, 1);
+      continue;
+    }
+
+    let hit = false;
+    for (let e of enemies) {
+      if (!e.alive) continue;
+
+      // use enemy center instead of top-left corner
+      let eCenterX = e.x + (e.type === "boss" ? BOSS_FRAME_W * 0.15 : RAT_FRAME_W) / 2;
+      let eCenterY = e.y + (e.type === "boss" ? BOSS_FRAME_H * 0.15 : RAT_FRAME_H[0]) / 2;
+
+      let d = dist(a.x, a.y, eCenterX, eCenterY);
+      if (d < (e.type === "boss" ? 30 : 16)) {  // bigger hitbox for boss
+        e.health -= 10;
+        attackPopups.push({ x: e.x, y: e.y, damage: 10, miss: false, crit: false, col: color(255), timer: millis(), isPlayerDamage: true });
+        e.knockbackX = a.dx * 5;
+        e.knockbackY = a.dy * 5;
+        if (e.health <= 0) {
+          e.alive = false;
+          if (e.type === "boss") playRandomBossRoar();
+          else playRandomRatSqueak();
+        }
+        arrows.splice(i, 1);
+        hit = true;
+        break;
+      }
+    }
+  }
+}
+
+
+function shootArrow() {
+  let equipped = getEquippedItem();
+
+  if (equipped && equipped.data.type === "bow") {
+    if (millis() - lastBowShot < bowCoolDown) return; // 500ms cooldown
+    lastBowShot = millis();
+
+    let worldMouseX = cam.x + mouseX;
+    let worldMouseY = cam.y + mouseY;
+
+    let dx = worldMouseX - playerX;
+    let dy = worldMouseY - playerY;
+
+    let d = dist(playerX, playerY, worldMouseX, worldMouseY);
+
+    if (d > 0) {
+      dx /= d;
+      dy /= d;
+    }
+
+    arrows.push({
+      x: playerX,
+      y: playerY,
+      dx: dx,
+      dy: dy,
+      angle: atan2(dy, dx)
+    });
+
+  }
+}
+
+
+function bowAttack() {
+  let equipped = getEquippedItem();
+  if (!equipped && equipped.data.type !== "bow") {
+    return
+  } else {
+
+    shootArrow();
+  }
+}
+
 
 function drawEnemy() {
+
   for (let i = enemies.length - 1; i >= 0; i--) {
     let e = enemies[i];
     if (!e.alive) continue;
@@ -1248,9 +1552,25 @@ function drawEnemy() {
     let dy = playerY - e.y;
     let d = dist(playerX, playerY, e.x, e.y);
 
-    if (d <= e.attackRange) e.state = "attack";
-    else if (d <= e.detectionRange) e.state = "chase";
-    else e.state = "wander";
+    if (collidesWithPlayer()) {
+      if (d > 0) {
+        e.x -= (dx / d) * 2;
+        e.y -= (dy / d) * 2;
+      }
+    }
+
+    // only activate if player is in the same room
+    let r = fightRooms[e.roomIndex];
+    let playerInRoom = r && playerX > r.x && playerX < r.x + r.w &&
+      playerY > r.y && playerY < r.y + r.h;
+
+    if (!playerInRoom) {
+      e.state = "wander";
+    } else {
+      if (d <= e.attackRange) e.state = "attack";
+      else if (d <= e.detectionRange) e.state = "chase";
+      else e.state = "wander";
+    }
 
     let dirRow;
     if (Math.abs(dx) > Math.abs(dy)) dirRow = dx > 0 ? 1 : 3;
@@ -1261,6 +1581,23 @@ function drawEnemy() {
     if (e.state === "chase" && d > 0) {
       moveX = (dx / d) * e.speed;
       moveY = (dy / d) * e.speed;
+
+      if (e.type === "boss") {
+        e.chargeCooldown--;
+        if (e.chargeCooldown <= 0) {
+          e.charging = true;
+          e.chargeTimer = 20;
+          e.chargeCooldown = 180;
+        }
+        if (e.charging) {
+          moveX = (dx / d) * e.speed * 4;
+          moveY = (dy / d) * e.speed * 4
+          e.chargeTimer--;
+          if (e.chargeTimer <= 0) e.charging = false;
+          triggerShake(6, 15);
+        }
+      }
+
     } else if (e.state === "wander") {
       e.moveTimer--;
       if (e.moveTimer <= 0) {
@@ -1272,8 +1609,42 @@ function drawEnemy() {
       moveX = e.dirX * e.speed * 0.5;
       moveY = e.dirY * e.speed * 0.5;
     } else if (e.state === "attack" && e.attackCooldown <= 0) {
-      playerHealth = max(0, playerHealth - ENEMY_ATTACK);
+      let roll = random(100);
+      let dmg;
+      let popupColor;
+
+      let diffMult = 1 + completedPlanets.length * 0.3;
+
+      if (roll < 20) {
+        dmg = 0;
+        popupColor = color(200, 200, 200);
+      } else if (roll < 50) {
+        dmg = floor(4 * diffMult);
+        popupColor = color(255, 150, 0);
+      } else if (roll < 85) {
+        dmg = floor(8 * diffMult);
+        popupColor = color(255, 50, 50);
+      } else {
+        dmg = floor(16 * diffMult);
+        popupColor = color(255, 0, 250);
+      }
+
+      playerHealth = max(0, playerHealth - dmg);
+      if (dmg > 0) {
+        triggerShake(4, 10);
+        playerHitFlash = 12;
+      }
+      if (dmg >= 16) triggerShake(8, 18);
+
+      if (e.type === "boss") {
+        playRandomBossRoar();
+      } else {
+        playRandomRatSqueak();
+      }
+
       e.attackCooldown = 90;
+      attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis(), isPlayerDamage: false });
+      e.jumpVelocity = -6;
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
@@ -1283,6 +1654,20 @@ function drawEnemy() {
     let nextY = e.y + moveY;
     let w = e.type === "boss" ? BOSS_FRAME_W * 0.15 : RAT_FRAME_W;
     let h = e.type === "boss" ? BOSS_FRAME_H * 0.15 : RAT_FRAME_H[dirRow];
+
+    if (e.knockbackX !== 0 || e.knockbackY !== 0) {
+      nextX += e.knockbackX;
+      nextY += e.knockbackY;
+      e.knockbackX *= 0.8;
+      e.knockbackY *= 0.8;
+      if (abs(e.knockbackX) < 0.1) e.knockbackX = 0;
+      if (abs(e.knockbackY) < 0.1) e.knockbackY = 0;
+    }
+
+    if (r) {
+      nextX = constrain(nextX, r.x, r.x + r.w - w);
+      nextY = constrain(nextY, r.y, r.y + r.h - h);
+    }
     if (!isWallTile(nextX + RAT_HITBOX_LEFT, e.y + RAT_HITBOX_TOP) &&
       !isWallTile(nextX + w - RAT_HITBOX_RIGHT - 1, e.y + RAT_HITBOX_TOP) &&
       !isWallTile(nextX + RAT_HITBOX_LEFT, e.y + h - RAT_HITBOX_BOTTOM - 1) &&
@@ -1297,14 +1682,30 @@ function drawEnemy() {
     }
 
     // draw
+    if (e.type === "boss" && !e.phase2 && e.health <= e.maxHealth / 2) {
+      e.phase2 = true;
+      e.speed *= 1.8;
+      e.attackRange += 10;
+      e.attackCooldown = 0;
+      triggerShake(12, 25);
+      e.hitFlash = 30;
+    }
     let img, fw, fh, ry;
     if (e.type === "boss") {
-      img = rat_boss;
+      if (planet === 1) img = rat_boss;
+      else if (planet === 2) img = rat_boss_blue;
+      else if (planet === 3) img = rat_boss_parmesan;
+      else if (planet === 4) img = rat_boss_cake;
+
       fw = BOSS_FRAME_W;
       fh = BOSS_FRAME_H;
       ry = BOSS_ROW_Y[dirRow];
     } else {
-      img = rat1;
+      if (planet === 1) img = rat1;
+      else if (planet === 2) img = rat_blue;
+      else if (planet === 3) img = rat_parmesan;
+      else if (planet === 4) img = rat_cake;
+
       fw = RAT_FRAME_W;
       fh = RAT_FRAME_H[dirRow];
       ry = RAT_ROW_Y[dirRow];
@@ -1314,7 +1715,31 @@ function drawEnemy() {
     let drawW = e.type === "boss" ? fw * 0.15 : fw;
     let drawH = e.type === "boss" ? fh * 0.15 : fh;
 
-    image(img, e.x, e.y, drawW, drawH, sx, ry, fw, fh);
+    if (e.jumpVelocity !== 0 || e.jumpOffset !== 0) {
+      e.jumpOffset += e.jumpVelocity;
+      e.jumpVelocity += 1.2; // gravity pulls back down
+      if (e.jumpOffset >= 0) {
+        e.jumpOffset = 0;
+        e.jumpVelocity = 0;
+      }
+    }
+
+    if (e.type === "boss" && e.chargeCooldown < 40 && !e.charging) {
+      noFill();
+      stroke(255, 255, 255, map(e.chargeCooldown, 40, 0, 0, 200));
+      strokeWeight(3);
+      ellipse(e.x + 30, e.y + 30, 80, 80);
+      noStroke();
+    }
+
+    image(img, e.x, e.y + e.jumpOffset, drawW, drawH, sx, ry, fw, fh);
+
+    if (e.hitFlash > 0) {
+      tint(255, 0, 0, e.hitFlash * 20);
+      image(img, e.x, e.y + e.jumpOffset, drawW, drawH, sx, ry, fw, fh);
+      noTint();
+      e.hitFlash--;
+    }
 
     healthBarEnemy(e.x, e.y - 5, e.health, e.maxHealth);
 
@@ -1342,7 +1767,6 @@ function AttackAnimation() {
   if (!isAttacking) return;
 
   let attackImg;
-
   if (frameCurrRow == 1) {
     attackImg = attack_up;
   } else if (frameCurrRow == 3) {
@@ -1353,12 +1777,9 @@ function AttackAnimation() {
     attackImg = attack_left;
   }
 
-  sx = attackFrame * ATTACK_FRAME_W;
-  sy = 0;
-  sw = ATTACK_FRAME_W;
-  sh = ATTACK_FRAME_H;
+  let sx = attackFrame * ATTACK_FRAME_W;
+  image(attackImg, playerX, playerY, ATTACK_FRAME_W, ATTACK_FRAME_H, sx, 0, ATTACK_FRAME_W, ATTACK_FRAME_H);
 
-  image(attackImg, playerX, playerY, sw, sh, sx, sy, sw, sh);
 
   if (millis() - lastAttackFrameTime > ATTACK_INTERVAL) {
     attackLastSwitch = millis();
@@ -1372,6 +1793,7 @@ function AttackAnimation() {
 }
 
 function drawCat(player) {
+  let itemSize = 16;
   let sx = currentFrame * frameWidth;
   let sy = frameHeight * frameCurrRow;
 
@@ -1383,6 +1805,10 @@ function drawCat(player) {
   let offsetY = 0;
 
   if (equipped != null) {
+    if (equipped.data.type === "bow") {
+      //make bow bigger on hand
+      itemSize = 20;
+    }
     if (frameCurrRow === 3) {
       offsetX = centerX + 4;
       offsetY = centerY - 4;
@@ -1405,11 +1831,19 @@ function drawCat(player) {
 
   // draw equipped item BEHIND cat if facing up
   if (equipped != null && frameCurrRow === 1) {
-    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, 12, 12);
+    image(equipped.image[0], playerX + offsetX, playerY + offsetY, itemSize, itemSize);
   }
 
   // draw cat
   image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+
+  // red flash overlay when hit
+  if (playerHitFlash > 0) {
+    tint(255, 0, 0, playerHitFlash * 20);
+    image(player, playerX, playerY, SPRITE_W, SPRITE_H, sx, sy, frameWidth, frameHeight);
+    noTint();
+    playerHitFlash--;
+  }
 
   // draw attack animation IN FRONT of cat for all other directions
   if (frameCurrRow !== 1 && isAttacking) {
@@ -1418,7 +1852,7 @@ function drawCat(player) {
 
   // draw equipped item IN FRONT of cat for all other directions
   if (equipped != null && frameCurrRow !== 1) {
-    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, 12, 12);
+    image(equipped.image[0], playerX + offsetX, playerY + offsetY, itemSize, itemSize);
   }
 
   // movement
@@ -1475,21 +1909,45 @@ function drawCat(player) {
       playerX = spawn.x;
       playerY = spawn.y;
       playerHealth = PLAYERHEALTHMAX;
+      triggerShake(10, 30);
     } else {
       page = 3;
     }
   }
 
   // attack
-  if (keyIsDown(32)) {
-    isAttacking = true;
+  if (keyIsDown(32)) { // space
+    if (attackCooldown == 0) {
+      isAttacking = true;
+      attackFrame = 0;
+      attackLastSwitch = millis();
+      lastAttackFrameTime = millis();
+    }
+    playerAttackRange = 30 + (equipped ? equipped.data.damage : 0);
     for (let e of enemies) {
       if (!e.alive) continue;
       let d = dist(playerX, playerY, e.x, e.y);
-      if (e.state !== "wander" && d <= e.attackRange * 4 && attackCooldown === 0) {
-        let damage = PLAYER_ATTACK + (equipped ? equipped.data.damage : 0);
+      if (e.state !== "wander" && d <= playerAttackRange && attackCooldown === 0) {
+
+        let damage = PLAYER_ATTACK + playerAttackBoost + (equipped ? equipped.data.damage : 0);
+
+        e.range = playerAttackRange / 2;
         e.health -= damage;
+        e.hitFlash = 10;
+        attackPopups.push({ x: e.x, y: e.y, damage: damage, miss: false, crit: false, col: color(255), timer: millis(), isPlayerDamage: true });
         attackCooldown = 40;
+
+        let knockbackDist = 8;
+        if (equipped && equipped.data.damage > 0) knockbackDist = 18;
+
+        if (d > 0) {
+          let dx = e.x - playerX;
+          let dy = e.y - playerY;
+          let len = sqrt(dx * dx + dy * dy);
+          e.knockbackX = (dx / len) * knockbackDist;
+          e.knockbackY = (dy / len) * knockbackDist;
+        }
+
         if (equipped && equipped.data.damage > 0) {
           sword_hit.setVolume(0.3);
           sword_hit.play();
@@ -1500,6 +1958,14 @@ function drawCat(player) {
         break;
       }
     }
+  }
+
+  if (strengthPotionActive) {
+    noFill();
+    stroke(255, 255, 255, 150);
+    strokeWeight(2);
+    ellipse(playerX + 16, playerY + 16, 40, 40);
+    noStroke();
   }
 }
 
@@ -1537,10 +2003,11 @@ function gameStart() {
     }
   }
 
-  // play the correct one
-  if (audioUnlocked && currentTheme && !currentTheme.isPlaying()) {
-    currentTheme.setVolume(0.2);
-    currentTheme.loop();
+  if (!boss_music.isPlaying()) {
+    if (audioUnlocked && currentTheme && !currentTheme.isPlaying()) {
+      currentTheme.setVolume(0.2);
+      currentTheme.loop();
+    }
   }
 
   if (homepage_sound.isPlaying()) {
@@ -1577,14 +2044,38 @@ function gameStart() {
   push();
   translate(-cam.x, -cam.y);
   drawEnemy();
+  drawArrows();
   pop();
 
+  attackPopups = attackPopups.filter(p => millis() - p.timer < 1000);
+  for (let p of attackPopups) {
+    let sx = p.x - cam.x;
+    let sy = p.y - cam.y;
+    let digitW = p.crit ? 14 : 10;
+    let digitH = p.crit ? 14 : 10;
+
+    if (p.miss) {
+      textSize(10);
+      textFont('Courier New');
+      fill(200, 200, 200);
+      textAlign(CENTER);
+      text("MISS", sx, sy);
+      textAlign(LEFT);
+    } else {
+      drawSpriteNumber(str(p.damage), sx, sy, digitW, digitH, !p.isPlayerDamage);
+    }
+
+    p.y -= 0.5;
+  }
 
   IU(lives, playerHealth, inventory1, inventory2);
-  if (playerHealth <= 0 && lives <= 0) {
+  if (playerHealth <= 0 && lives <= 1) {
     page = 3; // game over
   } else if (playerHealth <= 0) {
     lives--;
+
+    if (loose_heart) loose_heart.play();
+
     playerHealth = PLAYERHEALTHMAX;
 
   }
@@ -1594,7 +2085,32 @@ function gameStart() {
     console.log("fightRooms:", fightRooms.length);
     g++;
   }
+
+  if (strengthPotionActive && millis() - strengthPotionTimer > 15000) { // 15 second duration
+    strengthPotionActive = false;
+    playerAttackBoost = 0;
+  }
+
+
+  if (first == 0) {
+    startTime = millis();
+    first++;
+  }
+  if (enemies.filter(e => e.alive).length === enemies.length) {
+    totalEnemies = enemies.length;
+    droppedInventory = [];
+    droppedSize = 0;
+
+  }
+  textSize(12);
+  textFont('Courier New');
+  fill(0);
+  text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 482, 81);
+  fill(255);
+  text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 480, 80);
+  text("Enemies: " + (totalEnemies - enemies.filter(e => e.alive).length) + "/" + totalEnemies, 481, 80);
 }
+
 function keyPressed() {
   if (key === 'p' || key === 'P') {
     loadRandomPlanet();
@@ -1611,6 +2127,7 @@ function drawMap(map, floorTS, wallTS) {
   const mapCols = map.width;
   const isSnowMap = (map === mapData_parmesan);
   const isSewerMap = (map === mapData_blueCheese);
+  const isRoyalMap = (map === mapData_cheeseCake);
 
 
   for (let layer of map.layers) {
@@ -1644,6 +2161,24 @@ function drawMap(map, floorTS, wallTS) {
         const srcX = (localID % 16) * tileW;
         const srcY = Math.floor(localID / 16) * tileW;
         image(sewerTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+      } else if (isRoyalMap) {
+        if (tileId >= 2049) {
+          // test3 chest tileset
+          const localID = tileId - 2049;
+          const srcX = (localID % 3) * tileW;
+          const srcY = Math.floor(localID / 3) * tileW;
+          image(chestTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        } else if (tileId >= 1025) {
+          const localID = tileId - 1025;
+          const srcX = (localID % 32) * tileW;
+          const srcY = Math.floor(localID / 32) * tileW;
+          image(royalTileset2, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        } else {
+          const localID = tileId - 1;
+          const srcX = (localID % 32) * tileW;
+          const srcY = Math.floor(localID / 32) * tileW;
+          image(royalTileset, x, y, tileW * mapScale, tileW * mapScale, srcX, srcY, tileW, tileW);
+        }
       } else {
         if (tileId >= 194) {
           const localID = tileId - 194;
@@ -1702,6 +2237,7 @@ function isWallTile(worldX, worldY) {
   if (col < 0 || row < 0 || col >= currentMap.width || row >= currentMap.height) return true;
   const isSnowMap = (currentMap === mapData_parmesan);
   const isSewerMap = (currentMap === mapData_blueCheese);
+  const isRoyalMap = (currentMap === mapData_cheeseCake);
 
   let hasFloor = false;
   for (let layer of currentMap.layers) {
@@ -1712,6 +2248,12 @@ function isWallTile(worldX, worldY) {
       if (layer.name === "Walls" && tileId !== 0) return true;
       if (layer.name === "Floors" && tileId !== 0) hasFloor = true;
     } else if (isSewerMap) {
+      if (layer.name !== "floors" && layer.name !== "walls") continue;
+      const tileId = layer.data[row * currentMap.width + col];
+      if (layer.name === "walls" && tileId !== 0) return true;
+      if (layer.name === "floors" && tileId !== 0) hasFloor = true;
+
+    } else if (isRoyalMap) {
       if (layer.name !== "floors" && layer.name !== "walls") continue;
       const tileId = layer.data[row * currentMap.width + col];
       if (layer.name === "walls" && tileId !== 0) return true;
@@ -1772,6 +2314,7 @@ function gameover() {
   for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
     if (t && t.isPlaying()) t.stop();
   }
+  if (boss_music && boss_music.isPlaying()) boss_music.stop();
 
   image(
     homepage_background,
@@ -1795,6 +2338,21 @@ function gameover() {
     );
 
     scale -= 0.005;
+    textSize(20);
+    fill(255);
+    textFont('Courier New');
+    if (first === 1) {
+      timeTaken = floor((millis() - startTime) / 1000);
+      first++;
+    }
+    var minutes = floor(timeTaken / 60);
+    var seconds = timeTaken % 60;
+    var timeString = nf(minutes, 2) + ":" + nf(seconds, 2);
+    fill(0);
+    text("Time Taken: " + timeString, 202, 201);
+    fill(255);
+    text("Time Taken: " + timeString, 200, 200);
+    text("Time Taken: " + timeString, 201, 200);
   }
 
 
@@ -1804,6 +2362,7 @@ function gameover() {
 
 function victoryPage() {
   scale = 1;
+  meowl.stop();
   if (audioUnlocked && !victory_music.isPlaying()) {
     victory_music.loop();
   }
@@ -1811,6 +2370,7 @@ function victoryPage() {
   for (let t of [map1_theme, map2_theme, map3_theme, map4_theme]) {
     if (t && t.isPlaying()) t.stop();
   }
+  if (boss_music && boss_music.isPlaying()) boss_music.stop();
 
   image(
     homepage_background,
@@ -1834,6 +2394,23 @@ function victoryPage() {
     );
 
     scale -= 0.005;
+    textSize(20);
+    fill(255);
+    textFont('Courier New');
+
+    if (first === 1) {
+      timeTaken = floor((millis() - startTime) / 1000);
+      first++;
+    }
+    var minutes = floor(timeTaken / 60);
+    var seconds = timeTaken % 60;
+    var timeString = nf(minutes, 2) + ":" + nf(seconds, 2);
+    fill(0);
+    text("Time Taken: " + timeString, 202, 201);
+    fill(255);
+    text("Time Taken: " + timeString, 200, 200);
+    text("Time Taken: " + timeString, 201, 200);
+
   }
 
 
@@ -1843,10 +2420,11 @@ function victoryPage() {
 
 
 function healthBarEnemy(x, y, health, maxHealth) {
+  let barW = min(maxHealth * 0.3, 60);
   fill(209, 197, 197);
-  rect(x + 10, y, maxHealth * 0.3 + 2, 8);
+  rect(x + 10, y, barW + 2, 8);
   fill(163, 77, 77);
-  rect(x + 10.5, y + 1.5, health * 0.3, 5);
+  rect(x + 10.5, y + 1.5, (health / maxHealth) * barW, 5);
   fill(209, 197, 197);
   square(x, y, 8);
   fill(0);
@@ -1866,11 +2444,73 @@ function playerAttack() {
   return PLAYER_ATTACK + attack;
 }
 
+function triggerShake(amount, duration) {
+  shakeAmount = amount;
+  shakeDuration = duration;
+}
+
 //adds image item to inventory
 function addItem(item) {
   if (size < 3) {
     inventory2[size] = item;
     size++;
+  }
+}
+
+function mapClearedPage() {
+  // darken background
+  fill(0, 0, 0, 150);
+  noStroke();
+  rect(0, 0, pageWidth, pageHeight);
+
+  // fade in the image
+  mapClearedAlpha = min(mapClearedAlpha + 5, 255);
+
+  // freeze cat facing forward
+  frameCurrRow = 0;
+  currentFrame = 3;
+
+  // particles
+  if (frameCount % 3 === 0) {
+    mapClearedParticles.push({
+      x: random(pageWidth),
+      y: random(pageHeight),
+      size: random(3, 8),
+      alpha: 255,
+      col: random([color(255, 220, 80), color(255, 255, 255), color(200, 100, 100)])
+    });
+  }
+  for (let i = mapClearedParticles.length - 1; i >= 0; i--) {
+    let p = mapClearedParticles[i];
+    p.alpha -= 6;
+    p.y -= 0.5;
+    if (p.alpha <= 0) {
+      mapClearedParticles.splice(i, 1);
+      continue;
+    }
+    noStroke();
+    fill(red(p.col), green(p.col), blue(p.col), p.alpha);
+    rect(p.x, p.y, p.size, p.size);
+  }
+
+  // draw map cleared image centered
+  tint(255, mapClearedAlpha);
+  image(
+    mapCleared_img,
+    pageWidth / 2 - (mapCleared_img.width / 4) / 2,
+    pageHeight / 2 - (mapCleared_img.height / 4) / 2,
+    mapCleared_img.width / 4,
+    mapCleared_img.height / 4
+  );
+  noTint();
+
+  // after 2.5 seconds, trigger transition
+  if (millis() - mapClearedTimer > 2500) {
+    mapClearedActive = false;
+    mapClearedAlpha = 0;
+    mapClearedParticles = [];
+    planetClearing = true;
+    loadRandomPlanet();
   }
 }
 
@@ -1902,12 +2542,21 @@ class Enemy {
     this.x = x;
     this.y = y;
     this.type = type;
-    this.health = type === "boss" ? 300 : 100;
+    this.phase2 = false;
+    this.charging = false;
+    this.chargeTimer = 0;
+    this.chargeCooldown = 120;
+
+
+
+    let diffMult = 1 + completedPlanets.length * 0.3;
+
+    this.health = type === "boss" ? floor(300 * diffMult) : floor(100 * diffMult);
     this.maxHealth = this.health;
     this.state = "wander";
-    this.speed = type === "boss" ? 1.2 : random(0.5, 0.9);
-    this.detectionRange = type === "boss" ? 250 : 150;
-    this.attackRange = type === "boss" ? 35 : 15;
+    this.speed = type === "boss" ? 1.2 * diffMult : random(0.5, 0.9) * diffMult;
+    this.detectionRange = type === "boss" ? 250 : floor(150 * diffMult);
+    this.attackRange = type === "boss" ? 35 : 25;
     this.alive = true;
     this.dirX = 1;
     this.dirY = 0;
@@ -1915,6 +2564,11 @@ class Enemy {
     this.animFrame = 0;
     this.attackCooldown = 0;
     this.roomIndex = -1;
+    this.knockbackX = 0;
+    this.knockbackY = 0;
+    this.hitFlash = 0;
+    this.jumpOffset = 0;
+    this.jumpVelocity = 0;
   }
 }
 
@@ -1958,7 +2612,7 @@ function chestItem(index, x, y) {
 
   function swapChest() {
     var swapped = false;
-    if (!swapped && keyCode === ENTER && click) {
+    if (!swapped && keyCode === ENTER && click && size < 3) {
       for (let i = 0; i < chestInventory[planet - 1][index].length; i++) {
         if (chestInventory[planet - 1][index][i] != null && chestInventory[planet - 1][index][i].selected) {
           if (chestInventory[planet - 1][index][i].data.damage > 0) {
@@ -2010,6 +2664,23 @@ function IU(life, health, inventory1, inventory2) {
       if (inventory2[i] != null && (inventory2[i].image_display() === potion_selected || inventory2[i].image_display() === potion) && keyCode === SHIFT && !potionJustUsed) {
         potionJustUsed = true;
         playerHealth = min(playerHealth + inventory2[i].data.health, PLAYERHEALTHMAX);
+        potion_drink.setVolume(0.3);
+        potion_drink.play();
+        for (let j = i; j < size - 1; j++) {
+          inventory2[j] = inventory2[j + 1];
+        }
+        inventory2[size - 1] = null;
+        size--;
+        break;
+      }
+      if (inventory2[i] != null && (inventory2[i].image_display() === potion_strength_selected || inventory2[i].image_display() === potion_strength) && keyCode === SHIFT && !potionJustUsed) {
+        potionJustUsed = true;
+        playerAttackBoost = 5 + inventory2[i].data.damage;
+        strengthPotionTimer = millis();
+        strengthPotionActive = true;
+        setTimeout(() => {
+          playerAttackBoost = 0;
+        }, 15000);
         potion_drink.setVolume(0.3);
         potion_drink.play();
         for (let j = i; j < size - 1; j++) {
@@ -2147,6 +2818,14 @@ function IU(life, health, inventory1, inventory2) {
 function draw() {
   if (planet === 2) background(100, 150, 200); // blue tint for snow map
   else background(220);
+
+  push();
+  if (shakeDuration > 0) {
+    translate(random(-shakeAmount, shakeAmount), random(-shakeAmount, shakeAmount));
+    shakeDuration--;
+    shakeAmount *= 0.9;
+  }
   screen(page);
+  pop();
   mouseJustPressed = false;
 }

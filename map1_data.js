@@ -493,6 +493,18 @@ const mapData_nacho =
                  "width":0,
                  "x":1143.98,
                  "y":313.099
+                }, 
+                {
+                 "height":241.75,
+                 "id":60,
+                 "name":"fightRoom1",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":268.512,
+                 "x":1148.2907218911,
+                 "y":170.245315183352
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -720,7 +732,7 @@ const mapData_nacho =
          "y":0
         }],
  "nextlayerid":9,
- "nextobjectid":57,
+ "nextobjectid":61,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.1",
