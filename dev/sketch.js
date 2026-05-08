@@ -64,6 +64,11 @@ let rocketX = -200;
 let rocketY = pageHeight / 2;
 let rocketSpeed = 6;
 
+let endingActive = false;
+let endingSlide = 0;
+let endingAlpha = 0;
+let endingFadeState = "in";
+let endingFadeTimer = 0;
 
 let size = 0;
 var inventory2 = [];
@@ -187,6 +192,8 @@ function preload() {
   transition_background = loadImage("assets/transition_background.png");
   transition_sound = loadSound("assets/transition_sound.mp3");
 
+  ending_slide = loadImage("assets/ending_slide.png");
+
   return1 = loadImage("assets/return1.png");
   return2 = loadImage("assets/return2.png");
 
@@ -232,6 +239,8 @@ function preload() {
   map2_theme = loadSound("assets/map2_theme.mp3");
   map3_theme = loadSound("assets/map3_theme.mp3");
   map4_theme = loadSound("assets/map4_theme.mp3");
+
+  meowl = loadSound("assets/meowl.mp3");
 
   loose_heart = loadSound("assets/loose_heart.mp3");
 
@@ -442,6 +451,11 @@ function button(image1, x, y, w, h) {
 // 4 = victory screen
 // 5 = game screen
 function screen() {
+  if (endingActive) {
+    endingSlideshow();
+    return;
+  }
+
   if (mapClearedActive) {
     gameStart();
     mapClearedPage();
@@ -878,6 +892,48 @@ function storySlides() {
   button(skip2, 475, 354, skip2.width / 14, skip2.height / 12);
 }
 
+function endingSlideshow() {
+  stopAllSounds();
+  // background
+  image(ending_slide, 0, 0, pageWidth, pageHeight);
+
+  // fade overlay
+  fill(0, 0, 0, 255 - endingAlpha);
+  noStroke();
+  rect(0, 0, pageWidth, pageHeight);
+
+  // fade logic
+  if (endingFadeState === "in") {
+    if (message_noti && !message_noti.isPlaying()) {
+      message_noti.setVolume(0.9);
+      message_noti.play();
+    }
+
+    if (meowl && !meowl.isPlaying()) {
+      meowl.setVolume(0.9);
+      meowl.play();
+    }
+
+    endingAlpha = min(endingAlpha + FADE_SPEED, 255);
+    if (endingAlpha >= 255) {
+      endingFadeState = "hold";
+      endingFadeTimer = 0;
+    }
+  } else if (endingFadeState === "hold") {
+    endingFadeTimer++;
+    if (endingFadeTimer >= HOLD_FRAMES) {
+      endingFadeState = "out";
+    }
+  } else if (endingFadeState === "out") {
+    endingAlpha = max(endingAlpha - FADE_SPEED, 0);
+    if (endingAlpha <= 0) {
+      // ending done, go to victory screen
+      endingActive = false;
+      page = 4;
+    }
+  }
+}
+
 function mapTransitionPage() {
   stopAllSounds();
   let elapsed = millis() - mapTransitionStart;
@@ -1146,7 +1202,10 @@ function loadRandomPlanet() {
   cam.y = constrain(playerY - pageHeight / 2, 0, currentMap.height * 16 * mapScale - pageHeight);
 
   if (next === bossPlanet && completedPlanets.includes(bossPlanet)) {
-    page = 4; // victory
+    endingActive = true;
+    endingAlpha = 0;
+    endingFadeState = "in";
+    endingFadeTimer = 0;
   }
 }
 
@@ -1385,7 +1444,7 @@ function drawArrows() {
         arrows.splice(i, 1);
         hit = true;
         break;
-      } 
+      }
     }
   }
 }
@@ -2207,6 +2266,7 @@ function gameover() {
 
 function victoryPage() {
   scale = 1;
+  meowl.stop();
   if (audioUnlocked && !victory_music.isPlaying()) {
     victory_music.loop();
   }
