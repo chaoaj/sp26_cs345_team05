@@ -849,8 +849,7 @@ function storySlides() {
 
       // stop when either gifs OR text runs out
       if (
-        currentSlide >= storyGifs.length ||
-        currentSlide >= backstorySlides.length
+        currentSlide >= storyGifs.length 
       ) {
         onBackstoryComplete();
         return;
