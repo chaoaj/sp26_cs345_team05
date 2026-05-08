@@ -2025,7 +2025,7 @@ function gameStart() {
     g++;
   }
 
-  if (strengthPotionActive && millis() - strengthPotionTimer > 15000) { // 15 second duration
+  if (strengthPotionActive && millis() - strengthPotionTimer > 8000) { // 8seconds duration
     strengthPotionActive = false;
     playerAttackBoost = 0;
   }
@@ -2612,7 +2612,7 @@ function IU(life, health, inventory1, inventory2) {
         strengthPotionActive = true;
         setTimeout(() => {
           playerAttackBoost = 0;
-        }, 15000);
+        }, 8000);
         potion_drink.setVolume(0.3);
         potion_drink.play();
         for (let j = i; j < size - 1; j++) {
