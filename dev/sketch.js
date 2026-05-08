@@ -373,11 +373,11 @@ function setup() {
   chestInventory_nacho[0] = [new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), potion_strength_item];
   chestInventory_blueCheese[0] = [new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
-  chestInventory_blueCheese[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), bowItem];
+  chestInventory_blueCheese[1] = [potion_strength_item, bowItem];
   chestInventory_parmesan[0] = [new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
-  chestInventory_parmesan[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_parmesan[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), bowItem];
   chestInventory_cheeseCake[0] = [new Item([sword_cheeseCake, sword_cheeseCake_selected], false, { damage: 25, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
-  chestInventory_cheeseCake[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_cheeseCake[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), potion_strength_item];
 }
 
 
