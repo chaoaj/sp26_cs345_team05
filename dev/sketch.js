@@ -142,6 +142,11 @@ let hitEnemy = false;
 
 let digitImages = [];
 
+let strengthPotionActive = false;
+let strengthPotionTimer = 0;
+let strengthPotionDuration = 50000; //1 minute
+let playerAttackBoost = 0;
+
 
 function preload() {
   homepage_background = loadImage("assets/homepage_background.png");
@@ -315,6 +320,8 @@ function preload() {
   attack_right = loadImage("assets/AttackAnimation/slash_right.png");
 
   arrow_weapon = loadImage("assets/arrow_weapon.png");
+  potion_strength = loadImage("assets/potion_boost.png");
+  potion_strength_selected = loadImage("assets/potion_boost_selected.png");
 }
 
 function getSpawnPoint(map) {
@@ -361,9 +368,10 @@ function setup() {
 
 
   bowItem = new Item([bow, bow_selected], false, { type: "bow", damage: 15, health: 0 });
+  potion_strength_item = new Item([potion_strength, potion_strength_selected], false, { type: "strengthPotion", damage: 20, health: 0 });
 
   chestInventory_nacho[0] = [new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
-  chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
+  chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), potion_strength_item];
   chestInventory_blueCheese[0] = [new Item([sword_blueCheese, sword_blueCheese_selected], false, { damage: 15, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_blueCheese[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), bowItem];
   chestInventory_parmesan[0] = [new Item([sword_parmesan, sword_parmesan_selected], false, { damage: 20, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
@@ -1336,6 +1344,7 @@ function collidesWithPlayer() {
 
 function drawArrows() {
   for (let i = arrows.length - 1; i >= 0; i--) {
+    hitEnemy = false;
     let a = arrows[i];
     a.x += a.dx * 8;
     a.y += a.dy * 8;
@@ -1363,7 +1372,7 @@ function drawArrows() {
         arrows.splice(i, 1);
         hitEnemy = true;
         break;
-      }
+      } 
     }
     if (hitEnemy) continue;
   }
@@ -1746,7 +1755,8 @@ function drawCat(player) {
       let d = dist(playerX, playerY, e.x, e.y);
       if (e.state !== "wander" && d <= playerAttackRange && attackCooldown === 0) {
 
-        let damage = PLAYER_ATTACK + (equipped ? equipped.data.damage : 0);
+        let damage = PLAYER_ATTACK + playerAttackBoost + (equipped ? equipped.data.damage : 0);
+
         e.range = playerAttackRange / 2;
         e.health -= damage;
         attackCooldown = 40;
@@ -1772,6 +1782,12 @@ function drawCat(player) {
         break;
       }
     }
+  }
+
+  if (strengthPotionActive) {
+    fill(255, 0, 255, 100);
+    ellipse(playerX + 16, playerY + 16, 40, 40);
+    text("STRENGTH BOOST!", playerX + 16, playerY - 10);
   }
 }
 
@@ -1891,6 +1907,10 @@ function gameStart() {
     g++;
   }
 
+  if (strengthPotionActive && millis() - strengthPotionTimer > 15000) { // 15 second duration
+    strengthPotionActive = false;
+    playerAttackBoost = 0;
+  }
 
 
   if (first == 0) {
@@ -2459,6 +2479,23 @@ function IU(life, health, inventory1, inventory2) {
       if (inventory2[i] != null && (inventory2[i].image_display() === potion_selected || inventory2[i].image_display() === potion) && keyCode === SHIFT && !potionJustUsed) {
         potionJustUsed = true;
         playerHealth = min(playerHealth + inventory2[i].data.health, PLAYERHEALTHMAX);
+        potion_drink.setVolume(0.3);
+        potion_drink.play();
+        for (let j = i; j < size - 1; j++) {
+          inventory2[j] = inventory2[j + 1];
+        }
+        inventory2[size - 1] = null;
+        size--;
+        break;
+      }
+      if (inventory2[i] != null && (inventory2[i].image_display() === potion_strength_selected || inventory2[i].image_display() === potion_strength) && keyCode === SHIFT && !potionJustUsed) {
+        potionJustUsed = true;
+        playerAttackBoost = 5 + inventory2[i].data.damage;
+        strengthPotionTimer = millis();
+        strengthPotionActive = true;
+        setTimeout(() => {
+          playerAttackBoost = 0;
+        }, 15000);
         potion_drink.setVolume(0.3);
         potion_drink.play();
         for (let j = i; j < size - 1; j++) {
