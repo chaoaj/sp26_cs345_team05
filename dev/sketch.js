@@ -214,7 +214,6 @@ function preload() {
   rat_boss_parmesan = loadImage("assets/rat_boss_parmesan.png");
   rat_boss_cake = loadImage("assets/rat_boss_cake.png");
 
-
   icu = loadImage("assets/interface.png");
   heart = loadImage("assets/heart.png");
   inventory1 = loadImage("assets/inventory.png");
@@ -269,6 +268,7 @@ function preload() {
   potion_selected = loadImage("assets/Potion_selected.png");
   bow = loadImage("assets/bow.png");
   bow_selected = loadImage("assets/bow_selected.png");
+  arrow_weapon = loadImage("assets/arrow_weapon.png");
 
   floorTileset = loadImage("assets/atlas_floor-16x16.png");
   wallTileset = loadImage("assets/atlas_walls_high-16x32.png");
@@ -1340,11 +1340,23 @@ function drawArrows() {
     a.x += a.dx * 8;
     a.y += a.dy * 8;
 
-    // white projectiles
-    fill(255);
-    rect(a.x, a.y, 16, 4);
+    // draw rotated arrow sprite
+    push();
+    translate(a.x, a.y);
+    rotate(a.angle + PI / 4);
+    imageMode(CENTER);
+    image(arrow_weapon, 0, 0, 16, 16);
+    imageMode(CORNER);
+    pop();
 
-    //when arrow hits enemy
+    // check arrow out of bounds
+    if (a.x < cam.x - 50 || a.x > cam.x + pageWidth + 50 ||
+      a.y < cam.y - 50 || a.y > cam.y + pageHeight + 50) {
+      arrows.splice(i, 1);
+      continue;
+    }
+
+    let hit = false;
     for (let e of enemies) {
       if (!e.alive) continue;
       let d = dist(a.x, a.y, e.x, e.y);
@@ -1354,18 +1366,14 @@ function drawArrows() {
         e.knockbackY = a.dy * 5;
         if (e.health <= 0) {
           e.alive = false;
-          if (e.type === "boss") {
-            playRandomBossRoar();
-          } else {
-            playRandomRatSqueak();
-          }
+          if (e.type === "boss") playRandomBossRoar();
+          else playRandomRatSqueak();
         }
         arrows.splice(i, 1);
-        hitEnemy = true;
+        hit = true;
         break;
       }
     }
-    if (hitEnemy) continue;
   }
 }
 
@@ -1657,7 +1665,7 @@ function drawCat(player) {
 
   // draw equipped item BEHIND cat if facing up
   if (equipped != null && frameCurrRow === 1) {
-    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, itemSize, itemSize);
+    image(equipped.image[0], playerX + offsetX, playerY + offsetY, itemSize, itemSize);
   }
 
   // draw cat
@@ -1670,7 +1678,7 @@ function drawCat(player) {
 
   // draw equipped item IN FRONT of cat for all other directions
   if (equipped != null && frameCurrRow !== 1) {
-    image(equipped.image_display(), playerX + offsetX, playerY + offsetY, itemSize, itemSize);
+    image(equipped.image[0], playerX + offsetX, playerY + offsetY, itemSize, itemSize);
   }
 
   // movement
