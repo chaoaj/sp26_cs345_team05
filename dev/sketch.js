@@ -144,7 +144,6 @@ let digitImages = [];
 
 let strengthPotionActive = false;
 let strengthPotionTimer = 0;
-let strengthPotionDuration = 50000; //1 minute
 let playerAttackBoost = 0;
 
 
