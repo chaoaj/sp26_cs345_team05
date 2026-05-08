@@ -194,10 +194,10 @@ function preload() {
   skip1 = loadImage("assets/skip1.png");
   skip2 = loadImage("assets/skip2.png");
 
-  cat_orange = loadImage("assets/sprite_sheet_orange.png");
+  cat_orange = loadImage("assets/sprite_sheet_orange_dad.png");
   cat_white = loadImage("assets/sprite_sheet_white.png");
-  cat_tan = loadImage("assets/sprite_sheet_tan.png");
-  cat_charzard = loadImage("assets/sprite_sheet_charzard.png");
+  cat_tan = loadImage("assets/sprite_sheet_orange.png");
+  cat_charzard = loadImage("assets/sprite_sheet_orange_mom.png");
 
   skinChoice = cat_tan;
   skin_selection = loadImage("assets/skin_select_button.png");
