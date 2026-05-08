@@ -1,66 +1,3 @@
-const backstorySlides = [
-  {
-    title: "A Long Time Ago…",
-    text: [
-      "In a galaxy not that far away,",
-      "on the cheese-rich planet of Parmesean,",
-      "lived a very normal cat family.",
-      "(Well, as normal as space cats go.)"
-    ],
-    emoji: "🐱🧀🚀"
-  },
-  {
-    title: "Mom & Dad",
-    text: [
-      "Mama Whiskers made the best asteroid stew.",
-      "Papa Paws could fix any broken rocket",
-      "with nothing but duct tape and confidence.",
-      "Life was purrfect."
-    ],
-    emoji: "👩‍🚀👨‍🚀🍲"
-  },
-  {
-    title: "The Incident",
-    text: [
-      "Then one Tuesday — always a Tuesday —",
-      "the Rat King showed up uninvited.",
-      "He kidnapped Mom and Dad,",
-      "and didn't even leave a note. Rude."
-    ],
-    emoji: "🐀👑😤"
-  },
-  {
-    title: "Enter: YOU",
-    text: [
-      "You are their kid.",
-      "You eat danger for breakfast.",
-      "(And also tuna.)",
-      "It's time to suiting up and blast off."
-    ],
-    emoji: "😼⚔️🌌"
-  },
-  {
-    title: "The Mission",
-    text: [
-      "Navigate 4 treacherous planets.",
-      "Defeat the rat hordes standing in your way.",
-      "Find the Rat King.",
-      "Bring Mom and Dad home for dinner."
-    ],
-    emoji: "🗺️💥🐀"
-  },
-  {
-    title: "Good Luck, Space Cat.",
-    text: [
-      "The universe is counting on you.",
-      "Or at least your parents are.",
-      "No pressure.",
-      "…Okay, a little pressure."
-    ],
-    emoji: "🌠🐾✨"
-  }
-];
-
 var planet = 1;
 var g = 0;
 var page = 0;
@@ -197,6 +134,11 @@ var star = 0;
 var attackPopups = [];
 
 let playerAttackRange = 50;
+
+let arrows = [];
+let bowCoolDown = 300;
+let lastBowShot = 0;
+
 
 
 function preload() {
@@ -387,6 +329,8 @@ function mousePressed() {
     userStartAudio();
     audioUnlocked = true;
   }
+
+  shootArrow();
 }
 
 function setup() {
@@ -408,7 +352,7 @@ function setup() {
   // enemyY = spawn.y + random(-100, 100);
 
 
-  bowItem = new Item([bow, bow_selected], false, { damage: 15, health: 0 });
+  bowItem = new Item([bow, bow_selected], false, { type: "bow", damage: 15, health: 0 });
 
   chestInventory_nacho[0] = [new Item([sword_nacho, sword_nacho_selected], false, { damage: 10, health: 0 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
   chestInventory_nacho[1] = [new Item([potion, potion_selected], false, { damage: 0, health: 50 }), new Item([potion, potion_selected], false, { damage: 0, health: 50 })];
@@ -905,8 +849,7 @@ function storySlides() {
 
       // stop when either gifs OR text runs out
       if (
-        currentSlide >= storyGifs.length ||
-        currentSlide >= backstorySlides.length
+        currentSlide >= storyGifs.length 
       ) {
         onBackstoryComplete();
         return;
@@ -1383,6 +1326,80 @@ function collidesWithPlayer() {
   }
 }
 
+function drawArrows() {
+  for (let i = arrows.length - 1; i >= 0; i--) {
+    let a = arrows[i];
+    a.x += a.dx * 8;
+    a.y += a.dy * 8;
+
+    fill(255, 0, 0);
+    rect(a.x, a.y, 16, 4);
+  }
+}
+
+function shootArrow() {
+  if (millis() - lastBowShot < bowCoolDown) return; // 500ms cooldown
+  lastBowShot = millis();
+
+  let worldMouseX = cam.x + mouseX;
+  let worldMouseY = cam.y + mouseY;
+
+  let dx = worldMouseX - playerX;
+  let dy = worldMouseY - playerY;
+
+  let d = dist(playerX, playerY, worldMouseX, worldMouseY);
+
+  if (d > 0) {
+    dx /= d;
+    dy /= d;
+  }
+
+  arrows.push({
+    x: playerX,
+    y: playerY,
+    dx: dx,
+    dy: dy,
+    angle: atan2(dy, dx)
+  });
+}
+
+function drawBow() {
+  let offsetX = 0;
+  let offsetY = 0;
+  let sx = currentFrame * frameWidth;
+  let sy = frameHeight * frameCurrRow;
+
+  let equipped = getEquippedItem();
+  let bowequipped = equipped && equipped.data.type === "bow";
+
+  let centerX = bow.width / 2;
+  let centerY = bow.height / 2;
+
+  if (bowequipped != null) {
+    if (frameCurrRow === 3) {
+      offsetX = centerX + 4;
+      offsetY = centerY - 4;
+    } else if (frameCurrRow === 2) {
+      offsetX = centerX - 12;
+      offsetY = centerY - 4;
+    } else if (frameCurrRow === 0) {
+      offsetX = centerX - 4;
+      offsetY = centerY + 2;
+    } else if (frameCurrRow === 1) {
+      offsetX = centerX + 2;
+      offsetY = centerY - 12;
+    }
+  }
+
+  image(bow, playerX + offsetX, playerY + offsetY, sx, sy);
+
+  if (bowequipped && mousePressed) {
+    shootArrow();
+  }
+
+}
+
+
 function drawEnemy() {
 
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -1460,6 +1477,8 @@ function drawEnemy() {
       }
 
       e.attackCooldown = 90;
+      attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis() });
+
       e.jumpVelocity = -6;
 
       attackPopups.push({ x: e.x, y: e.y, damage: dmg, miss: dmg === 0, crit: dmg === 16, col: popupColor, timer: millis() });
@@ -1813,6 +1832,8 @@ function gameStart() {
   push();
   translate(-cam.x, -cam.y);
   drawEnemy();
+  drawArrows();
+  drawBow();
   pop();
 
   attackPopups = attackPopups.filter(p => millis() - p.timer < 1000);
