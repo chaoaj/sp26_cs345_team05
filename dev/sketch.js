@@ -308,6 +308,8 @@ function preload() {
   attack_up = loadImage("assets/AttackAnimation/slash_up.png");
   attack_left = loadImage("assets/AttackAnimation/slash_left.png");
   attack_right = loadImage("assets/AttackAnimation/slash_right.png");
+
+  arrow_weapon = loadImage("assets/arrow_weapon.png");
 }
 
 function getSpawnPoint(map) {
